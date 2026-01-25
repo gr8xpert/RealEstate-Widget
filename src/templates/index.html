@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Templates Gallery - RealtySoft Widget v2</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #f5f5f5;
+            color: #333;
+        }
+        .header {
+            background: linear-gradient(135deg, #0066cc 0%, #004a99 100%);
+            color: white;
+            padding: 60px 20px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0 0 10px 0;
+            font-size: 2.5rem;
+            font-weight: 600;
+        }
+        .header p {
+            margin: 0;
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin: 0 0 30px 0;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        .templates-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 30px;
+            margin-bottom: 60px;
+        }
+        .template-card {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .template-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+        }
+        .template-preview {
+            height: 200px;
+            background: #f8f9fa;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-bottom: 1px solid #e0e0e0;
+            overflow: hidden;
+        }
+        .template-preview img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: cover;
+        }
+        .template-preview-placeholder {
+            color: #999;
+            text-align: center;
+            padding: 20px;
+        }
+        .template-preview-placeholder svg {
+            width: 48px;
+            height: 48px;
+            margin-bottom: 10px;
+            opacity: 0.5;
+        }
+        .template-info {
+            padding: 20px;
+        }
+        .template-info h3 {
+            margin: 0 0 8px 0;
+            font-size: 1.1rem;
+        }
+        .template-info p {
+            margin: 0 0 15px 0;
+            color: #666;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+        .template-actions {
+            display: flex;
+            gap: 10px;
+        }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            text-decoration: none;
+            transition: background-color 0.2s;
+        }
+        .btn-primary {
+            background: #0066cc;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #0052a3;
+        }
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+        .code-section {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 40px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .code-section h3 {
+            margin: 0 0 15px 0;
+            font-size: 1.1rem;
+        }
+        .code-block {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.875rem;
+            line-height: 1.6;
+        }
+        .code-block .tag { color: #569cd6; }
+        .code-block .attr { color: #9cdcfe; }
+        .code-block .string { color: #ce9178; }
+        .code-block .comment { color: #6a9955; }
+        .copy-btn {
+            float: right;
+            background: #333;
+            color: #fff;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.75rem;
+        }
+        .copy-btn:hover {
+            background: #555;
+        }
+        .search-preview {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .search-row {
+            display: flex;
+            gap: 8px;
+        }
+        .search-field {
+            flex: 1;
+            height: 32px;
+            background: #f0f0f0;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+        .search-btn {
+            width: 80px;
+            height: 32px;
+            background: #0066cc;
+            border-radius: 4px;
+        }
+        .search-reset {
+            width: 32px;
+            height: 32px;
+            background: #f0f0f0;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+        .card-preview {
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            width: 200px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .card-preview-image {
+            height: 100px;
+            background: linear-gradient(135deg, #e0e0e0 0%, #c0c0c0 100%);
+            position: relative;
+        }
+        .card-preview-heart {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+        }
+        .card-preview-content {
+            padding: 12px;
+        }
+        .card-preview-location {
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-bottom: 2px;
+        }
+        .card-preview-type {
+            font-size: 0.75rem;
+            color: #666;
+            margin-bottom: 8px;
+        }
+        .card-preview-specs {
+            font-size: 0.7rem;
+            color: #888;
+            margin-bottom: 8px;
+        }
+        .card-preview-price {
+            font-weight: 600;
+            color: #0066cc;
+        }
+    </style>
+</head>
+<body>
+
+<header class="header">
+    <h1>RealtySoft Templates</h1>
+    <p>Pre-built HTML/CSS templates for search forms and property listings</p>
+</header>
+
+<div class="container">
+
+    <!-- Search Templates -->
+    <h2 class="section-title">Search Templates</h2>
+    <div class="templates-grid">
+        <!-- Template 01: Compact Horizontal -->
+        <div class="template-card">
+            <div class="template-preview">
+                <div class="search-preview">
+                    <div class="search-row">
+                        <div class="search-field" style="flex: 0.8;"></div>
+                        <div class="search-field"></div>
+                        <div class="search-field"></div>
+                        <div class="search-field"></div>
+                        <div class="search-btn"></div>
+                    </div>
+                    <div class="search-row">
+                        <div class="search-field" style="flex: 0.6;"></div>
+                        <div class="search-field" style="flex: 0.6;"></div>
+                        <div class="search-field" style="flex: 0.6;"></div>
+                        <div class="search-field" style="flex: 0.6;"></div>
+                        <div class="search-field" style="flex: 0.6;"></div>
+                        <div class="search-reset"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="template-info">
+                <h3>Template 01: Compact Horizontal</h3>
+                <p>Two-row horizontal search form with all essential filters. Reference, location, sublocation, property type in row 1. Beds, baths, price range, listing type in row 2.</p>
+                <div class="template-actions">
+                    <a href="search/template-01-compact-horizontal.html" class="btn btn-primary">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                            <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                        Preview
+                    </a>
+                    <button class="btn btn-secondary" onclick="copySearchTemplate()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                        </svg>
+                        Copy Code
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Template 02: Single Row with More Filters -->
+        <div class="template-card">
+            <div class="template-preview">
+                <div class="search-preview" style="flex-direction: column; gap: 6px;">
+                    <div class="search-row">
+                        <div class="search-field" style="flex: 2; border-radius: 50px;"></div>
+                        <div class="search-field" style="flex: 0.6; background: transparent; border: none;"></div>
+                        <div class="search-field" style="flex: 0.8; background: transparent; border: none;"></div>
+                        <div class="search-field" style="flex: 0.6; background: transparent; border: none;"></div>
+                        <div class="search-field" style="flex: 0.8; border-color: #f97316;"></div>
+                        <div class="search-btn"></div>
+                        <div class="search-reset"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="template-info">
+                <h3>Template 02: Single Row + More Filters</h3>
+                <p>Single-row search with location pill, inline dropdowns, and expandable "More Filters" dropdown. Includes Reference, Bathrooms, Built Area, Terrace, Plot, Status.</p>
+                <div class="template-actions">
+                    <a href="search/template-02-single-row.html" class="btn btn-primary">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                            <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                        Preview
+                    </a>
+                    <button class="btn btn-secondary" onclick="copySearchTemplate02()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                        </svg>
+                        Copy Code
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Listing Templates -->
+    <h2 class="section-title">Listing Card Templates</h2>
+    <div class="templates-grid">
+        <!-- Template 01: Location-First -->
+        <div class="template-card">
+            <div class="template-preview">
+                <div class="card-preview">
+                    <div class="card-preview-image">
+                        <div class="card-preview-heart"></div>
+                    </div>
+                    <div class="card-preview-content">
+                        <div class="card-preview-location">Elviria</div>
+                        <div class="card-preview-type">Residential Plot</div>
+                        <div class="card-preview-specs">2 beds | 2 baths | 105m2</div>
+                        <div class="card-preview-price">449,000</div>
+                    </div>
+                </div>
+            </div>
+            <div class="template-info">
+                <h3>Template 01: Location-First Cards</h3>
+                <p>Property cards with location as the main title, property type as subtitle, truncated description, specs with icons, and price at the bottom.</p>
+                <div class="template-actions">
+                    <a href="listing/template-01-location-first.html" class="btn btn-primary">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                            <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                        Preview
+                    </a>
+                    <button class="btn btn-secondary" onclick="copyListingTemplate()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                        </svg>
+                        Copy Code
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Template 02: Price on Image Cards -->
+        <div class="template-card">
+            <div class="template-preview">
+                <div class="card-preview" style="position: relative;">
+                    <div class="card-preview-image" style="position: relative;">
+                        <div style="position: absolute; top: 8px; left: 8px; background: #e53935; color: white; padding: 3px 8px; font-size: 0.6rem; border-radius: 3px; font-weight: 600;">FOR SALE</div>
+                        <div style="position: absolute; bottom: 8px; left: 8px; display: flex; gap: 6px;">
+                            <div style="background: rgba(0,0,0,0.5); color: white; padding: 3px 6px; border-radius: 3px; font-size: 0.6rem;">📷 5</div>
+                            <div style="background: rgba(0,0,0,0.5); color: white; padding: 3px 6px; border-radius: 3px; font-size: 0.6rem;">♡</div>
+                        </div>
+                        <div style="position: absolute; bottom: 8px; right: 8px; text-align: right;">
+                            <div style="color: white; font-size: 0.9rem; font-weight: 700; text-shadow: 0 1px 3px rgba(0,0,0,0.5);">$1.2m</div>
+                            <div style="color: rgba(255,255,255,0.8); font-size: 0.5rem;">Leasehold</div>
+                        </div>
+                    </div>
+                    <div class="card-preview-content">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div class="card-preview-location" style="margin: 0;">3 Bedroom Villa</div>
+                            <span style="color: #999; font-size: 0.8rem;">ⓘ</span>
+                        </div>
+                        <div style="color: #666; font-size: 0.65rem; margin-bottom: 6px;">Seminyak Area</div>
+                        <div style="font-size: 0.6rem; color: #333;">Beds: 3 &nbsp;&nbsp; Baths: 3 &nbsp;&nbsp; Area: 150 sqm</div>
+                    </div>
+                </div>
+            </div>
+            <div class="template-info">
+                <h3>Template 02: Price on Image Cards</h3>
+                <p>Property cards with price overlay on image, status badge top-left, image count & wishlist bottom-left, specs with labels below.</p>
+                <div class="template-actions">
+                    <a href="listing/template-02-price-on-image.html" class="btn btn-primary">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                            <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                        Preview
+                    </a>
+                    <button class="btn btn-secondary" onclick="copyListingTemplate02()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                        </svg>
+                        Copy Code
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Start Code -->
+    <h2 class="section-title">Quick Start</h2>
+
+    <div class="code-section">
+        <h3>Search Template 01 - Compact Horizontal</h3>
+        <div class="code-block" id="search-code">
+<span class="comment">&lt;!-- Search Template 01: Compact Horizontal --&gt;</span>
+<span class="tag">&lt;section</span> <span class="attr">id</span>=<span class="string">"rs_search"</span> <span class="attr">class</span>=<span class="string">"rs-template-search-01"</span><span class="tag">&gt;</span>
+  <span class="comment">&lt;!-- Row 1: Primary Search --&gt;</span>
+  <span class="tag">&lt;div</span> <span class="attr">class</span>=<span class="string">"rs-template-search-01__row rs-template-search-01__row--primary"</span><span class="tag">&gt;</span>
+    <span class="tag">&lt;div</span> <span class="attr">class</span>=<span class="string">"rs-template-search-01__field"</span><span class="tag">&gt;&lt;div</span> <span class="attr">class</span>=<span class="string">"rs_ref"</span><span class="tag">&gt;&lt;/div&gt;&lt;/div&gt;</span>
+    <span class="tag">&lt;div</span> <span class="attr">class</span>=<span class="string">"rs-template-search-01__field"</span><span class="tag">&gt;&lt;div</span> <span class="attr">class</span>=<span class="string">"rs_location"</span> <span class="attr">data-rs-variation</span>=<span class="string">"4"</span><span class="tag">&gt;&lt;/div&gt;&lt;/div&gt;</span>
+    <span class="tag">&lt;div</span> <span class="attr">class</span>=<span class="string">"rs-template-search-01__field"</span><span class="tag">&gt;&lt;div</span> <span class="attr">class</span>=<span class="string">"rs_location"</span> <span class="attr">data-rs-variation</span>=<span class="string">"4"</span> <span class="attr">data-rs-role</span>=<span class="string">"sublocation"</span><span class="tag">&gt;&lt;/div&gt;&lt;/div&gt;</span>
+    <span class="tag">&lt;div</span> <span class="attr">class</span>=<span class="string">"rs-template-search-01__field"</span><span class="tag">&gt;&lt;div</span> <span class="attr">class</span>=<span class="string">"rs_property_type"</span> <span class="attr">data-rs-variation</span>=<span class="string">"2"</span><span class="tag">&gt;&lt;/div&gt;&lt;/div&gt;</span>
+    <span class="tag">&lt;div</span> <span class="attr">class</span>=<span class="string">"rs-template-search-01__field"</span><span class="tag">&gt;&lt;div</span> <span class="attr">class</span>=<span class="string">"rs_search_button"</span><span class="tag">&gt;&lt;/div&gt;&lt;/div&gt;</span>
+  <span class="tag">&lt;/div&gt;</span>
+
+  <span class="comment">&lt;!-- Row 2: Secondary Filters --&gt;</span>
+  <span class="tag">&lt;div</span> <span class="attr">class</span>=<span class="string">"rs-template-search-01__row rs-template-search-01__row--secondary"</span><span class="tag">&gt;</span>
+    <span class="tag">&lt;div</span> <span class="attr">class</span>=<span class="string">"rs-template-search-01__field"</span><span class="tag">&gt;&lt;div</span> <span class="attr">class</span>=<span class="string">"rs_bedrooms"</span> <span class="attr">data-rs-variation</span>=<span class="string">"1"</span><span class="tag">&gt;&lt;/div&gt;&lt;/div&gt;</span>
+    <span class="tag">&lt;div</span> <span class="attr">class</span>=<span class="string">"rs-template-search-01__field"</span><span class="tag">&gt;&lt;div</span> <span class="attr">class</span>=<span class="string">"rs_bathrooms"</span> <span class="attr">data-rs-variation</span>=<span class="string">"1"</span><span class="tag">&gt;&lt;/div&gt;&lt;/div&gt;</span>
+    <span class="tag">&lt;div</span> <span class="attr">class</span>=<span class="string">"rs-template-search-01__field"</span><span class="tag">&gt;&lt;div</span> <span class="attr">class</span>=<span class="string">"rs_price"</span> <span class="attr">data-rs-variation</span>=<span class="string">"1"</span> <span class="attr">data-rs-type</span>=<span class="string">"min"</span><span class="tag">&gt;&lt;/div&gt;&lt;/div&gt;</span>
+    <span class="tag">&lt;div</span> <span class="attr">class</span>=<span class="string">"rs-template-search-01__field"</span><span class="tag">&gt;&lt;div</span> <span class="attr">class</span>=<span class="string">"rs_price"</span> <span class="attr">data-rs-variation</span>=<span class="string">"1"</span> <span class="attr">data-rs-type</span>=<span class="string">"max"</span><span class="tag">&gt;&lt;/div&gt;&lt;/div&gt;</span>
+    <span class="tag">&lt;div</span> <span class="attr">class</span>=<span class="string">"rs-template-search-01__field"</span><span class="tag">&gt;&lt;div</span> <span class="attr">class</span>=<span class="string">"rs_listing_type"</span> <span class="attr">data-rs-variation</span>=<span class="string">"2"</span><span class="tag">&gt;&lt;/div&gt;&lt;/div&gt;</span>
+    <span class="tag">&lt;div</span> <span class="attr">class</span>=<span class="string">"rs-template-search-01__field"</span><span class="tag">&gt;&lt;div</span> <span class="attr">class</span>=<span class="string">"rs_reset_button"</span><span class="tag">&gt;&lt;/div&gt;&lt;/div&gt;</span>
+  <span class="tag">&lt;/div&gt;</span>
+
+  <span class="comment">&lt;!-- Footer Links --&gt;</span>
+  <span class="tag">&lt;div</span> <span class="attr">class</span>=<span class="string">"rs-template-search-01__footer"</span><span class="tag">&gt;</span>
+    <span class="tag">&lt;a</span> <span class="attr">href</span>=<span class="string">"#"</span><span class="tag">&gt;</span>Advanced Search<span class="tag">&lt;/a&gt;</span>
+    <span class="tag">&lt;a</span> <span class="attr">href</span>=<span class="string">"#"</span><span class="tag">&gt;</span>Map Search<span class="tag">&lt;/a&gt;</span>
+  <span class="tag">&lt;/div&gt;</span>
+<span class="tag">&lt;/section&gt;</span>
+        </div>
+    </div>
+
+    <div class="code-section">
+        <h3>Listing Template 01 - Location-First Cards</h3>
+        <div class="code-block" id="listing-code">
+<span class="comment">&lt;!-- Listing Template 01: Location-First Cards --&gt;</span>
+<span class="tag">&lt;section</span> <span class="attr">id</span>=<span class="string">"rs_listing"</span> <span class="attr">class</span>=<span class="string">"rs-template-listing-01"</span><span class="tag">&gt;</span>
+  <span class="tag">&lt;div</span> <span class="attr">class</span>=<span class="string">"rs_results_count"</span><span class="tag">&gt;&lt;/div&gt;</span>
+  <span class="tag">&lt;div</span> <span class="attr">class</span>=<span class="string">"rs_property_grid"</span><span class="tag">&gt;</span>
+    <span class="comment">&lt;!-- Custom card template (cloned for each property) --&gt;</span>
+    <span class="tag">&lt;div</span> <span class="attr">class</span>=<span class="string">"rs_card rs-template-card-01"</span><span class="tag">&gt;</span>
+      <span class="tag">&lt;div</span> <span class="attr">class</span>=<span class="string">"rs-template-card-01__image-section"</span><span class="tag">&gt;</span>
+        <span class="tag">&lt;div</span> <span class="attr">class</span>=<span class="string">"rs_card_carousel"</span><span class="tag">&gt;&lt;/div&gt;</span>
+        <span class="tag">&lt;button</span> <span class="attr">class</span>=<span class="string">"rs_card_wishlist"</span><span class="tag">&gt;&lt;/button&gt;</span>
+        <span class="tag">&lt;div</span> <span class="attr">class</span>=<span class="string">"rs_card_status"</span><span class="tag">&gt;&lt;/div&gt;</span>
+      <span class="tag">&lt;/div&gt;</span>
+      <span class="tag">&lt;a</span> <span class="attr">class</span>=<span class="string">"rs_card_link rs-template-card-01__content"</span><span class="tag">&gt;</span>
+        <span class="tag">&lt;h3</span> <span class="attr">class</span>=<span class="string">"rs_card_location rs-template-card-01__location"</span><span class="tag">&gt;&lt;/h3&gt;</span>
+        <span class="tag">&lt;p</span> <span class="attr">class</span>=<span class="string">"rs_card_type rs-template-card-01__type"</span><span class="tag">&gt;&lt;/p&gt;</span>
+        <span class="tag">&lt;p</span> <span class="attr">class</span>=<span class="string">"rs_card_description rs-template-card-01__description"</span><span class="tag">&gt;&lt;/p&gt;</span>
+        <span class="tag">&lt;div</span> <span class="attr">class</span>=<span class="string">"rs-template-card-01__specs"</span><span class="tag">&gt;</span>
+          <span class="tag">&lt;span</span> <span class="attr">class</span>=<span class="string">"rs_card_beds rs-template-card-01__spec"</span><span class="tag">&gt;&lt;/span&gt;</span>
+          <span class="tag">&lt;span</span> <span class="attr">class</span>=<span class="string">"rs_card_baths rs-template-card-01__spec"</span><span class="tag">&gt;&lt;/span&gt;</span>
+          <span class="tag">&lt;span</span> <span class="attr">class</span>=<span class="string">"rs_card_built rs-template-card-01__spec"</span><span class="tag">&gt;&lt;/span&gt;</span>
+          <span class="tag">&lt;span</span> <span class="attr">class</span>=<span class="string">"rs_card_plot rs-template-card-01__spec"</span><span class="tag">&gt;&lt;/span&gt;</span>
+        <span class="tag">&lt;/div&gt;</span>
+        <span class="tag">&lt;div</span> <span class="attr">class</span>=<span class="string">"rs_card_price rs-template-card-01__price"</span><span class="tag">&gt;&lt;/div&gt;</span>
+      <span class="tag">&lt;/a&gt;</span>
+    <span class="tag">&lt;/div&gt;</span>
+  <span class="tag">&lt;/div&gt;</span>
+  <span class="tag">&lt;div</span> <span class="attr">class</span>=<span class="string">"rs_pagination"</span><span class="tag">&gt;&lt;/div&gt;</span>
+<span class="tag">&lt;/section&gt;</span>
+        </div>
+    </div>
+
+</div>
+
+<script>
+function copySearchTemplate() {
+    const code = `<section id="rs_search" class="rs-template-search-01">
+    <div class="rs-template-search-01__row rs-template-search-01__row--primary">
+        <div class="rs-template-search-01__field"><div class="rs_ref"></div></div>
+        <div class="rs-template-search-01__field"><div class="rs_location" data-rs-variation="4"></div></div>
+        <div class="rs-template-search-01__field"><div class="rs_location" data-rs-variation="4" data-rs-role="sublocation"></div></div>
+        <div class="rs-template-search-01__field"><div class="rs_property_type" data-rs-variation="2"></div></div>
+        <div class="rs-template-search-01__field"><div class="rs_search_button"></div></div>
+    </div>
+    <div class="rs-template-search-01__row rs-template-search-01__row--secondary">
+        <div class="rs-template-search-01__field"><div class="rs_bedrooms" data-rs-variation="1"></div></div>
+        <div class="rs-template-search-01__field"><div class="rs_bathrooms" data-rs-variation="1"></div></div>
+        <div class="rs-template-search-01__field"><div class="rs_price" data-rs-variation="1" data-rs-type="min"></div></div>
+        <div class="rs-template-search-01__field"><div class="rs_price" data-rs-variation="1" data-rs-type="max"></div></div>
+        <div class="rs-template-search-01__field"><div class="rs_listing_type" data-rs-variation="2"></div></div>
+        <div class="rs-template-search-01__field"><div class="rs_reset_button"></div></div>
+    </div>
+    <div class="rs-template-search-01__footer">
+        <a href="#">Advanced Search</a>
+        <a href="#">Map Search</a>
+    </div>
+</section>`;
+    navigator.clipboard.writeText(code);
+    alert('Search template code copied to clipboard!');
+}
+
+function copyListingTemplate() {
+    const code = `<section id="rs_listing" class="rs-template-listing-01">
+    <div class="rs_results_count"></div>
+    <div class="rs_property_grid">
+        <div class="rs_card rs-template-card-01">
+            <div class="rs-template-card-01__image-section">
+                <div class="rs_card_carousel"></div>
+                <button class="rs_card_wishlist"></button>
+                <div class="rs_card_status"></div>
+            </div>
+            <a class="rs_card_link rs-template-card-01__content">
+                <h3 class="rs_card_location rs-template-card-01__location"></h3>
+                <p class="rs_card_type rs-template-card-01__type"></p>
+                <p class="rs_card_description rs-template-card-01__description"></p>
+                <div class="rs-template-card-01__specs">
+                    <span class="rs_card_beds rs-template-card-01__spec"></span>
+                    <span class="rs_card_baths rs-template-card-01__spec"></span>
+                    <span class="rs_card_built rs-template-card-01__spec"></span>
+                    <span class="rs_card_plot rs-template-card-01__spec"></span>
+                </div>
+                <div class="rs_card_price rs-template-card-01__price"></div>
+            </a>
+        </div>
+    </div>
+    <div class="rs_pagination"></div>
+</section>`;
+    navigator.clipboard.writeText(code);
+    alert('Listing template code copied to clipboard!');
+}
+
+function copySearchTemplate02() {
+    const code = `<div class="rs-search-template-02"></div>`;
+    navigator.clipboard.writeText(code);
+    alert('Search Template 02 code copied to clipboard!');
+}
+
+function copyListingTemplate02() {
+    const code = `<div class="rs-listing-template-02"></div>`;
+    navigator.clipboard.writeText(code);
+    alert('Listing Template 02 code copied to clipboard!');
+}
+</script>
+
+</body>
+</html>

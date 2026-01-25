@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Listing Template 02 - Price on Image Cards | RealtySoft</title>
+    <link rel="stylesheet" href="../../dist/realtysoft.css">
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #f5f5f5;
+        }
+        .demo-header {
+            background: linear-gradient(135deg, #e53935 0%, #c62828 100%);
+            color: white;
+            padding: 40px 20px;
+            text-align: center;
+        }
+        .demo-header h1 {
+            margin: 0 0 10px 0;
+            font-size: 1.75rem;
+        }
+        .demo-header p {
+            margin: 0;
+            opacity: 0.9;
+        }
+        .demo-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .demo-section {
+            background: white;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .demo-section-title {
+            padding: 15px 20px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e0e0e0;
+            font-weight: 600;
+            font-size: 0.875rem;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .demo-results {
+            padding: 20px;
+            min-height: 400px;
+        }
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: white;
+            text-decoration: none;
+            opacity: 0.9;
+            font-size: 0.875rem;
+            margin-bottom: 20px;
+        }
+        .back-link:hover {
+            opacity: 1;
+        }
+        .code-block {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            margin: 20px;
+            border-radius: 8px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.875rem;
+            overflow-x: auto;
+        }
+        .code-block .tag { color: #569cd6; }
+        .code-block .attr { color: #9cdcfe; }
+        .code-block .string { color: #ce9178; }
+    </style>
+</head>
+<body>
+
+<div class="demo-header">
+    <a href="../index.html" class="back-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M19 12H5M12 19l-7-7 7-7"/>
+        </svg>
+        Back to Templates
+    </a>
+    <h1>Listing Template 02</h1>
+    <p>Price on Image Cards with Status Badge</p>
+</div>
+
+<div class="demo-container">
+    <!-- Usage Code -->
+    <div class="demo-section">
+        <div class="demo-section-title">Usage - Just add this div</div>
+        <div class="code-block">
+            <span class="tag">&lt;div</span> <span class="attr">class</span>=<span class="string">"rs-listing-template-02"</span><span class="tag">&gt;&lt;/div&gt;</span>
+        </div>
+    </div>
+
+    <!-- Listing Section - AUTO-RENDERED -->
+    <div class="demo-section">
+        <div class="demo-section-title">Property Listing (Auto-Rendered)</div>
+        <div class="demo-results">
+            <!-- THIS IS ALL YOU NEED! The JS auto-renders the entire template -->
+            <div class="rs-listing-template-02" data-rs-columns="3"></div>
+        </div>
+    </div>
+</div>
+
+<script src="../../dist/realtysoft.js"></script>
+<script>
+    // Initialize RealtySoft
+    window.RealtySoftConfig = {
+        ownerEmail: 'demo@realtysoft.ai',
+        privacyPolicyUrl: '/privacy',
+        language: 'en_GB'
+    };
+</script>
+
+</body>
+</html>

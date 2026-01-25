@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Property Carousel - Template 01: Center Focus</title>
+    <link rel="stylesheet" href="../../dist/realtysoft.css">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #f5f5f5;
+        }
+        .demo-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+        .demo-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        .demo-header h1 {
+            font-size: 2rem;
+            margin: 0 0 10px 0;
+            color: #333;
+        }
+        .demo-header p {
+            color: #666;
+            margin: 0;
+        }
+        .demo-section {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 40px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .demo-section h2 {
+            font-size: 1.25rem;
+            margin: 0 0 20px 0;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+            color: #333;
+        }
+        .demo-code {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        .demo-code .tag { color: #569cd6; }
+        .demo-code .attr { color: #9cdcfe; }
+        .demo-code .value { color: #ce9178; }
+        .demo-code .comment { color: #6a9955; }
+    </style>
+</head>
+<body>
+    <div class="demo-container">
+        <div class="demo-header">
+            <h1>Property Carousel - Template 01</h1>
+            <p>Center Focus Carousel with 5 visible cards, size/opacity gradient effect</p>
+        </div>
+
+        <!-- Live Demo Section -->
+        <div class="demo-section">
+            <h2>Live Demo - Basic Usage</h2>
+            <!-- Basic carousel - loads properties automatically -->
+            <div class="rs_property_carousel"></div>
+        </div>
+
+        <!-- Usage Code Section -->
+        <div class="demo-section">
+            <h2>Basic Usage</h2>
+            <div class="demo-code">
+<span class="comment">&lt;!-- Basic carousel - loads properties from API --&gt;</span>
+<span class="tag">&lt;div</span> <span class="attr">class</span>=<span class="value">"rs_property_carousel"</span><span class="tag">&gt;&lt;/div&gt;</span>
+            </div>
+        </div>
+
+        <!-- With Options Section -->
+        <div class="demo-section">
+            <h2>With Options</h2>
+            <div class="demo-code">
+<span class="comment">&lt;!-- Carousel with all options --&gt;</span>
+<span class="tag">&lt;div</span> <span class="attr">class</span>=<span class="value">"rs_property_carousel"</span>
+     <span class="attr">data-rs-limit</span>=<span class="value">"10"</span>
+     <span class="attr">data-rs-autoplay</span>=<span class="value">"true"</span>
+     <span class="attr">data-rs-interval</span>=<span class="value">"5000"</span>
+     <span class="attr">data-rs-featured</span>=<span class="value">"true"</span><span class="tag">&gt;&lt;/div&gt;</span>
+            </div>
+        </div>
+
+        <!-- Demo with Autoplay -->
+        <div class="demo-section">
+            <h2>Live Demo - Auto-play Enabled (Featured Properties)</h2>
+            <div class="rs_property_carousel"
+                 data-rs-limit="8"
+                 data-rs-autoplay="true"
+                 data-rs-interval="4000"
+                 data-rs-featured="true">
+            </div>
+        </div>
+
+        <!-- Data Attributes Reference -->
+        <div class="demo-section">
+            <h2>Data Attributes Reference</h2>
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="background: #f5f5f5;">
+                        <th style="padding: 12px; text-align: left; border-bottom: 2px solid #ddd;">Attribute</th>
+                        <th style="padding: 12px; text-align: left; border-bottom: 2px solid #ddd;">Default</th>
+                        <th style="padding: 12px; text-align: left; border-bottom: 2px solid #ddd;">Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td style="padding: 12px; border-bottom: 1px solid #eee;"><code>data-rs-limit</code></td>
+                        <td style="padding: 12px; border-bottom: 1px solid #eee;">10</td>
+                        <td style="padding: 12px; border-bottom: 1px solid #eee;">Maximum number of properties to load</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 12px; border-bottom: 1px solid #eee;"><code>data-rs-autoplay</code></td>
+                        <td style="padding: 12px; border-bottom: 1px solid #eee;">false</td>
+                        <td style="padding: 12px; border-bottom: 1px solid #eee;">Enable auto-play rotation</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 12px; border-bottom: 1px solid #eee;"><code>data-rs-interval</code></td>
+                        <td style="padding: 12px; border-bottom: 1px solid #eee;">5000</td>
+                        <td style="padding: 12px; border-bottom: 1px solid #eee;">Auto-play interval in milliseconds</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 12px; border-bottom: 1px solid #eee;"><code>data-rs-featured</code></td>
+                        <td style="padding: 12px; border-bottom: 1px solid #eee;">false</td>
+                        <td style="padding: 12px; border-bottom: 1px solid #eee;">Only show featured properties</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 12px; border-bottom: 1px solid #eee;"><code>data-rs-variation</code></td>
+                        <td style="padding: 12px; border-bottom: 1px solid #eee;">1</td>
+                        <td style="padding: 12px; border-bottom: 1px solid #eee;">Template variation (future: 2, 3, 4)</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Features Section -->
+        <div class="demo-section">
+            <h2>Features</h2>
+            <ul style="margin: 0; padding-left: 20px; line-height: 1.8;">
+                <li>5 visible cards with center focus effect (largest card in center)</li>
+                <li>Size and opacity gradient from center to edges</li>
+                <li>Smooth 1s transitions on all properties</li>
+                <li>Touch/swipe support for mobile devices</li>
+                <li>Keyboard navigation (arrow keys)</li>
+                <li>Auto-play with pause on hover</li>
+                <li>Dot indicators for navigation</li>
+                <li>Infinite loop navigation</li>
+                <li>Responsive design (adapts to tablet/mobile)</li>
+                <li>Simplified property cards (image, title, beds/baths, price)</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- RealtySoft Widget -->
+    <script src="../../dist/realtysoft.js"></script>
+    <script>
+        // Initialize RealtySoft (normally done via embed script)
+        RealtySoft.init({
+            apiKey: 'YOUR_API_KEY',
+            language: 'en_US'
+        });
+    </script>
+</body>
+</html>
