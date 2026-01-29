@@ -48,7 +48,34 @@ That's it! The widget will automatically initialize and display your properties.
 
 Before you can lock pages to specific locations, property types, or features, you need to find the correct IDs for your data.
 
-### Using the Filter IDs Reference Page
+### For WordPress Users
+
+If you have the RealtySoft Connector plugin installed, finding your filter IDs is easy:
+
+1. Go to **Settings > RealtySoft** in your WordPress admin
+2. Scroll down to the **Filter IDs Reference** section
+3. Click the **"Open Filter IDs Reference"** button
+
+This automatically opens the reference page pre-configured for your domain, showing all your locations, property types, and features with their IDs.
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  Filter IDs Reference                                           │
+│                                                                 │
+│  To lock filters on specific pages (e.g., show only villas     │
+│  in Marbella), you need the IDs for locations, property        │
+│  types, and features.                                          │
+│                                                                 │
+│  View Filter IDs    [ Open Filter IDs Reference ]              │
+│                                                                 │
+│  Opens a page showing all available Location, Property Type,   │
+│  and Feature IDs for yourdomain.com.                           │
+│                                                                 │
+│  Example: <div data-rs-component="search" data-rs-location="5">│
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### For Non-WordPress Users
 
 Visit the Filter IDs Reference page and enter your domain:
 
@@ -56,7 +83,7 @@ Visit the Filter IDs Reference page and enter your domain:
 https://realtysoft.ai/propertymanager/pages/filter-ids.html?domain=yourdomain.com
 ```
 
-This page will show you:
+### What You'll Find
 
 | Section | What You'll Find |
 |---------|-----------------|
@@ -66,7 +93,7 @@ This page will show you:
 
 ### How to Use the Page
 
-1. Enter your website domain (e.g., `mywebsite.com`)
+1. Enter your website domain (e.g., `mywebsite.com`) — *WordPress users: this is pre-filled*
 2. Click "Load Data"
 3. Browse or search for the location/type/feature you need
 4. Click "Copy" to copy the data attribute (e.g., `data-rs-location="505"`)
