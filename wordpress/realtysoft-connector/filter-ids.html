@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Filter IDs Reference - RealtySoft</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+        }
+        .container { max-width: 1200px; margin: 0 auto; }
+        header {
+            background: #2c3e50;
+            color: white;
+            padding: 20px 30px;
+            border-radius: 8px 8px 0 0;
+        }
+        header h1 { font-size: 24px; margin-bottom: 5px; }
+        header p { opacity: 0.8; font-size: 14px; }
+        .domain-badge {
+            display: inline-block;
+            background: #3498db;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 14px;
+            margin-top: 10px;
+            font-family: monospace;
+        }
+        .search-bar {
+            background: white;
+            padding: 15px 30px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .search-bar input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+        }
+        .search-bar input:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+        .content {
+            background: white;
+            padding: 30px;
+            border-radius: 0 0 8px 8px;
+        }
+        .loading {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+        .loading .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid #e0e0e0;
+            border-top-color: #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .error {
+            background: #fee;
+            border: 1px solid #fcc;
+            color: #c00;
+            padding: 20px;
+            border-radius: 6px;
+            text-align: center;
+        }
+        .section { margin-bottom: 40px; }
+        .section:last-child { margin-bottom: 0; }
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #3498db;
+        }
+        .section-header h2 {
+            font-size: 18px;
+            color: #2c3e50;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .section-header .count {
+            background: #3498db;
+            color: white;
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+        }
+        .copy-all-btn {
+            background: #27ae60;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        .copy-all-btn:hover { background: #219a52; }
+        .items-list { display: flex; flex-direction: column; gap: 2px; }
+        .item {
+            display: flex;
+            align-items: center;
+            padding: 10px 15px;
+            background: #f9f9f9;
+            border-radius: 4px;
+        }
+        .item:hover { background: #f0f0f0; }
+        .item.level-1 { margin-left: 25px; background: #fff; border-left: 2px solid #3498db; }
+        .item.level-2 { margin-left: 50px; background: #fff; border-left: 2px solid #27ae60; }
+        .item.level-3 { margin-left: 75px; background: #fff; border-left: 2px solid #e67e22; }
+        .item.level-4 { margin-left: 100px; background: #fff; border-left: 2px solid #9b59b6; }
+        .item .name { flex: 1; font-weight: 500; }
+        .item .property-count { color: #888; font-size: 12px; margin-right: 15px; }
+        .item .type-label {
+            background: #95a5a6;
+            color: white;
+            padding: 1px 6px;
+            border-radius: 3px;
+            font-size: 10px;
+            margin-left: 8px;
+            text-transform: uppercase;
+        }
+        .item .id {
+            background: #ecf0f1;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 14px;
+            margin-right: 10px;
+            min-width: 80px;
+            text-align: center;
+        }
+        .item .copy-btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .item .copy-btn:hover { background: #2980b9; }
+        .item .copy-btn.copied { background: #27ae60; }
+        .usage-section {
+            margin-top: 40px;
+            padding-top: 30px;
+            border-top: 1px solid #e0e0e0;
+        }
+        .usage-section h2 { font-size: 18px; color: #2c3e50; margin-bottom: 20px; }
+        .usage-examples { display: grid; gap: 15px; }
+        .usage-example { background: #f8f9fa; border-radius: 6px; padding: 15px; }
+        .usage-example h3 { font-size: 14px; color: #666; margin-bottom: 10px; }
+        .usage-example code {
+            display: block;
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 12px 15px;
+            border-radius: 4px;
+            font-size: 13px;
+            overflow-x: auto;
+        }
+        .no-results { text-align: center; padding: 40px; color: #888; }
+        .hidden { display: none !important; }
+        @media (max-width: 600px) {
+            body { padding: 10px; }
+            header, .search-bar, .content { padding: 15px; }
+            .item { flex-wrap: wrap; gap: 10px; }
+            .item .name { flex: 0 0 100%; }
+            .item.level-1 { margin-left: 15px; }
+            .item.level-2 { margin-left: 30px; }
+            .item.level-3 { margin-left: 45px; }
+            .item.level-4 { margin-left: 60px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Filter IDs Reference</h1>
+            <p>Use these IDs to lock filters on your property search pages</p>
+            <span class="domain-badge" id="domainBadge"></span>
+        </header>
+
+        <div class="search-bar">
+            <input type="text" id="searchInput" placeholder="Search by name or ID...">
+        </div>
+
+        <div class="content">
+            <div id="loading" class="loading">
+                <div class="spinner"></div>
+                <p>Loading data from API...</p>
+            </div>
+
+            <div id="error" class="error hidden"></div>
+
+            <div id="data" class="hidden">
+                <div class="section">
+                    <div class="section-header">
+                        <h2>Locations <span class="count" id="locationsCount">0</span></h2>
+                        <button class="copy-all-btn" onclick="copyAllIds('locations')">Copy All IDs</button>
+                    </div>
+                    <div class="items-list" id="locationsList"></div>
+                </div>
+
+                <div class="section">
+                    <div class="section-header">
+                        <h2>Property Types <span class="count" id="propertyTypesCount">0</span></h2>
+                        <button class="copy-all-btn" onclick="copyAllIds('propertyTypes')">Copy All IDs</button>
+                    </div>
+                    <div class="items-list" id="propertyTypesList"></div>
+                </div>
+
+                <div class="section">
+                    <div class="section-header">
+                        <h2>Features <span class="count" id="featuresCount">0</span></h2>
+                        <button class="copy-all-btn" onclick="copyAllIds('features')">Copy All IDs</button>
+                    </div>
+                    <div class="items-list" id="featuresList"></div>
+                </div>
+
+                <div class="usage-section">
+                    <h2>Usage Examples</h2>
+                    <div class="usage-examples">
+                        <div class="usage-example">
+                            <h3>Lock to a specific location</h3>
+                            <code>&lt;div data-rs-component="search" data-rs-location="5"&gt;&lt;/div&gt;</code>
+                        </div>
+                        <div class="usage-example">
+                            <h3>Lock to multiple locations</h3>
+                            <code>&lt;div data-rs-component="search" data-rs-location="5,19,23"&gt;&lt;/div&gt;</code>
+                        </div>
+                        <div class="usage-example">
+                            <h3>Lock to a property type</h3>
+                            <code>&lt;div data-rs-component="search" data-rs-property-type="12"&gt;&lt;/div&gt;</code>
+                        </div>
+                        <div class="usage-example">
+                            <h3>Lock to specific features</h3>
+                            <code>&lt;div data-rs-component="search" data-rs-features="101,102,103"&gt;&lt;/div&gt;</code>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Auto-detect domain from current page URL
+        const DOMAIN = window.location.hostname.replace(/^www\./, '');
+        const PROXY_URL = 'https://realtysoft.ai/propertymanager/php/api-proxy.php';
+
+        let allData = { locations: [], propertyTypes: [], features: [] };
+
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('domainBadge').textContent = DOMAIN;
+            loadAllData();
+        });
+
+        async function loadAllData() {
+            try {
+                const [locationsRes, typesRes, featuresRes] = await Promise.all([
+                    fetchFromProxy('v1/location'),
+                    fetchFromProxy('v1/property_types'),
+                    fetchFromProxy('v1/property_features')
+                ]);
+
+                if (locationsRes.error) throw new Error(locationsRes.error);
+
+                allData.locations = locationsRes.data || [];
+                allData.propertyTypes = typesRes.data || [];
+                allData.features = featuresRes.data || [];
+
+                renderLocations();
+                renderPropertyTypes();
+                renderFeatures();
+
+                document.getElementById('loading').classList.add('hidden');
+                document.getElementById('data').classList.remove('hidden');
+                setupSearch();
+            } catch (error) {
+                showError('Failed to load data: ' + error.message);
+            }
+        }
+
+        async function fetchFromProxy(endpoint) {
+            const url = `${PROXY_URL}?_endpoint=${endpoint}&_domain=${encodeURIComponent(DOMAIN)}`;
+            const response = await fetch(url, { headers: { 'X-RS-Domain': DOMAIN } });
+            if (!response.ok) throw new Error(`API error: ${response.status}`);
+            return response.json();
+        }
+
+        function renderLocations() {
+            const container = document.getElementById('locationsList');
+            const locations = allData.locations;
+            const childrenMap = {};
+
+            locations.forEach(loc => {
+                if (loc.parent_id && loc.parent_id !== 0) {
+                    if (!childrenMap[loc.parent_id]) childrenMap[loc.parent_id] = [];
+                    childrenMap[loc.parent_id].push(loc);
+                }
+            });
+
+            const roots = locations.filter(l => !l.parent_id || l.parent_id === 0);
+            roots.sort((a, b) => a.name.localeCompare(b.name));
+
+            let html = '';
+            let count = 0;
+
+            function renderTree(loc, level) {
+                const propCount = loc.property_count !== undefined ? `<span class="property-count">${loc.property_count} properties</span>` : '';
+                const levelClass = level > 0 ? `level-${Math.min(level, 4)}` : '';
+                const typeLabel = loc.type ? `<span class="type-label">${loc.type}</span>` : '';
+
+                html += `<div class="item ${levelClass}" data-name="${loc.name.toLowerCase()}" data-id="${loc.id}">
+                    <span class="name">${loc.name} ${typeLabel}</span>
+                    ${propCount}
+                    <span class="id">ID: ${loc.id}</span>
+                    <button class="copy-btn" onclick="copyId(${loc.id}, 'data-rs-location', this)">Copy</button>
+                </div>`;
+                count++;
+
+                const children = childrenMap[loc.id] || [];
+                children.sort((a, b) => a.name.localeCompare(b.name));
+                children.forEach(child => renderTree(child, level + 1));
+            }
+
+            roots.forEach(root => renderTree(root, 0));
+            container.innerHTML = html || '<div class="no-results">No locations found</div>';
+            document.getElementById('locationsCount').textContent = count;
+        }
+
+        function renderPropertyTypes() {
+            const container = document.getElementById('propertyTypesList');
+            const types = allData.propertyTypes;
+            const childrenMap = {};
+
+            types.forEach(type => {
+                const pid = type.parent_id;
+                if (pid && pid !== 0 && pid !== '0') {
+                    const key = String(pid);
+                    if (!childrenMap[key]) childrenMap[key] = [];
+                    childrenMap[key].push(type);
+                }
+            });
+
+            const roots = types.filter(t => !t.parent_id || t.parent_id === 0 || t.parent_id === '0');
+            roots.sort((a, b) => a.name.localeCompare(b.name));
+
+            let html = '';
+            let count = 0;
+
+            function renderTree(type, level) {
+                const propCount = type.property_count !== undefined ? `<span class="property-count">${type.property_count} properties</span>` : '';
+                const levelClass = level > 0 ? `level-${Math.min(level, 4)}` : '';
+
+                html += `<div class="item ${levelClass}" data-name="${type.name.toLowerCase()}" data-id="${type.id}">
+                    <span class="name">${type.name}</span>
+                    ${propCount}
+                    <span class="id">ID: ${type.id}</span>
+                    <button class="copy-btn" onclick="copyId(${type.id}, 'data-rs-property-type', this)">Copy</button>
+                </div>`;
+                count++;
+
+                const children = childrenMap[String(type.id)] || [];
+                children.sort((a, b) => a.name.localeCompare(b.name));
+                children.forEach(child => renderTree(child, level + 1));
+            }
+
+            roots.forEach(root => renderTree(root, 0));
+            container.innerHTML = html || '<div class="no-results">No property types found</div>';
+            document.getElementById('propertyTypesCount').textContent = count;
+        }
+
+        function renderFeatures() {
+            const container = document.getElementById('featuresList');
+            const features = allData.features;
+            features.sort((a, b) => a.name.localeCompare(b.name));
+
+            let html = '';
+            features.forEach(f => {
+                const cat = f.category ? `<span class="type-label">${f.category}</span>` : '';
+                html += `<div class="item" data-name="${f.name.toLowerCase()}" data-id="${f.id}">
+                    <span class="name">${f.name} ${cat}</span>
+                    <span class="id">ID: ${f.id}</span>
+                    <button class="copy-btn" onclick="copyId(${f.id}, 'data-rs-features', this)">Copy</button>
+                </div>`;
+            });
+
+            container.innerHTML = html || '<div class="no-results">No features found</div>';
+            document.getElementById('featuresCount').textContent = features.length;
+        }
+
+        function copyId(id, attr, btn) {
+            navigator.clipboard.writeText(`${attr}="${id}"`).then(() => {
+                btn.textContent = 'Copied!';
+                btn.classList.add('copied');
+                setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 1500);
+            });
+        }
+
+        function copyAllIds(type) {
+            let ids = type === 'locations' ? allData.locations.map(l => l.id) :
+                      type === 'propertyTypes' ? allData.propertyTypes.map(t => t.id) :
+                      allData.features.map(f => f.id);
+            navigator.clipboard.writeText(JSON.stringify(ids)).then(() => alert('IDs copied: ' + JSON.stringify(ids)));
+        }
+
+        function setupSearch() {
+            document.getElementById('searchInput').addEventListener('input', function() {
+                const q = this.value.toLowerCase().trim();
+                document.querySelectorAll('.item').forEach(item => {
+                    const match = !q || item.dataset.name.includes(q) || item.dataset.id.includes(q);
+                    item.classList.toggle('hidden', !match);
+                });
+                document.getElementById('locationsCount').textContent = document.querySelectorAll('#locationsList .item:not(.hidden)').length;
+                document.getElementById('propertyTypesCount').textContent = document.querySelectorAll('#propertyTypesList .item:not(.hidden)').length;
+                document.getElementById('featuresCount').textContent = document.querySelectorAll('#featuresList .item:not(.hidden)').length;
+            });
+        }
+
+        function showError(msg) {
+            document.getElementById('loading').classList.add('hidden');
+            const err = document.getElementById('error');
+            err.textContent = msg;
+            err.classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>

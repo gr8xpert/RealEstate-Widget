@@ -39,9 +39,6 @@ class RealtySoft_Connector {
         add_action('admin_menu', [$this, 'add_settings_page']);
         add_action('admin_init', [$this, 'register_settings']);
 
-        // Filter IDs page (white-labeled)
-        add_filter('query_vars', [$this, 'add_filter_ids_query_var']);
-        add_action('template_redirect', [$this, 'render_filter_ids_page']);
     }
 
     // ─── Activation ──────────────────────────────────────────────
@@ -64,35 +61,6 @@ class RealtySoft_Connector {
             );
         }
 
-        // Filter IDs admin page
-        add_rewrite_rule(
-            '^realtysoft-filter-ids/?$',
-            'index.php?rs_filter_ids=1',
-            'top'
-        );
-    }
-
-    public function add_filter_ids_query_var($vars) {
-        $vars[] = 'rs_filter_ids';
-        return $vars;
-    }
-
-    public function render_filter_ids_page() {
-        if (!get_query_var('rs_filter_ids')) {
-            return;
-        }
-
-        // Check if user is logged in and is admin
-        if (!is_user_logged_in() || !current_user_can('manage_options')) {
-            wp_die('You must be logged in as an administrator to view this page.', 'Access Denied', ['response' => 403]);
-        }
-
-        // Get current domain
-        $domain = preg_replace('/^www\./', '', parse_url(home_url(), PHP_URL_HOST));
-
-        // Include the filter-ids template
-        include plugin_dir_path(__FILE__) . 'templates/filter-ids.php';
-        exit;
     }
 
     public function maybe_flush_rules() {
@@ -848,12 +816,15 @@ class RealtySoft_Connector {
                 <!-- ── Filter IDs Reference ── -->
                 <h2>Filter IDs Reference</h2>
                 <p>To lock filters on specific pages (e.g., show only villas in Marbella), you need the IDs for locations, property types, and features.</p>
-                <?php $current_domain = preg_replace('/^www\./', '', parse_url(home_url(), PHP_URL_HOST)); ?>
+                <?php
+                $current_domain = preg_replace('/^www\./', '', parse_url(home_url(), PHP_URL_HOST));
+                $filter_ids_url = plugins_url('filter-ids.html', __FILE__);
+                ?>
                 <table class="form-table">
                     <tr>
                         <th>View Filter IDs</th>
                         <td>
-                            <a href="<?php echo esc_url(home_url('/realtysoft-filter-ids/')); ?>"
+                            <a href="<?php echo esc_url($filter_ids_url); ?>"
                                target="_blank"
                                class="button button-secondary"
                                style="display: inline-flex; align-items: center; gap: 6px;">
@@ -863,8 +834,7 @@ class RealtySoft_Connector {
                             <p class="description">
                                 Opens a page showing all available Location, Property Type, and Feature IDs for <strong><?php echo esc_html($current_domain); ?></strong>.<br>
                                 Copy the IDs you need and use them in your page HTML.<br>
-                                <strong>Example:</strong> <code>&lt;div data-rs-component="search" data-rs-location="5"&gt;&lt;/div&gt;</code><br>
-                                <strong>URL:</strong> <code><?php echo esc_html(home_url('/realtysoft-filter-ids/')); ?></code>
+                                <strong>Example:</strong> <code>&lt;div data-rs-component="search" data-rs-location="5"&gt;&lt;/div&gt;</code>
                             </p>
                         </td>
                     </tr>
