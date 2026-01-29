@@ -554,7 +554,7 @@ Natural language property search powered by AI. Visitors can search using plain 
 Instead of using dropdown filters, visitors can type natural language queries like:
 
 - *"3 bedroom villa in Marbella under 500k"*
-- *"Apartment with pool near the beach"*
+- *"Apartment with pool in Estepona"*
 - *"Family home with garden, 4 beds, max 800000 euros"*
 - *"Piso con 2 habitaciones en Madrid"* (Spanish)
 - *"Wohnung mit Balkon in München"* (German)
@@ -565,10 +565,10 @@ The AI parses the query and automatically sets the appropriate filters. AI Searc
 
 | Filter | Example Query |
 |--------|---------------|
-| Location | *"in Marbella"*, *"near the beach"* |
+| Location | *"in Marbella"*, *"in Estepona"* |
 | Property Type | *"villa"*, *"apartment"*, *"penthouse"* |
 | Listing Type | *"for sale"*, *"to rent"*, *"holiday rental"* |
-| Bedrooms | *"3 bedroom"*, *"3 beds"*, *"3 hab"* |
+| Bedrooms | *"3 bedroom"*, *"3 beds"* |
 | Bathrooms | *"2 bathroom"*, *"2 baths"* |
 | Price Range | *"under 500k"*, *"between 200 and 400 thousand"* |
 | Built Area | *"minimum 100m2"*, *"at least 150 sqm"* |
