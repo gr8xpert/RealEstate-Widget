@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RealtySoft Widget Test</title>
+    <link rel="stylesheet" href="/src/styles/realtysoft.css">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1, h2 { margin-top: 0; }
+        .status { padding: 10px; border-radius: 4px; margin: 10px 0; }
+        .status.success { background: #d4edda; color: #155724; }
+        .status.error { background: #f8d7da; color: #721c24; }
+        .status.info { background: #cce5ff; color: #004085; }
+    </style>
+</head>
+<body>
+    <h1>RealtySoft Widget v3.0 Test Page</h1>
+
+    <!-- Configuration -->
+    <script>
+        window.RealtySoftConfig = {
+            apiKey: 'demo',
+            language: 'en_US',
+            // Test label overrides (Phase 4)
+            labelOverrides: {
+                search_button: 'Find Properties',
+                results_count: '{count} listings found'
+            }
+        };
+    </script>
+
+    <!-- Status Section -->
+    <div class="test-section">
+        <h2>Widget Status</h2>
+        <div id="status" class="status info">Loading widget...</div>
+        <div id="language-status" class="status info">Language: detecting...</div>
+    </div>
+
+    <!-- Search Section -->
+    <div class="test-section">
+        <h2>Search Components</h2>
+        <div id="rs_search" style="display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end;">
+            <div class="rs_location" style="min-width: 200px;"></div>
+            <div class="rs_listing_type"></div>
+            <div class="rs_property_type" style="min-width: 150px;"></div>
+            <div class="rs_bedrooms"></div>
+            <div class="rs_bathrooms"></div>
+            <div class="rs_price"></div>
+            <div class="rs_search_button"></div>
+            <div class="rs_reset_button"></div>
+        </div>
+    </div>
+
+    <!-- Language Selector -->
+    <div class="test-section">
+        <h2>Language Selector (Phase 3)</h2>
+        <div class="rs_language_selector" data-languages="en_US,es_ES,de_DE,fr_FR"></div>
+    </div>
+
+    <!-- Results Section -->
+    <div class="test-section">
+        <h2>Results</h2>
+        <div id="rs_listing">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <div class="rs_results_count"></div>
+                <div style="display: flex; gap: 10px;">
+                    <div class="rs_sort"></div>
+                    <div class="rs_view_toggle"></div>
+                </div>
+            </div>
+            <div class="rs_pagination" style="margin-bottom: 15px;"></div>
+            <div class="rs_property_grid"></div>
+            <div class="rs_pagination"></div>
+        </div>
+    </div>
+
+    <!-- Debug Console -->
+    <div class="test-section">
+        <h2>Debug Console</h2>
+        <button onclick="testState()">Test State</button>
+        <button onclick="testLabels()">Test Labels</button>
+        <button onclick="testAPI()">Test API</button>
+        <button onclick="changeLanguage('es_ES')">Switch to Spanish</button>
+        <button onclick="changeLanguage('en_US')">Switch to English</button>
+        <pre id="debug" style="background: #1e1e1e; color: #d4d4d4; padding: 15px; border-radius: 4px; overflow-x: auto; max-height: 300px;"></pre>
+    </div>
+
+    <!-- Load Widget -->
+    <script type="module" src="/src/index.ts"></script>
+
+    <script>
+        function log(msg) {
+            const debug = document.getElementById('debug');
+            const time = new Date().toLocaleTimeString();
+            debug.textContent = `[${time}] ${msg}\n` + debug.textContent;
+            console.log(msg);
+        }
+
+        // Wait for widget to load
+        function waitForWidget() {
+            return new Promise((resolve) => {
+                const check = () => {
+                    if (window.RealtySoft && window.RealtySoft.isReady && window.RealtySoft.isReady()) {
+                        resolve();
+                    } else if (window.RealtySoft) {
+                        window.RealtySoft.init().then(resolve).catch(resolve);
+                    } else {
+                        setTimeout(check, 100);
+                    }
+                };
+                check();
+            });
+        }
+
+        waitForWidget().then(() => {
+            document.getElementById('status').className = 'status success';
+            document.getElementById('status').textContent = 'Widget loaded successfully!';
+
+            const lang = window.RealtySoftLabels.getLanguage();
+            document.getElementById('language-status').textContent = `Language: ${lang}`;
+
+            log('Widget initialized');
+            log('Mode: ' + window.RealtySoft.getMode());
+        }).catch(err => {
+            document.getElementById('status').className = 'status error';
+            document.getElementById('status').textContent = 'Error: ' + err.message;
+            log('Error: ' + err.message);
+        });
+
+        function testState() {
+            const state = window.RealtySoftState.getState();
+            log('State: ' + JSON.stringify(state.filters, null, 2));
+        }
+
+        function testLabels() {
+            const labels = window.RealtySoftLabels;
+            log('search_button: ' + labels.get('search_button'));
+            log('results_count: ' + labels.get('results_count', { count: 42 }));
+            log('formatPrice: ' + labels.formatPrice(250000));
+        }
+
+        function testAPI() {
+            log('Testing API cache...');
+            window.RealtySoftAPI.getPropertyTypes().then(result => {
+                log('Property types: ' + (result.data?.length || 0) + ' types loaded');
+            }).catch(err => {
+                log('API Error: ' + err.message);
+            });
+        }
+
+        async function changeLanguage(code) {
+            log('Changing language to: ' + code);
+            await window.RealtySoft.setLanguage(code);
+            document.getElementById('language-status').textContent = `Language: ${code}`;
+            log('Language changed to: ' + code);
+        }
+    </script>
+</body>
+</html>

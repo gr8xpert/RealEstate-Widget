@@ -1,0 +1,39 @@
+{
+    "2026-01-26": {
+        "searches": 63,
+        "property_views": 4,
+        "card_clicks": 4,
+        "wishlist_adds": 1,
+        "inquiries": 0,
+        "shares": []
+    },
+    "2026-01-27": {
+        "searches": 104,
+        "property_views": 92,
+        "card_clicks": 29,
+        "wishlist_adds": 0,
+        "inquiries": 1,
+        "shares": {
+            "facebook": 28,
+            "whatsapp": 1
+        }
+    },
+    "2026-01-28": {
+        "searches": 140,
+        "property_views": 121,
+        "card_clicks": 73,
+        "wishlist_adds": 15,
+        "inquiries": 0,
+        "shares": {
+            "facebook": 7
+        }
+    },
+    "2026-01-29": {
+        "searches": 6,
+        "property_views": 13,
+        "card_clicks": 4,
+        "wishlist_adds": 0,
+        "inquiries": 0,
+        "shares": []
+    }
+}
