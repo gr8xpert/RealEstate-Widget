@@ -11,12 +11,15 @@
 3. [Locking Pages with Filters](#locking-pages-with-filters)
 4. [Search Templates](#search-templates)
 5. [Listing Templates (Property Cards)](#listing-templates-property-cards)
-6. [Creating a Property Detail Page](#creating-a-property-detail-page)
-7. [Building Custom Layouts](#building-custom-layouts)
-8. [Grid Columns Configuration](#grid-columns-configuration)
-9. [Search-Only Mode (Homepage Search)](#search-only-mode-homepage-search)
-10. [Configuration Options](#configuration-options)
-11. [Platform-Specific Setup](#platform-specific-setup)
+6. [Property Carousel Templates](#property-carousel-templates)
+7. [Creating a Property Detail Page](#creating-a-property-detail-page)
+8. [Wishlist Features](#wishlist-features)
+9. [AI Search (Premium)](#ai-search-premium)
+10. [Building Custom Layouts](#building-custom-layouts)
+11. [Grid Columns Configuration](#grid-columns-configuration)
+12. [Search-Only Mode (Homepage Search)](#search-only-mode-homepage-search)
+13. [Configuration Options](#configuration-options)
+14. [Platform-Specific Setup](#platform-specific-setup)
 
 ---
 
@@ -273,6 +276,91 @@ Choose from 12 property card designs. Each template displays properties differen
 
 ---
 
+## Property Carousel Templates
+
+Display featured properties in a horizontal scrolling carousel. Choose from 6 different carousel styles.
+
+### Available Carousel Templates
+
+| Template | Class | Description |
+|----------|-------|-------------|
+| 01 | `rs-property-carousel--v1` | Standard horizontal carousel |
+| 02 | `rs-property-carousel--v2` | 3D stacked cards with perspective effect |
+| 03 | `rs-property-carousel--v3` | Coverflow style with grayscale inactive cards |
+| 04 | `rs-property-carousel--v4` | Full-width hero carousel (info always visible) |
+| 05 | `rs-property-carousel--v5` | Cards with info overlay (info always visible) |
+| 06 | `rs-property-carousel--v6` | Dark cards with numbers |
+
+### Basic Usage
+
+```html
+<!-- Standard carousel -->
+<div class="rs_property_carousel" data-rs-template="1"></div>
+
+<!-- 3D stacked cards -->
+<div class="rs_property_carousel" data-rs-template="2"></div>
+
+<!-- Coverflow style -->
+<div class="rs_property_carousel" data-rs-template="3"></div>
+
+<!-- Full-width hero -->
+<div class="rs_property_carousel" data-rs-template="4"></div>
+
+<!-- Cards with overlay -->
+<div class="rs_property_carousel" data-rs-template="5"></div>
+
+<!-- Dark numbered cards -->
+<div class="rs_property_carousel" data-rs-template="6"></div>
+```
+
+### Carousel with Locked Filters
+
+Show only specific properties in the carousel:
+
+```html
+<!-- Featured villas carousel -->
+<div class="rs_property_carousel"
+     data-rs-template="4"
+     data-rs-property-type="76"
+     data-rs-price-min="500000"></div>
+
+<!-- Marbella properties carousel -->
+<div class="rs_property_carousel"
+     data-rs-template="1"
+     data-rs-location="505"></div>
+```
+
+### Carousel Layout Preview (Template 06 - Dark Cards)
+
+```
+┌─────────────────────────────────┐
+│  01                             │ ← Large number
+│                                 │
+│  APARTMENT                      │ ← Property type
+│  Palm Beach, Florida            │ ← Location
+│                                 │
+│  ┌───────────────────────────┐  │
+│  │      [Property Image]     │  │
+│  │              [POPULAR]    │  │ ← Badge
+│  └───────────────────────────┘  │
+│                                 │
+│  $450,000                       │ ← Price
+│  3 Beds | 2 Bath                │ ← Specs
+│                                 │
+│  [View Detail]                  │ ← Button
+└─────────────────────────────────┘
+```
+
+### Responsive Behavior
+
+| Screen Size | Cards Visible |
+|-------------|---------------|
+| Desktop (>768px) | 3 cards |
+| Tablet (768px) | 2 cards |
+| Mobile (<480px) | 1 card (swipe) |
+
+---
+
 ## Creating a Property Detail Page
 
 ### Option 1: Using the Detail Template (Easiest)
@@ -378,6 +466,125 @@ The detail page automatically detects the property from these URL formats:
 - `/property/villa-marbella-R123456` - SEO-friendly with reference
 - `/property?id=123` - Query parameter
 - `/property?ref=R123456` - Reference query parameter
+
+---
+
+## Wishlist Features
+
+The wishlist system allows visitors to save, compare, share, and export their favorite properties.
+
+### Basic Wishlist Page
+
+```html
+<div class="rs_wishlist_list"></div>
+```
+
+This renders a complete wishlist page with all features.
+
+### Wishlist Features Overview
+
+| Feature | Description |
+|---------|-------------|
+| **Save Properties** | Click the heart icon on any property card |
+| **Compare Properties** | Select 2-3 properties to compare side-by-side |
+| **Share Wishlist** | Generate a shareable link, share via WhatsApp, Email, or QR code |
+| **Email Wishlist** | Send wishlist to anyone via email |
+| **Download PDF** | Export wishlist as a professional PDF document |
+| **Add Notes** | Add personal notes to each saved property |
+| **Sort & Filter** | Sort by date added, price, name, or location |
+
+### Wishlist Components (For Custom Layouts)
+
+Build a custom wishlist page using individual components:
+
+```html
+<div class="my-wishlist-page">
+    <!-- Header with count -->
+    <div class="rs_wishlist_header"></div>
+
+    <!-- Sort dropdown -->
+    <div class="rs_wishlist_sort"></div>
+
+    <!-- Action buttons (PDF, Share, Email, Clear) -->
+    <div class="rs_wishlist_actions"></div>
+
+    <!-- Property cards grid -->
+    <div class="rs_wishlist_grid"></div>
+
+    <!-- Empty state message -->
+    <div class="rs_wishlist_empty"></div>
+
+    <!-- Floating compare button -->
+    <div class="rs_wishlist_compare_btn"></div>
+
+    <!-- Required for modals (share, email, compare, notes) -->
+    <div class="rs_wishlist_modals"></div>
+</div>
+```
+
+### Wishlist Counter (For Header/Navigation)
+
+Show the wishlist count in your site header:
+
+```html
+<a href="/wishlist">
+    My Wishlist <span class="rs_wishlist_counter"></span>
+</a>
+```
+
+### Shared Wishlist
+
+When someone receives a shared wishlist link, they see a read-only view with a banner:
+
+```html
+<!-- This component shows when viewing a shared wishlist -->
+<div class="rs_wishlist_shared_banner"></div>
+```
+
+---
+
+## AI Search (Premium)
+
+Natural language property search powered by AI. Visitors can search using plain English instead of filling out filter forms.
+
+> **Note:** AI Search is a premium feature that requires activation for your domain.
+
+### How It Works
+
+Instead of using dropdown filters, visitors can type natural language queries like:
+
+- *"3 bedroom villa in Marbella under 500k"*
+- *"Apartment with pool near the beach"*
+- *"Family home with garden, 4 beds, max 800000 euros"*
+- *"Piso con 2 habitaciones en Madrid"* (Spanish)
+- *"Wohnung mit Balkon in München"* (German)
+
+The AI parses the query and automatically sets the appropriate filters.
+
+### Supported Languages
+
+AI Search understands queries in:
+- English
+- Spanish
+- German
+
+### What AI Search Extracts
+
+| Filter | Example Query |
+|--------|---------------|
+| Location | *"in Marbella"*, *"near the beach"* |
+| Property Type | *"villa"*, *"apartment"*, *"penthouse"* |
+| Listing Type | *"for sale"*, *"to rent"*, *"holiday rental"* |
+| Bedrooms | *"3 bedroom"*, *"3 beds"*, *"3 hab"* |
+| Bathrooms | *"2 bathroom"*, *"2 baths"* |
+| Price Range | *"under 500k"*, *"between 200 and 400 thousand"* |
+| Built Area | *"minimum 100m2"*, *"at least 150 sqm"* |
+| Plot Size | *"500m2 plot"*, *"large garden"* |
+| Features | *"with pool"*, *"garage"*, *"sea views"* |
+
+### Enabling AI Search
+
+Contact your RealtySoft administrator to enable AI Search for your domain. Once enabled, an AI search input will appear in your search forms.
 
 ---
 
@@ -647,6 +854,167 @@ location ~ ^/property/.+ {
     <!-- Results -->
     <div class="rs-listing-template-01" data-rs-columns="3"></div>
 
+    <script src="https://realtysoft.ai/propertymanager/dist/realtysoft-loader.min.js"></script>
+</body>
+</html>
+```
+
+### Villas in Marbella Page
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Luxury Villas in Marbella</title>
+</head>
+<body>
+    <h1>Luxury Villas in Marbella</h1>
+
+    <!-- Locked to villas in Marbella -->
+    <div class="rs-search-template-01"
+         data-rs-location="505"
+         data-rs-property-type="76"></div>
+
+    <div class="rs-listing-template-01"
+         data-rs-location="505"
+         data-rs-property-type="76"
+         data-rs-columns="3"></div>
+
+    <script src="https://realtysoft.ai/propertymanager/dist/realtysoft-loader.min.js"></script>
+</body>
+</html>
+```
+
+### Property Detail Page
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Property Details</title>
+</head>
+<body>
+    <div class="rs_detail">
+        <div class="rs-property-detail-template"></div>
+    </div>
+
+    <script src="https://realtysoft.ai/propertymanager/dist/realtysoft-loader.min.js"></script>
+</body>
+</html>
+```
+
+### Wishlist Page
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>My Wishlist</title>
+</head>
+<body>
+    <div class="rs_wishlist_list"></div>
+
+    <script src="https://realtysoft.ai/propertymanager/dist/realtysoft-loader.min.js"></script>
+</body>
+</html>
+```
+
+---
+
+## Social Sharing
+
+Properties can be shared on social media with proper Open Graph tags for rich previews.
+
+### Share Buttons on Detail Page
+
+Add share buttons to your property detail page:
+
+```html
+<div class="rs_detail">
+    <!-- Other components -->
+    <div class="rs_detail_share"></div>
+</div>
+```
+
+### Supported Platforms
+
+- Facebook
+- Twitter/X
+- WhatsApp
+- LinkedIn
+- Email
+- Copy Link
+
+### Open Graph Support
+
+When properties are shared, they display rich previews with:
+- Property image
+- Title and price
+- Location
+- Description snippet
+
+### Custom Site Name
+
+Set your brand name for social sharing cards:
+
+```html
+<script>
+window.RealtySoftConfig = {
+    siteName: 'Your Real Estate Brand'
+};
+</script>
+```
+
+---
+
+## Complete Page Examples
+
+### Properties Page
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Properties for Sale</title>
+</head>
+<body>
+    <h1>Find Your Dream Property</h1>
+
+    <!-- Search -->
+    <div class="rs-search-template-01"></div>
+
+    <!-- Results -->
+    <div class="rs-listing-template-01" data-rs-columns="3"></div>
+
+    <script src="https://realtysoft.ai/propertymanager/dist/realtysoft-loader.min.js"></script>
+</body>
+</html>
+```
+
+### Homepage with Featured Carousel
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Welcome - My Real Estate</title>
+</head>
+<body>
+    <h1>Find Your Dream Home</h1>
+
+    <!-- Search form (redirects to /properties) -->
+    <div class="rs-search-template-01"></div>
+
+    <h2>Featured Properties</h2>
+
+    <!-- Featured properties carousel -->
+    <div class="rs_property_carousel" data-rs-template="4"></div>
+
+    <script>
+    window.RealtySoftConfig = {
+        resultsPage: '/properties'
+    };
+    </script>
     <script src="https://realtysoft.ai/propertymanager/dist/realtysoft-loader.min.js"></script>
 </body>
 </html>
