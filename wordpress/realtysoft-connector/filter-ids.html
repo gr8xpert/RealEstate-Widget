@@ -388,42 +388,37 @@
         function renderFeatures() {
             const container = document.getElementById('featuresList');
             const features = allData.features;
-            const childrenMap = {};
 
-            // Build parent-child map
-            features.forEach(f => {
-                const pid = f.parent_id;
-                if (pid && pid !== 0 && pid !== '0') {
-                    const key = String(pid);
-                    if (!childrenMap[key]) childrenMap[key] = [];
-                    childrenMap[key].push(f);
-                }
-            });
-
-            // Get root level features
-            const roots = features.filter(f => !f.parent_id || f.parent_id === 0 || f.parent_id === '0');
-            roots.sort((a, b) => a.name.localeCompare(b.name));
+            // Features have category structure: { id, name, value_ids: [{id, name}, ...] }
+            // Sort categories alphabetically
+            features.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 
             let html = '';
             let count = 0;
 
-            function renderTree(f, level) {
-                const cat = f.category ? `<span class="type-label">${f.category}</span>` : '';
-                const levelClass = level > 0 ? `level-${Math.min(level, 4)}` : '';
-
-                html += `<div class="item ${levelClass}" data-name="${f.name.toLowerCase()}" data-id="${f.id}">
-                    <span class="name">${f.name} ${cat}</span>
-                    <span class="id">ID: ${f.id}</span>
-                    <button class="copy-btn" onclick="copyId(${f.id}, 'data-rs-features', this)">Copy</button>
+            features.forEach(category => {
+                // Render category (parent)
+                html += `<div class="item" data-name="${(category.name || '').toLowerCase()}" data-id="${category.id}">
+                    <span class="name">${category.name || 'Unknown Category'}</span>
+                    <span class="id">ID: ${category.id}</span>
+                    <button class="copy-btn" onclick="copyId(${category.id}, 'data-rs-features', this)">Copy</button>
                 </div>`;
                 count++;
 
-                const children = childrenMap[String(f.id)] || [];
-                children.sort((a, b) => a.name.localeCompare(b.name));
-                children.forEach(child => renderTree(child, level + 1));
-            }
+                // Render child features (value_ids)
+                const children = category.value_ids || [];
+                children.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 
-            roots.forEach(root => renderTree(root, 0));
+                children.forEach(child => {
+                    html += `<div class="item level-1" data-name="${(child.name || '').toLowerCase()}" data-id="${child.id}">
+                        <span class="name">${child.name}</span>
+                        <span class="id">ID: ${child.id}</span>
+                        <button class="copy-btn" onclick="copyId(${child.id}, 'data-rs-features', this)">Copy</button>
+                    </div>`;
+                    count++;
+                });
+            });
+
             container.innerHTML = html || '<div class="no-results">No features found</div>';
             document.getElementById('featuresCount').textContent = count;
         }
