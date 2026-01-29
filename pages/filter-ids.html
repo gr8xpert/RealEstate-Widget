@@ -624,7 +624,7 @@
                 'feature': 'v1/property_features'
             };
             const apiEndpoint = endpointMap[endpoint] || endpoint;
-            const url = `${PROXY_URL}?_endpoint=${apiEndpoint}&_domain=${encodeURIComponent(domain)}`;
+            const url = `${PROXY_URL}?_endpoint=${apiEndpoint}&_domain=${encodeURIComponent(domain)}&limit=1000`;
 
             const response = await fetch(url);
 

@@ -296,7 +296,7 @@
         }
 
         async function fetchFromProxy(endpoint) {
-            const url = `${PROXY_URL}?_endpoint=${endpoint}&_domain=${encodeURIComponent(DOMAIN)}`;
+            const url = `${PROXY_URL}?_endpoint=${endpoint}&_domain=${encodeURIComponent(DOMAIN)}&limit=1000`;
             const response = await fetch(url);
             if (!response.ok) throw new Error(`API error: ${response.status}`);
             return response.json();
