@@ -319,6 +319,9 @@ Build your own layout using individual detail components:
     <!-- Features -->
     <div class="rs_detail_features"></div>
 
+    <!-- Video, Virtual Tour, PDF -->
+    <div class="rs_detail_resources"></div>
+
     <!-- Map -->
     <div class="rs_detail_map"></div>
 
@@ -357,6 +360,10 @@ Build your own layout using individual detail components:
 | `rs_detail_gallery` | Image gallery with lightbox |
 | `rs_detail_features` | Categorized features list |
 | `rs_detail_map` | Location map |
+| `rs_detail_resources` | Video, virtual tour, and PDF links (all in one) |
+| `rs_detail_video` | Video player/embed |
+| `rs_detail_virtual_tour` | Virtual tour embed |
+| `rs_detail_pdf` | PDF download button |
 | `rs_detail_inquiry_form` | Contact form |
 | `rs_detail_wishlist` | Wishlist button |
 | `rs_detail_share` | Social share buttons |
