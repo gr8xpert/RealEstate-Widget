@@ -32,9 +32,9 @@ return [
     ],
 
     // Test domain
-    'witos323.sg-host.com' => [
-        'api_key' => 'CP1-3081321dd784d5ad68ff6d022109d6021e4e1b6e',
-        'api_url' => 'https://crm.costacasas.pl',
+    'witos.sg-host.com' => [
+        'api_key' => 'CP1-xxxxxxxxx',
+        'api_url' => 'https://crm.yourdomain.pl',
         'enabled' => true,
 		'owner_email' => 'webmaster@realtysoft.eu',
         'features' => ['search', 'detail', 'wishlist', 'analytics'],
