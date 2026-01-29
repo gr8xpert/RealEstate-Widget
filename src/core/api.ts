@@ -665,10 +665,55 @@ const RealtySoftAPI: RealtySoftAPIModule = (function () {
   }
 
   /**
+   * Get translated field value from property
+   * Checks for language-specific fields like title_es, description_es
+   * Falls back to default field if no translation exists
+   */
+  function getTranslatedField(
+    property: Record<string, unknown>,
+    fieldName: string,
+    fallbackFields: string[] = []
+  ): string {
+    // Get language code (e.g., 'es' from 'es_ES')
+    const langCode = config.language.split('_')[0];
+
+    // Try language-specific field first (e.g., title_es, description_es)
+    const langField = `${fieldName}_${langCode}`;
+    if (property[langField] && typeof property[langField] === 'string') {
+      return property[langField] as string;
+    }
+
+    // Try translations object (e.g., translations.es.title)
+    const translations = property.translations as Record<string, Record<string, string>> | undefined;
+    if (translations && translations[langCode] && translations[langCode][fieldName]) {
+      return translations[langCode][fieldName];
+    }
+
+    // Try full language code (e.g., title_es_ES)
+    const fullLangField = `${fieldName}_${config.language.replace('-', '_')}`;
+    if (property[fullLangField] && typeof property[fullLangField] === 'string') {
+      return property[fullLangField] as string;
+    }
+
+    // Fall back to default field and alternatives
+    const allFields = [fieldName, ...fallbackFields];
+    for (const field of allFields) {
+      if (property[field] && typeof property[field] === 'string') {
+        return property[field] as string;
+      }
+    }
+
+    return '';
+  }
+
+  /**
    * Normalize property data from API to expected format
    */
   function normalizeProperty(property: RawProperty | null): Property | null {
     if (!property) return null;
+
+    // Cast to Record for dynamic field access
+    const propRecord = property as unknown as Record<string, unknown>;
 
     // Extract images
     let images: string[] = [];
@@ -713,21 +758,32 @@ const RealtySoftAPI: RealtySoftAPIModule = (function () {
         .filter((img): img is ImageWithSizes => img !== null && !!img.src);
     }
 
-    // Extract location name
+    // Get language code for translation lookups
+    const langCode = config.language.split('_')[0];
+
+    // Helper to get translated name from an object with possible name_es, name_en etc.
+    const getTranslatedName = (obj: { name?: string; [key: string]: unknown } | null | undefined): string => {
+      if (!obj) return '';
+      const langName = obj[`name_${langCode}`];
+      if (typeof langName === 'string' && langName) return langName;
+      return obj.name || '';
+    };
+
+    // Extract location name with translation support
     const locationName =
-      (property.location_id as { name?: string })?.name ||
-      (property.location as { name?: string })?.name ||
-      property.city_id?.name ||
-      property.municipality_id?.name ||
+      getTranslatedName(property.location_id as { name?: string }) ||
+      getTranslatedName(property.location as { name?: string }) ||
+      getTranslatedName(property.city_id) ||
+      getTranslatedName(property.municipality_id) ||
       (typeof property.location === 'string' ? property.location : '') ||
       property.address ||
       '';
 
-    // Extract type name
+    // Extract type name with translation support
     const typeName =
-      property.type_id?.name ||
-      (property.type as { name?: string })?.name ||
-      property.property_type?.name ||
+      getTranslatedName(property.type_id) ||
+      getTranslatedName(property.type as { name?: string }) ||
+      getTranslatedName(property.property_type) ||
       (typeof property.type === 'string' ? property.type : '') ||
       '';
 
@@ -735,19 +791,29 @@ const RealtySoftAPI: RealtySoftAPIModule = (function () {
     const listingType =
       property.listing_type || property.listing_type_id?.code || property.status || 'resale';
 
-    // Extract features
+    // Extract features with translation support
     let features: PropertyFeature[] = [];
     const rawFeatures = property.features || property.amenities;
     if (rawFeatures && Array.isArray(rawFeatures)) {
       features = rawFeatures
         .map((f): PropertyFeature | null => {
           if (typeof f === 'string') return { name: f, category: 'Features' };
-          const name = f.name || f.label || f.title || '';
+          const fRecord = f as Record<string, unknown>;
+          // Check for translated name (e.g., name_es)
+          const name =
+            (fRecord[`name_${langCode}`] as string) ||
+            f.name ||
+            f.label ||
+            f.title ||
+            '';
           if (!name) return null;
-          return {
-            name,
-            category: f.attr_id?.name || f.category || 'Features',
-          };
+          // Check for translated category
+          const category =
+            (fRecord[`category_${langCode}`] as string) ||
+            f.attr_id?.name ||
+            f.category ||
+            'Features';
+          return { name, category };
         })
         .filter((f): f is PropertyFeature => f !== null);
     }
@@ -766,9 +832,14 @@ const RealtySoftAPI: RealtySoftAPIModule = (function () {
     const toBoolean = (val: boolean | number | string | undefined): boolean =>
       val === true || val === 1 || val === '1';
 
+    // Get translated title and description
+    const title = getTranslatedField(propRecord, 'title', ['name', 'headline']);
+    const description = getTranslatedField(propRecord, 'description', ['desc', 'full_description']);
+    const shortDescription = getTranslatedField(propRecord, 'short_description', ['summary']);
+
     return {
       id: property.id,
-      title: property.title || property.name || property.headline || '',
+      title,
       ref: property.ref_no || property.ref || property.reference || '',
       unique_ref: property.unique_ref || property.unique_reference || property.external_ref || '',
       price: property.list_price || property.price || property.asking_price || 0,
@@ -831,8 +902,8 @@ const RealtySoftAPI: RealtySoftAPIModule = (function () {
       is_own: toBoolean(property.is_own),
       is_new: toBoolean(property.is_new),
       is_exclusive: toBoolean(property.is_exclusive),
-      description: property.desc || property.description || property.full_description || '',
-      short_description: property.short_description || property.summary || '',
+      description,
+      short_description: shortDescription,
       features,
       agent,
       latitude: property.latitude || property.lat || property.geo_lat || null,
@@ -916,7 +987,8 @@ const RealtySoftAPI: RealtySoftAPIModule = (function () {
   async function searchProperties(
     params: Partial<SearchParams>
   ): Promise<APIResponse<Property[]>> {
-    const cacheKey = 'search_' + hashString(JSON.stringify(params));
+    // Include language in cache key to ensure language-specific results
+    const cacheKey = 'search_' + config.language + '_' + hashString(JSON.stringify(params));
 
     // Check cache
     const cached = CacheManager.get<APIResponse<Property[]>>(cacheKey, 'search');
@@ -948,23 +1020,26 @@ const RealtySoftAPI: RealtySoftAPIModule = (function () {
   }
 
   /**
-   * Cache a single property
+   * Cache a single property (language-specific)
    */
   function cacheProperty(property: Property): void {
     if (!property || !property.id) return;
-    const key = 'property_' + property.id;
+    // Include language in cache key since property content is language-specific
+    const lang = config.language;
+    const key = 'property_' + lang + '_' + property.id;
     CacheManager.set(key, property);
     if (property.ref) {
-      const refKey = 'property_ref_' + property.ref;
+      const refKey = 'property_ref_' + lang + '_' + property.ref;
       CacheManager.set(refKey, property);
     }
   }
 
   /**
-   * Get cached property
+   * Get cached property (language-specific)
    */
   function getCachedProperty(idOrRef: number | string, isRef: boolean = false): Property | null {
-    const key = isRef ? 'property_ref_' + idOrRef : 'property_' + idOrRef;
+    const lang = config.language;
+    const key = isRef ? 'property_ref_' + lang + '_' + idOrRef : 'property_' + lang + '_' + idOrRef;
     return CacheManager.get<Property>(key, 'property');
   }
 
@@ -1148,6 +1223,53 @@ const RealtySoftAPI: RealtySoftAPIModule = (function () {
     };
   }
 
+  /**
+   * Clear all language-dependent caches
+   * Used when language changes to force fresh translated data from API
+   */
+  function clearPropertyCache(): void {
+    const prefixes = [
+      'property_',
+      'property_ref_',
+      'search_',
+      'propertyTypes_',
+      'features_',
+      'labels_'
+    ];
+
+    // Clear from localStorage
+    try {
+      const keysToRemove: string[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith(CacheManager.CACHE_PREFIX)) {
+          const cacheKey = key.slice(CacheManager.CACHE_PREFIX.length);
+          if (prefixes.some(prefix => cacheKey.startsWith(prefix))) {
+            keysToRemove.push(key);
+          }
+        }
+      }
+      keysToRemove.forEach(key => localStorage.removeItem(key));
+      console.log('[RealtySoft API] Cleared', keysToRemove.length, 'property cache entries from localStorage');
+    } catch (e) {
+      console.warn('[RealtySoft API] Error clearing property cache from localStorage:', e);
+    }
+
+    // Clear from in-memory LRU cache
+    // We need to iterate and remove matching entries
+    const memoryKeysToRemove: string[] = [];
+    memoryCache.forEach((_, key) => {
+      const cacheKey = key.startsWith(CacheManager.CACHE_PREFIX)
+        ? key.slice(CacheManager.CACHE_PREFIX.length)
+        : key;
+      if (prefixes.some(prefix => cacheKey.startsWith(prefix))) {
+        memoryKeysToRemove.push(key);
+      }
+    });
+    memoryKeysToRemove.forEach(key => memoryCache.delete(key));
+    console.log('[RealtySoft API] Cleared', memoryKeysToRemove.length, 'property cache entries from memory');
+  }
+
   // Public API
   return {
     init,
@@ -1171,6 +1293,7 @@ const RealtySoftAPI: RealtySoftAPIModule = (function () {
     getCachedProperty,
     cacheProperty,
     clearCache: CacheManager.clear.bind(CacheManager),
+    clearPropertyCache,
   };
 })();
 

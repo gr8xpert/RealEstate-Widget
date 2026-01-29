@@ -119,6 +119,19 @@ class RSPropertyCarousel extends RSBaseComponent {
       this.renderItems();
       this.startAutoPlay();
     }
+
+    // Subscribe to language changes - reload properties with translated content
+    // Carousel is independent and makes its own API calls, so we need to refetch
+    this.subscribe('config.language', () => {
+      console.log('[RSPropertyCarousel] Language changed, reloading properties...');
+      // Reset and reload properties with new language
+      this.properties = [];
+      this.active = 0;
+      this.v2Initialized = false;
+      this.v3Initialized = false;
+      this.stopAutoPlay();
+      this.loadProperties();
+    });
   }
 
   /**

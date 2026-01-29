@@ -2026,6 +2026,61 @@ If API labels fail to load:
 - Logs warning: "Could not load labels from API, using defaults"
 - All functionality continues to work
 
+### Dynamic Language Switching
+
+The widget supports real-time language switching without page refresh. When a user changes the language:
+
+1. **All caches are cleared** (property data, search results, features, property types)
+2. **Property data is refetched** from the API with the new language
+3. **Components re-render** with translated content
+
+**What updates on language switch:**
+- Property titles and descriptions
+- Property features
+- Property type names in filters
+- Feature names in filters
+- All UI labels
+
+**Using the Language Selector:**
+
+```html
+<div class="rs_language_selector"></div>
+```
+
+**Programmatic language change:**
+
+```javascript
+// Change language at runtime
+await RealtySoft.setLanguage('es_ES');
+```
+
+**How it works internally:**
+
+```
+User switches language
+    ↓
+RealtySoft.setLanguage('es_ES')
+    ↓
+Clear all language-dependent caches
+    ↓
+Reset features/property types loaded flags
+    ↓
+Re-initialize API with new language
+    ↓
+Refetch property data (search results or detail page)
+    ↓
+Components receive new data via state subscriptions
+    ↓
+UI updates with translated content
+```
+
+**CRM API Requirement:**
+
+The CRM must return translated content based on the `ln` parameter:
+- `v1/property?ln=es_ES` returns Spanish property data
+- `v1/property_types?ln=es_ES` returns Spanish property type names
+- `v1/property_features?ln=es_ES` returns Spanish feature names
+
 ---
 
 ## Analytics

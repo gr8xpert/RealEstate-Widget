@@ -93,19 +93,34 @@ class RSPropertyDetailTemplate extends RSBaseComponent {
       this.showError('No property ID or reference found');
     }
 
-    // Subscribe only for background updates to the SAME property (after first load)
+    // Subscribe for updates to the SAME property (after first load)
+    // This handles both background updates and language change reloads
     this.subscribe<Property>('currentProperty', (property) => {
       // Only update if we already have a property AND it's the same ID
       if (!property || !this.property) return;
       if (property.id !== this.property.id) return;
 
-      // Silent update - don't re-render, just update data for child components
+      // Check if this is a language change reload (property data changed but same ID)
+      const contentChanged =
+        this.property.title !== property.title ||
+        this.property.description !== property.description;
+
       this.property = property;
+
+      // Re-render if content changed (language switch) and we've already rendered
+      if (contentChanged && this.hasInitiallyRendered) {
+        console.log('[RSPropertyDetailTemplate] Property content changed (language switch), re-rendering...');
+        this.hasInitiallyRendered = false;
+        this.render();
+      }
     });
 
     // Listen for language changes to update labels
-    this.subscribe('language', () => {
+    // Note: Property data will be reloaded by controller's setLanguage()
+    // The currentProperty subscription above will handle the re-render
+    this.subscribe('config.language', () => {
       if (this.hasInitiallyRendered && this.property) {
+        // Update labels immediately while waiting for property reload
         this.updateLabelsInPlace();
       }
     });

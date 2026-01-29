@@ -2950,6 +2950,54 @@ const RealtySoft = (function () {
       cache: globalConfig.cache,
     });
 
+    // Clear all language-dependent caches to force fresh data
+    RealtySoftAPI.clearPropertyCache();
+
+    // Reset features/property types loaded flags so they refetch with new language
+    RealtySoftState.set('data.featuresLoaded', false);
+    RealtySoftState.set('data.propertyTypesLoaded', false);
+    RealtySoftState.set('data.features', []);
+    RealtySoftState.set('data.propertyTypes', []);
+
+    // Refetch property data with new language
+    // This ensures translated content is loaded from API
+    const refetchPropertyData = async () => {
+      try {
+        // If on listing page with properties, re-run search
+        const currentProperties = RealtySoftState.get<Property[]>('results.properties');
+        if (currentProperties && currentProperties.length > 0) {
+          console.log('[RealtySoft] Language changed: refetching listing properties...');
+          await search();
+        }
+
+        // If on detail page with a property, reload it with forceRefresh
+        const currentProperty = RealtySoftState.get<Property>('currentProperty');
+        if (currentProperty) {
+          console.log('[RealtySoft] Language changed: reloading detail property...');
+          RealtySoftState.set('ui.loading', true);
+          try {
+            let result;
+            if (currentProperty.ref) {
+              result = await RealtySoftAPI.getPropertyByRef(currentProperty.ref, { forceRefresh: true });
+            } else if (currentProperty.id) {
+              result = await RealtySoftAPI.getProperty(currentProperty.id, { forceRefresh: true });
+            }
+            if (result?.data) {
+              RealtySoftState.set('currentProperty', result.data);
+              console.log('[RealtySoft] Property reloaded with new language:', newLanguage);
+            }
+          } finally {
+            RealtySoftState.set('ui.loading', false);
+          }
+        }
+      } catch (error) {
+        console.warn('[RealtySoft] Error refetching property data for new language:', error);
+      }
+    };
+
+    // Start property refetch (don't await - let it run in parallel with label fetching)
+    refetchPropertyData();
+
     // Static mode: we're done - no API call needed
     if (labelsMode === 'static') {
       console.log('[RealtySoft] Static mode: language changed to:', newLanguage);

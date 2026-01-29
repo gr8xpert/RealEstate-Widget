@@ -95,6 +95,15 @@ class RSPropertyGrid extends RSBaseComponent {
       this.updateLoadingState();
     });
 
+    // Subscribe to language changes - ensure re-render with translated content
+    // Note: Properties will be refetched by controller's setLanguage(), this ensures
+    // any label-based rendering is updated when new properties arrive
+    this.subscribe('config.language', () => {
+      if (this.properties.length > 0) {
+        this.renderProperties();
+      }
+    });
+
     // Note: Initial search is triggered by the controller after all components init
   }
 

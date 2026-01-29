@@ -69,6 +69,22 @@ export class LRUCache<T> {
     return this.map.has(key);
   }
 
+  /**
+   * Iterate over all entries in the cache
+   */
+  forEach(callback: (value: T, key: string) => void): void {
+    this.map.forEach((node, key) => {
+      callback(node.value, key);
+    });
+  }
+
+  /**
+   * Get all keys in the cache
+   */
+  keys(): string[] {
+    return Array.from(this.map.keys());
+  }
+
   private addToHead(node: LRUNode<T>): void {
     node.prev = null;
     node.next = this.head;

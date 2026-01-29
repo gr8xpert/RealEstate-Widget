@@ -206,8 +206,9 @@ $params = $_GET;
 unset($params['_endpoint'], $params['_lang']);
 
 // Add language only if explicitly provided
+// CRM uses 'ln' parameter for language (not 'lang')
 if (isset($_GET['_lang']) || isset($_POST['_lang'])) {
-    $params['lang'] = $language;
+    $params['ln'] = $language;
 }
 
 // Build query string
@@ -237,7 +238,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $jsonData = json_decode($postData, true);
         if ($jsonData) {
             unset($jsonData['_endpoint'], $jsonData['_lang']);
-            $jsonData['lang'] = $language;
+            $jsonData['ln'] = $language;
             $postData = json_encode($jsonData);
         }
     }

@@ -385,6 +385,7 @@ export interface RealtySoftAPIModule {
   getCachedProperty(idOrRef: number | string, isRef?: boolean): Property | null;
   cacheProperty(property: Property): void;
   clearCache(key?: string): void;
+  clearPropertyCache(): void;
 }
 
 export interface RealtySoftLabelsModule {

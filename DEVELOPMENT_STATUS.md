@@ -1,6 +1,6 @@
 # RealtySoft Widget v3 - Development Status
 
-> **Version:** 3.1.0 | **Last Updated:** January 29, 2026
+> **Version:** 3.2.0 | **Last Updated:** January 29, 2026
 
 ---
 
@@ -30,6 +30,7 @@
 | Phase 10: CSV Export | Complete | 100% |
 | Phase 11: Enhanced i18n Testing | Complete | 100% |
 | Phase 12: Labels Optimization & Detail UX | Complete | 100% |
+| Phase 13: Dynamic Language Content Switching | Complete | 100% |
 
 ---
 
@@ -436,6 +437,48 @@ Added advanced configuration textarea in WordPress admin settings:
 
 ---
 
+### Phase 13: Dynamic Language Content Switching (v3.2.0)
+
+Fixed property content (title, description, features) not updating when user switches language. Previously only UI labels were updating, but property data remained in the original language.
+
+#### Root Cause
+
+The CRM API uses `ln` parameter for language (not `lang`), and property caches were not being cleared on language switch.
+
+#### Changes Made
+
+| File | Change |
+|------|--------|
+| `php/api-proxy.php` | Changed `lang` → `ln` parameter for CRM API compatibility |
+| `src/core/api.ts` | Added `clearPropertyCache()` method to clear all language-dependent caches |
+| `src/core/api.ts` | Added language to cache keys (`property_${lang}_${id}`, `search_${lang}_${hash}`) |
+| `src/core/api.ts` | Added translation field support (`title_es`, `description_es`, `translations` object) |
+| `src/core/controller.ts` | Added property data refetch on language change (search + detail) |
+| `src/core/controller.ts` | Reset `featuresLoaded` and `propertyTypesLoaded` flags on language switch |
+| `src/core/lru-cache.ts` | Added `forEach()` and `keys()` methods for cache iteration |
+| `src/types/index.ts` | Added `clearPropertyCache` to `RealtySoftAPIModule` interface |
+| `src/components/listing/property-grid.ts` | Added `config.language` subscription for re-render |
+| `src/components/listing/property-carousel.ts` | Added `config.language` subscription to reload properties |
+| `src/components/detail/property-detail-template.ts` | Fixed subscription path, added content change detection |
+| `src/styles/realtysoft.css` | Fixed map z-index to prevent interference with modals |
+
+#### What Now Works
+
+| Content Type | Status |
+|--------------|--------|
+| Property title | ✅ Updates on language switch |
+| Property description | ✅ Updates on language switch |
+| Property features | ✅ Updates on language switch |
+| Property types (filter dropdowns) | ✅ Updates on language switch |
+| Feature names (amenity filters) | ✅ Updates on language switch |
+| UI Labels | ✅ Already working |
+
+#### Supported Languages
+
+All languages supported: English (en_US), Spanish (es_ES), German (de_DE), French (fr_FR), Dutch (nl_NL), Polish (pl_PL), Italian (it_IT), Portuguese (pt_PT), Russian (ru_RU), Chinese (zh_CN), Japanese (ja_JP), Arabic (ar_SA), Swedish (sv_SE), Norwegian (no_NO), Danish (da_DK), Finnish (fi_FI)
+
+---
+
 ### PHP Backend
 
 | File | Status | Description |
@@ -735,6 +778,9 @@ The loader script:
 | 40 | Missing inquiry form translations | Added `inquiry_default_message` to all 16 languages |
 | 41 | Missing wishlist form translations | Added form labels to major languages |
 | 42 | Wishlist/fullscreen icons overlapping | Moved wishlist to `right: 70px` |
+| 43 | Property content not translating on language switch | Fixed: CRM uses `ln` param (not `lang`), added cache clearing, refetch on switch |
+| 44 | Property types/features not translating | Added cache key with language, reset loaded flags on switch |
+| 45 | Features popup going behind map | Added `isolation: isolate` to map container, reset leaflet z-index |
 
 ---
 

@@ -2579,6 +2579,18 @@ a[class*=" rs-"]:focus-visible {
     z-index: 0;
 }
 
+/* Ensure map container creates isolated stacking context */
+.rs-detail-map__container {
+    isolation: isolate;
+}
+
+/* Override leaflet z-index to prevent interference with modals */
+.rs-detail-map__leaflet .leaflet-pane,
+.rs-detail-map__leaflet .leaflet-control-container,
+.rs-detail-map__leaflet .leaflet-control {
+    z-index: auto;
+}
+
 @media (max-width: 640px) {
     .rs-detail-map__header {
         flex-direction: column;
