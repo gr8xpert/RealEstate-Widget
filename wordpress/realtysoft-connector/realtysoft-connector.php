@@ -814,11 +814,12 @@ class RealtySoft_Connector {
                 <!-- ── Filter IDs Reference ── -->
                 <h2>Filter IDs Reference</h2>
                 <p>To lock filters on specific pages (e.g., show only villas in Marbella), you need the IDs for locations, property types, and features.</p>
+                <?php $current_domain = preg_replace('/^www\./', '', parse_url(home_url(), PHP_URL_HOST)); ?>
                 <table class="form-table">
                     <tr>
                         <th>View Filter IDs</th>
                         <td>
-                            <a href="https://realtysoft.ai/propertymanager/pages/filter-ids.html"
+                            <a href="https://realtysoft.ai/propertymanager/pages/filter-ids.html?domain=<?php echo esc_attr($current_domain); ?>"
                                target="_blank"
                                class="button button-secondary"
                                style="display: inline-flex; align-items: center; gap: 6px;">
@@ -826,7 +827,7 @@ class RealtySoft_Connector {
                                 Open Filter IDs Reference
                             </a>
                             <p class="description">
-                                Opens a page showing all available Location, Property Type, and Feature IDs for your account.
+                                Opens a page showing all available Location, Property Type, and Feature IDs for <strong><?php echo esc_html($current_domain); ?></strong>.<br>
                                 Copy the IDs you need and use them in your page HTML.<br>
                                 <strong>Example:</strong> <code>&lt;div data-rs-component="search" data-rs-location="5"&gt;&lt;/div&gt;</code>
                             </p>

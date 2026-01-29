@@ -107,8 +107,18 @@ if (!file_exists($configFile)) {
 $clients = require $configFile;
 
 // Get requesting domain
-$origin = $_SERVER['HTTP_ORIGIN'] ?? $_SERVER['HTTP_REFERER'] ?? '';
-$domain = parse_url($origin, PHP_URL_HOST) ?? 'localhost';
+// Priority: 1. _domain parameter (for admin tools) 2. X-RS-Domain header 3. Origin/Referer
+$domain = null;
+
+// Check for explicit domain parameter (used by filter-ids admin page)
+if (!empty($_GET['_domain'])) {
+    $domain = $_GET['_domain'];
+} elseif (!empty($_SERVER['HTTP_X_RS_DOMAIN'])) {
+    $domain = $_SERVER['HTTP_X_RS_DOMAIN'];
+} else {
+    $origin = $_SERVER['HTTP_ORIGIN'] ?? $_SERVER['HTTP_REFERER'] ?? '';
+    $domain = parse_url($origin, PHP_URL_HOST) ?? 'localhost';
+}
 
 // Remove www. prefix for matching
 $domain = preg_replace('/^www\./', '', $domain);
