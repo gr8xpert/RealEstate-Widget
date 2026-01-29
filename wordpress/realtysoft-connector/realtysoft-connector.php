@@ -811,6 +811,31 @@ class RealtySoft_Connector {
 
                 <hr />
 
+                <!-- ── Filter IDs Reference ── -->
+                <h2>Filter IDs Reference</h2>
+                <p>To lock filters on specific pages (e.g., show only villas in Marbella), you need the IDs for locations, property types, and features.</p>
+                <table class="form-table">
+                    <tr>
+                        <th>View Filter IDs</th>
+                        <td>
+                            <a href="https://realtysoft.ai/propertymanager/pages/filter-ids.html"
+                               target="_blank"
+                               class="button button-secondary"
+                               style="display: inline-flex; align-items: center; gap: 6px;">
+                                <span class="dashicons dashicons-editor-table" style="margin-top: 3px;"></span>
+                                Open Filter IDs Reference
+                            </a>
+                            <p class="description">
+                                Opens a page showing all available Location, Property Type, and Feature IDs for your account.
+                                Copy the IDs you need and use them in your page HTML.<br>
+                                <strong>Example:</strong> <code>&lt;div data-rs-component="search" data-rs-location="5"&gt;&lt;/div&gt;</code>
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+
+                <hr />
+
                 <!-- ── Property Page Slugs ── -->
                 <h2>Property Page Slugs</h2>
                 <p>Each slug must match an existing WordPress page with the widget.
