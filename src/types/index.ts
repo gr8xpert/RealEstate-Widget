@@ -124,6 +124,8 @@ export interface PropertyType {
   id: number;
   name: string;
   key?: string;
+  parent_id?: number | string | null;
+  property_count?: number;
 }
 
 export interface Feature {

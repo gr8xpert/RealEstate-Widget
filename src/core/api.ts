@@ -404,6 +404,9 @@ const RealtySoftAPI: RealtySoftAPIModule = (function () {
       requestParams._lang = config.language;
     }
 
+    // Add cache-busting timestamp to force fresh data from proxy/CDN
+    requestParams._t = Date.now();
+
     if (method === 'GET') {
       Object.keys(requestParams).forEach((key) => {
         if (requestParams[key] !== null && requestParams[key] !== undefined) {

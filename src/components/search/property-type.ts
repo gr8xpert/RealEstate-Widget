@@ -18,6 +18,35 @@ declare const RealtySoftState: RealtySoftStateModule;
 
 interface ExtendedPropertyType extends PropertyType {
   parent_id?: number | string | null;
+  count?: number;
+}
+
+/**
+ * Check if a property type has properties (property_count > 0)
+ * Returns true if property_count is undefined (backwards compatibility) or > 0
+ * Returns false only if property_count is explicitly 0
+ */
+function hasProperties(type: ExtendedPropertyType): boolean {
+  // If property_count doesn't exist, show the type (backwards compatibility)
+  if (!('property_count' in type)) return true;
+  if (type.property_count === undefined || type.property_count === null) return true;
+  return type.property_count > 0;
+}
+
+/**
+ * Check if a parent type or any of its children have properties
+ */
+function hasPropertiesOrChildren(type: ExtendedPropertyType, allTypes: ExtendedPropertyType[]): boolean {
+  // First check if the type itself has properties
+  if (hasProperties(type)) return true;
+
+  // Then check if any children have properties
+  const children = allTypes.filter(child => {
+    const pid = child.parent_id;
+    if (!pid && pid !== 0) return false;
+    return String(pid) === String(type.id);
+  });
+  return children.some(child => hasProperties(child));
 }
 
 class RSPropertyType extends RSBaseComponent {
@@ -101,17 +130,25 @@ class RSPropertyType extends RSBaseComponent {
     });
   }
 
-  // Get parent property types (no parent_id or parent_id = 0)
+  // Get parent property types (no parent_id or parent_id = 0), excluding items with 0 properties
+  // For parents, show if they or their children have properties
   private getParentTypes(): ExtendedPropertyType[] {
-    return this.propertyTypes
-      .filter(type => !type.parent_id || type.parent_id === '0' || type.parent_id === 0)
-      .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    const allParents = this.propertyTypes.filter(type =>
+      !type.parent_id || type.parent_id === '0' || type.parent_id === 0
+    );
+
+    const filtered = allParents.filter(type => hasPropertiesOrChildren(type, this.propertyTypes));
+
+    console.log(`[RealtySoft] Property type parents: ${allParents.length} total, ${filtered.length} after filtering`);
+    console.log(`[RealtySoft] Filtered out types: ${allParents.filter(p => !filtered.includes(p)).map(p => `${p.name}(${p.property_count})`).join(', ')}`);
+
+    return filtered.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
   }
 
-  // Get child property types for a parent
+  // Get child property types for a parent, excluding items with 0 properties
   private getChildTypes(parentId: number | string): ExtendedPropertyType[] {
     return this.propertyTypes
-      .filter(type => type.parent_id == parentId)
+      .filter(type => type.parent_id == parentId && hasProperties(type))
       .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
   }
 
@@ -168,7 +205,8 @@ class RSPropertyType extends RSBaseComponent {
     this.list = this.element.querySelector('.rs-property-type__list');
     this.clearBtn = this.element.querySelector('.rs-property-type__clear');
 
-    this.filteredTypes = this.propertyTypes;
+    // Filter out types with 0 properties
+    this.filteredTypes = this.propertyTypes.filter(type => hasProperties(type));
   }
 
   // VARIATION 2: Flat Multi-Select with Filter (styled like Location V3)
@@ -623,10 +661,13 @@ class RSPropertyType extends RSBaseComponent {
   }
 
   private filterTypes(): void {
+    // Filter by search term and exclude items with 0 properties
+    const typesWithProperties = this.propertyTypes.filter(type => hasProperties(type));
+
     if (!this.searchTerm) {
-      this.filteredTypes = this.propertyTypes;
+      this.filteredTypes = typesWithProperties;
     } else {
-      this.filteredTypes = this.propertyTypes.filter(type =>
+      this.filteredTypes = typesWithProperties.filter(type =>
         (type.name || '').toLowerCase().includes(this.searchTerm)
       );
     }

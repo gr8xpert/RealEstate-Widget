@@ -26,6 +26,54 @@ interface ExtendedLocation extends Location {
   level?: number;
 }
 
+/**
+ * Check if a location has properties (property_count > 0)
+ * Returns true if property_count is undefined (backwards compatibility) or > 0
+ * Returns false only if property_count is explicitly 0
+ */
+function hasProperties(loc: ExtendedLocation): boolean {
+  const count = loc.property_count;
+  // Debug logging
+  if (count === 0) {
+    console.log(`[RealtySoft] Filtering out location with 0 properties: ${loc.name} (id: ${loc.id})`);
+  }
+  // If property_count doesn't exist, show the location (backwards compatibility)
+  if (count === undefined || count === null) return true;
+  return count > 0;
+}
+
+/**
+ * Check if a parent location or any of its descendants have properties
+ * A parent is shown only if:
+ * 1. It has property_count > 0, OR
+ * 2. At least one of its descendants has property_count > 0
+ */
+function hasPropertiesOrChildren(loc: ExtendedLocation, allLocations: ExtendedLocation[]): boolean {
+  // Check if the location itself has properties
+  const selfHasProperties = hasProperties(loc);
+
+  // Get all descendants (children, grandchildren, etc.)
+  const getAllDescendants = (parentId: number | string): ExtendedLocation[] => {
+    const children = allLocations.filter(child => {
+      const pid = child.parent_id;
+      if (!pid && pid !== 0) return false;
+      return String(pid) === String(parentId);
+    });
+
+    let descendants = [...children];
+    children.forEach(child => {
+      descendants = descendants.concat(getAllDescendants(child.id));
+    });
+    return descendants;
+  };
+
+  const descendants = getAllDescendants(loc.id);
+  const anyDescendantHasProperties = descendants.some(d => hasProperties(d));
+
+  // Show if self has properties OR any descendant has properties
+  return selfHasProperties || anyDescendantHasProperties;
+}
+
 class RSLocation extends RSBaseComponent {
   private lockedMode: boolean = false;
   private locations: ExtendedLocation[] = [];
@@ -74,6 +122,14 @@ class RSLocation extends RSBaseComponent {
   init(): void {
     this.lockedMode = this.isLocked('location');
     this.locations = RealtySoftState.get<ExtendedLocation[]>('data.locations') || [];
+
+    // Debug: Log location data on init
+    const zeroCount = this.locations.filter(l => l.property_count === 0);
+    const undefinedCount = this.locations.filter(l => l.property_count === undefined || l.property_count === null);
+    console.log(`[RealtySoft] Location init: ${this.locations.length} locations, ${zeroCount.length} with count=0, ${undefinedCount.length} with count=undefined`);
+    if (zeroCount.length > 0) {
+      console.log(`[RealtySoft] Zero-count: ${zeroCount.slice(0, 15).map(l => `${l.name}(id:${l.id})`).join(', ')}`);
+    }
     this.selectedLocations = new Set();
     this.selectedLocation = this.getFilter<number | null>('location');
     this.selectedName = this.getFilter<string>('locationName') || '';
@@ -128,6 +184,15 @@ class RSLocation extends RSBaseComponent {
     // Subscribe to location data updates
     this.subscribe<ExtendedLocation[]>('data.locations', (locations) => {
       this.locations = locations;
+
+      // Debug: Log locations with property_count = 0 or undefined
+      const zeroCountLocs = locations.filter(l => l.property_count === 0);
+      const undefinedCountLocs = locations.filter(l => l.property_count === undefined || l.property_count === null);
+      console.log(`[RealtySoft] Location data: ${locations.length} total, ${zeroCountLocs.length} with count=0, ${undefinedCountLocs.length} with count=undefined`);
+      if (zeroCountLocs.length > 0) {
+        console.log(`[RealtySoft] Zero-count locations: ${zeroCountLocs.slice(0, 10).map(l => `${l.name}(id:${l.id},type:${l.type})`).join(', ')}${zeroCountLocs.length > 10 ? '...' : ''}`);
+      }
+
       // If we have a location ID but no name, look it up now that we have data
       if (this.selectedLocation && !this.selectedName) {
         const loc = this.locations.find(l => l.id === this.selectedLocation);
@@ -148,23 +213,63 @@ class RSLocation extends RSBaseComponent {
   }
 
   private getParentLocations(): ExtendedLocation[] {
-    // Filter by parentType (default: municipality)
-    return this.locations.filter(loc => {
-      if (loc.type) {
-        return loc.type.toLowerCase() === this.parentType.toLowerCase();
-      }
-      return false;
-    }).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    // Filter by parentType (default: municipality) and exclude items with 0 properties
+    // For parents, also check if they have children with properties
+    const allParents = this.locations.filter(loc =>
+      loc.type && loc.type.toLowerCase() === this.parentType.toLowerCase()
+    );
+
+    // First filter by property_count
+    let filtered = allParents.filter(loc => hasPropertiesOrChildren(loc, this.locations));
+
+    // For variation 2 (Two Dropdowns), also filter out parents with no children
+    // This handles cases where API has incorrect property_count but parent has no actual children
+    if (this.variation === '2') {
+      filtered = filtered.filter(parent => {
+        const children = this.locations.filter(loc => {
+          const pid = loc.parent_id;
+          if (!pid && pid !== 0) return false;
+          const matchesParent = String(pid) === String(parent.id);
+          const matchesType = loc.type && loc.type.toLowerCase() === this.childType.toLowerCase();
+          return matchesParent && matchesType && hasProperties(loc);
+        });
+        return children.length > 0;
+      });
+    }
+
+    const filteredOut = allParents.filter(p => !filtered.includes(p));
+    console.log(`[RealtySoft] Location parents: ${allParents.length} total, ${filtered.length} after filtering, ${filteredOut.length} filtered out`);
+
+    if (filteredOut.length > 0) {
+      console.log(`[RealtySoft] Filtered out parents: ${filteredOut.map(p => `${p.name}(id:${p.id},count:${p.property_count})`).join(', ')}`);
+    }
+
+    return filtered.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
   }
 
   private getChildLocations(parentId: number | string): ExtendedLocation[] {
-    // Get locations of childType that have this parentId
-    return this.locations.filter(loc => {
+    // Get the parent location to check for duplicate names
+    const parent = this.locations.find(loc => String(loc.id) === String(parentId));
+    const parentName = parent?.name?.toLowerCase().trim() || '';
+
+    // Get locations of childType that have this parentId, exclude items with 0 properties
+    const allChildren = this.locations.filter(loc => {
       const pid = loc.parent_id;
       const matchesParent = pid && String(pid) === String(parentId);
       const matchesType = loc.type && loc.type.toLowerCase() === this.childType.toLowerCase();
       return matchesParent && matchesType;
-    }).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    });
+
+    // Filter by property_count and exclude children with same name as parent
+    const filtered = allChildren.filter(loc => {
+      const hasProps = hasProperties(loc);
+      const isDuplicateName = loc.name?.toLowerCase().trim() === parentName;
+      return hasProps && !isDuplicateName;
+    });
+
+    console.log(`[RealtySoft] Child locations for parent ${parentId}: ${allChildren.length} total, ${filtered.length} after filtering`);
+
+    return filtered.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
   }
 
   // Get all descendants of a location (recursive)
@@ -184,14 +289,17 @@ class RSLocation extends RSBaseComponent {
   private getAllLocationsFlat(): ExtendedLocation[] {
     const result: ExtendedLocation[] = [];
 
-    // Build full hierarchy tree recursively
+    // Build full hierarchy tree recursively, excluding items with 0 properties
     const buildFlat = (parentId: number | string | null, level: number) => {
       const children = this.locations.filter(loc => {
         const pid = loc.parent_id;
+        let matchesParent = false;
         if (parentId === null) {
-          return pid === null || pid === undefined || pid === 0 || String(pid) === '0' || String(pid) === '';
+          matchesParent = pid === null || pid === undefined || pid === 0 || String(pid) === '0' || String(pid) === '';
+        } else {
+          matchesParent = pid && String(pid) === String(parentId);
         }
-        return pid && String(pid) === String(parentId);
+        return matchesParent && hasProperties(loc);
       }).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 
       children.forEach(loc => {
@@ -202,9 +310,9 @@ class RSLocation extends RSBaseComponent {
 
     buildFlat(null, 0);
 
-    // If hierarchy build found nothing, return all locations sorted alphabetically
+    // If hierarchy build found nothing, return all locations with properties sorted alphabetically
     if (result.length === 0 && this.locations.length > 0) {
-      return [...this.locations].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+      return [...this.locations].filter(loc => hasProperties(loc)).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
     }
 
     return result;
@@ -446,9 +554,11 @@ class RSLocation extends RSBaseComponent {
 
     let html = `<option value="">${this.label('search_location')}</option>`;
 
-    // Get municipalities (parents) and cities (children)
+    // Get municipalities (parents) and cities (children), excluding items with 0 properties
+    // For parents, show if they or their children have properties
     const municipalities = this.locations
-      .filter(loc => loc.type && loc.type.toLowerCase() === this.parentType.toLowerCase())
+      .filter(loc => loc.type && loc.type.toLowerCase() === this.parentType.toLowerCase() &&
+                     hasPropertiesOrChildren(loc, this.locations))
       .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 
     municipalities.forEach(municipality => {
@@ -467,10 +577,11 @@ class RSLocation extends RSBaseComponent {
       };
       collectDescendants(municipality.id);
 
-      // Get cities that are descendants of this municipality
+      // Get cities that are descendants of this municipality, excluding items with 0 properties
       const cities = this.locations
         .filter(loc => {
           if (!loc.type || loc.type.toLowerCase() !== this.childType.toLowerCase()) return false;
+          if (!hasProperties(loc)) return false;
           // Check if city is direct child or descendant
           return (loc.parent_id && String(loc.parent_id) === String(municipality.id)) ||
                  descendantIds.has(loc.id);
