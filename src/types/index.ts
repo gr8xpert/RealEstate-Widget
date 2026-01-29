@@ -82,6 +82,9 @@ export interface CacheConfig {
 // Config Types
 // ============================================================
 
+// Label overrides can be flat { key: value } or per-language { _default: {...}, es_ES: {...} }
+export type LabelOverrides = Record<string, string> | Record<string, Record<string, string>>;
+
 export interface WidgetConfig {
   apiKey: string | null;
   apiUrl: string | null;
@@ -97,7 +100,8 @@ export interface WidgetConfig {
   defaultCountryCode: string;
   inquiryThankYouMessage: string | null;
   inquiryThankYouUrl: string | null;
-  labelOverrides?: Record<string, string>;
+  labelsMode?: 'static' | 'api' | 'hybrid';
+  labelOverrides?: LabelOverrides;
   analytics?: boolean;
   debug?: boolean;
   cache?: CacheConfig;
@@ -385,8 +389,9 @@ export interface RealtySoftAPIModule {
 
 export interface RealtySoftLabelsModule {
   init(language?: string | null): string;
+  initStatic(language: string): void;
   loadFromAPI(apiLabels: Record<string, string>): Promise<void>;
-  applyOverrides(overrides: Record<string, string>): void;
+  applyOverrides(overrides: LabelOverrides, language?: string): void;
   reloadForLanguage(newLanguage: string): Promise<void>;
   get(key: string, replacements?: Record<string, string | number>): string;
   getAll(): Record<string, string>;

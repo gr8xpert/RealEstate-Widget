@@ -17,6 +17,7 @@ declare const RealtySoft: RealtySoftModule;
 class RSWishlistHeader extends RSBaseComponent {
   private isSharedView: boolean = false;
   private subtitleEl: HTMLElement | null = null;
+  private windowEventsBound: boolean = false;
 
   constructor(element: HTMLElement, options: ComponentOptions = {}) {
     super(element, options);
@@ -52,10 +53,15 @@ class RSWishlistHeader extends RSBaseComponent {
   }
 
   bindEvents(): void {
+    // Only bind window events once to prevent duplicates on language change
+    if (this.windowEventsBound) return;
+
     // Listen for wishlist changes
     window.addEventListener(WishlistManager.EVENTS.CHANGED, () => {
       this.updateCount();
     });
+
+    this.windowEventsBound = true;
   }
 
   private updateCount(): void {

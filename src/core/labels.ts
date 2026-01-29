@@ -3,7 +3,7 @@
  * Internationalization using labels from API
  */
 
-import type { RealtySoftLabelsModule } from '../types/index';
+import type { RealtySoftLabelsModule, LabelOverrides } from '../types/index';
 
 // Language code mapping type
 type LanguageMap = Record<string, string>;
@@ -244,6 +244,7 @@ const RealtySoftLabels: RealtySoftLabelsModule = (function () {
     inquiry_privacy_accept: 'I accept the',
     inquiry_privacy_policy: 'privacy policy',
     inquiry_country: 'Country',
+    inquiry_default_message: 'I am interested in the property "{title}"{ref}. Please contact me with more information.',
 
     // Pagination
     pagination_prev: 'Previous',
@@ -413,6 +414,27 @@ const RealtySoftLabels: RealtySoftLabelsModule = (function () {
       wishlist_confirm_clear: '¿Estás seguro de que quieres borrar toda tu lista de deseos?',
       wishlist_removed: 'Eliminado de favoritos',
       wishlist_cleared: 'Lista de deseos borrada',
+      wishlist_share_title: 'Compartir tu lista',
+      wishlist_share_desc: 'Comparte este enlace con cualquiera para mostrarle tus propiedades guardadas:',
+      wishlist_email_title: 'Enviar lista por email',
+      wishlist_email_to: 'Enviar a:',
+      wishlist_email_from: 'Tu email (opcional):',
+      wishlist_email_message: 'Mensaje personal (opcional):',
+      wishlist_email_placeholder: 'Añade una nota personal...',
+      wishlist_email_send: 'Enviar email',
+      wishlist_email_sent: '¡Email enviado con éxito!',
+      wishlist_email_error: 'Error al enviar el email',
+      wishlist_note_title: 'Añadir nota a propiedad',
+      wishlist_note_label: 'Tu nota:',
+      wishlist_note_placeholder: 'Añade tus pensamientos, preguntas o recordatorios...',
+      wishlist_compare_title: 'Comparar propiedades',
+      wishlist_compare_clear: 'Limpiar selección',
+      note_saved: '¡Nota guardada!',
+      note_deleted: 'Nota eliminada',
+      confirm_delete_note: '¿Eliminar esta nota?',
+      compare_min: 'Selecciona al menos 2 propiedades para comparar',
+      compare_confirm_clear: '¿Limpiar todas las propiedades seleccionadas?',
+      copied: '¡Enlace copiado al portapapeles!',
 
       // Inquiry
       inquiry_name: 'Su nombre',
@@ -428,6 +450,7 @@ const RealtySoftLabels: RealtySoftLabelsModule = (function () {
       inquiry_privacy_accept: 'Acepto la',
       inquiry_privacy_policy: 'política de privacidad',
       inquiry_country: 'País',
+      inquiry_default_message: 'Estoy interesado/a en la propiedad "{title}"{ref}. Por favor, contacten conmigo para más información.',
 
       // Pagination
       pagination_prev: 'Anterior',
@@ -529,6 +552,34 @@ const RealtySoftLabels: RealtySoftLabelsModule = (function () {
       detail_get_directions: 'Wegbeschreibung',
       wishlist_add: 'Zur Merkliste hinzufügen',
       wishlist_remove: 'Von Merkliste entfernen',
+      wishlist_title: 'Meine Merkliste',
+      wishlist_empty: 'Ihre Merkliste ist leer',
+      wishlist_share: 'Teilen',
+      wishlist_email: 'E-Mail',
+      wishlist_pdf: 'PDF herunterladen',
+      wishlist_clear: 'Alles löschen',
+      wishlist_compare: 'Vergleichen',
+      wishlist_share_title: 'Merkliste teilen',
+      wishlist_share_desc: 'Teilen Sie diesen Link, um Ihre gespeicherten Immobilien zu zeigen:',
+      wishlist_email_title: 'Merkliste per E-Mail senden',
+      wishlist_email_to: 'Senden an:',
+      wishlist_email_from: 'Ihre E-Mail (optional):',
+      wishlist_email_message: 'Persönliche Nachricht (optional):',
+      wishlist_email_placeholder: 'Fügen Sie eine persönliche Notiz hinzu...',
+      wishlist_email_send: 'E-Mail senden',
+      wishlist_email_sent: 'E-Mail erfolgreich gesendet!',
+      wishlist_email_error: 'E-Mail konnte nicht gesendet werden',
+      wishlist_note_title: 'Notiz hinzufügen',
+      wishlist_note_label: 'Ihre Notiz:',
+      wishlist_note_placeholder: 'Fügen Sie Ihre Gedanken, Fragen oder Erinnerungen hinzu...',
+      wishlist_compare_title: 'Immobilien vergleichen',
+      wishlist_compare_clear: 'Auswahl löschen',
+      note_saved: 'Notiz gespeichert!',
+      note_deleted: 'Notiz gelöscht',
+      confirm_delete_note: 'Diese Notiz löschen?',
+      compare_min: 'Wählen Sie mindestens 2 Immobilien zum Vergleichen',
+      compare_confirm_clear: 'Alle ausgewählten Immobilien löschen?',
+      copied: 'Link in die Zwischenablage kopiert!',
       pagination_prev: 'Zurück',
       pagination_next: 'Weiter',
       general_close: 'Schließen',
@@ -537,6 +588,7 @@ const RealtySoftLabels: RealtySoftLabelsModule = (function () {
       close: 'Schließen',
       save: 'Speichern',
       no_results: 'Keine Ergebnisse gefunden',
+      inquiry_default_message: 'Ich interessiere mich für die Immobilie "{title}"{ref}. Bitte kontaktieren Sie mich für weitere Informationen.',
     },
     fr_FR: {
       search_location: 'Emplacement',
@@ -598,6 +650,34 @@ const RealtySoftLabels: RealtySoftLabelsModule = (function () {
       detail_get_directions: 'Itinéraire',
       wishlist_add: 'Ajouter aux favoris',
       wishlist_remove: 'Retirer des favoris',
+      wishlist_title: 'Ma liste de souhaits',
+      wishlist_empty: 'Votre liste de souhaits est vide',
+      wishlist_share: 'Partager',
+      wishlist_email: 'E-mail',
+      wishlist_pdf: 'Télécharger PDF',
+      wishlist_clear: 'Tout effacer',
+      wishlist_compare: 'Comparer',
+      wishlist_share_title: 'Partager votre liste',
+      wishlist_share_desc: 'Partagez ce lien pour montrer vos propriétés enregistrées:',
+      wishlist_email_title: 'Envoyer la liste par e-mail',
+      wishlist_email_to: 'Envoyer à:',
+      wishlist_email_from: 'Votre e-mail (optionnel):',
+      wishlist_email_message: 'Message personnel (optionnel):',
+      wishlist_email_placeholder: 'Ajoutez une note personnelle...',
+      wishlist_email_send: 'Envoyer l\'e-mail',
+      wishlist_email_sent: 'E-mail envoyé avec succès!',
+      wishlist_email_error: 'Impossible d\'envoyer l\'e-mail',
+      wishlist_note_title: 'Ajouter une note',
+      wishlist_note_label: 'Votre note:',
+      wishlist_note_placeholder: 'Ajoutez vos pensées, questions ou rappels...',
+      wishlist_compare_title: 'Comparer les propriétés',
+      wishlist_compare_clear: 'Effacer la sélection',
+      note_saved: 'Note enregistrée!',
+      note_deleted: 'Note supprimée',
+      confirm_delete_note: 'Supprimer cette note?',
+      compare_min: 'Sélectionnez au moins 2 propriétés à comparer',
+      compare_confirm_clear: 'Effacer toutes les propriétés sélectionnées?',
+      copied: 'Lien copié dans le presse-papiers!',
       pagination_prev: 'Précédent',
       pagination_next: 'Suivant',
       general_close: 'Fermer',
@@ -606,6 +686,7 @@ const RealtySoftLabels: RealtySoftLabelsModule = (function () {
       close: 'Fermer',
       save: 'Enregistrer',
       no_results: 'Aucun résultat trouvé',
+      inquiry_default_message: 'Je suis intéressé(e) par la propriété "{title}"{ref}. Veuillez me contacter pour plus d\'informations.',
     },
     nl_NL: {
       // Search
@@ -750,6 +831,27 @@ const RealtySoftLabels: RealtySoftLabelsModule = (function () {
       wishlist_confirm_clear: 'Weet je zeker dat je je hele verlanglijst wilt wissen?',
       wishlist_removed: 'Verwijderd uit favorieten',
       wishlist_cleared: 'Verlanglijst gewist',
+      wishlist_share_title: 'Deel je verlanglijst',
+      wishlist_share_desc: 'Deel deze link met iedereen om je opgeslagen woningen te tonen:',
+      wishlist_email_title: 'E-mail je verlanglijst',
+      wishlist_email_to: 'Verzenden naar:',
+      wishlist_email_from: 'Je e-mail (optioneel):',
+      wishlist_email_message: 'Persoonlijk bericht (optioneel):',
+      wishlist_email_placeholder: 'Voeg een persoonlijke notitie toe...',
+      wishlist_email_send: 'E-mail verzenden',
+      wishlist_email_sent: 'E-mail succesvol verzonden!',
+      wishlist_email_error: 'Kan e-mail niet verzenden',
+      wishlist_note_title: 'Notitie toevoegen',
+      wishlist_note_label: 'Je notitie:',
+      wishlist_note_placeholder: 'Voeg je gedachten, vragen of herinneringen toe...',
+      wishlist_compare_title: 'Woningen vergelijken',
+      wishlist_compare_clear: 'Selectie wissen',
+      note_saved: 'Notitie opgeslagen!',
+      note_deleted: 'Notitie verwijderd',
+      confirm_delete_note: 'Deze notitie verwijderen?',
+      compare_min: 'Selecteer minimaal 2 woningen om te vergelijken',
+      compare_confirm_clear: 'Alle geselecteerde woningen wissen?',
+      copied: 'Link gekopieerd naar klembord!',
 
       // Inquiry
       inquiry_name: 'Uw naam',
@@ -765,6 +867,7 @@ const RealtySoftLabels: RealtySoftLabelsModule = (function () {
       inquiry_privacy_accept: 'Ik accepteer het',
       inquiry_privacy_policy: 'privacybeleid',
       inquiry_country: 'Land',
+      inquiry_default_message: 'Ik ben geïnteresseerd in de woning "{title}"{ref}. Neem alstublieft contact met mij op voor meer informatie.',
 
       // Pagination
       pagination_prev: 'Vorige',
@@ -949,6 +1052,27 @@ const RealtySoftLabels: RealtySoftLabelsModule = (function () {
       wishlist_confirm_clear: 'Czy na pewno chcesz wyczy\u015bci\u0107 ca\u0142\u0105 list\u0119 \u017cycze\u0144?',
       wishlist_removed: 'Usuni\u0119to z ulubionych',
       wishlist_cleared: 'Lista \u017cycze\u0144 wyczyszczona',
+      wishlist_share_title: 'Udost\u0119pnij swoj\u0105 list\u0119',
+      wishlist_share_desc: 'Udost\u0119pnij ten link, aby pokaza\u0107 zapisane nieruchomo\u015bci:',
+      wishlist_email_title: 'Wy\u015blij list\u0119 e-mailem',
+      wishlist_email_to: 'Wy\u015blij do:',
+      wishlist_email_from: 'Tw\u00f3j e-mail (opcjonalnie):',
+      wishlist_email_message: 'Wiadomo\u015b\u0107 osobista (opcjonalnie):',
+      wishlist_email_placeholder: 'Dodaj osobist\u0105 notatk\u0119...',
+      wishlist_email_send: 'Wy\u015blij e-mail',
+      wishlist_email_sent: 'E-mail wys\u0142any pomy\u015blnie!',
+      wishlist_email_error: 'Nie uda\u0142o si\u0119 wys\u0142a\u0107 e-maila',
+      wishlist_note_title: 'Dodaj notatk\u0119',
+      wishlist_note_label: 'Twoja notatka:',
+      wishlist_note_placeholder: 'Dodaj swoje przemys\u0142enia, pytania lub przypomnienia...',
+      wishlist_compare_title: 'Por\u00f3wnaj nieruchomo\u015bci',
+      wishlist_compare_clear: 'Wyczy\u015b\u0107 wyb\u00f3r',
+      note_saved: 'Notatka zapisana!',
+      note_deleted: 'Notatka usuni\u0119ta',
+      confirm_delete_note: 'Usun\u0105\u0107 t\u0119 notatk\u0119?',
+      compare_min: 'Wybierz co najmniej 2 nieruchomo\u015bci do por\u00f3wnania',
+      compare_confirm_clear: 'Wyczy\u015bci\u0107 wszystkie wybrane nieruchomo\u015bci?',
+      copied: 'Link skopiowany do schowka!',
 
       // Inquiry
       inquiry_name: 'Twoje imi\u0119',
@@ -964,6 +1088,7 @@ const RealtySoftLabels: RealtySoftLabelsModule = (function () {
       inquiry_privacy_accept: 'Akceptuj\u0119',
       inquiry_privacy_policy: 'polityk\u0119 prywatno\u015bci',
       inquiry_country: 'Kraj',
+      inquiry_default_message: 'Jestem zainteresowany/a nieruchomo\u015bci\u0105 "{title}"{ref}. Prosz\u0119 o kontakt w celu uzyskania wi\u0119cej informacji.',
 
       // Pagination
       pagination_prev: 'Poprzednia',
@@ -1043,6 +1168,7 @@ const RealtySoftLabels: RealtySoftLabelsModule = (function () {
       wishlist_remove: 'Rimuovi dai preferiti',
       pagination_prev: 'Precedente',
       pagination_next: 'Successivo',
+      inquiry_default_message: 'Sono interessato/a alla proprietà "{title}"{ref}. Vi prego di contattarmi per maggiori informazioni.',
     },
     pt_PT: {
       // AI Search
@@ -1080,6 +1206,7 @@ const RealtySoftLabels: RealtySoftLabelsModule = (function () {
       wishlist_remove: 'Remover dos favoritos',
       pagination_prev: 'Anterior',
       pagination_next: 'Seguinte',
+      inquiry_default_message: 'Estou interessado/a no imóvel "{title}"{ref}. Por favor, contactem-me para mais informações.',
     },
     ru_RU: {
       // AI Search
@@ -1117,6 +1244,7 @@ const RealtySoftLabels: RealtySoftLabelsModule = (function () {
       wishlist_remove: 'Удалить из избранного',
       pagination_prev: 'Назад',
       pagination_next: 'Далее',
+      inquiry_default_message: 'Меня интересует недвижимость "{title}"{ref}. Пожалуйста, свяжитесь со мной для получения дополнительной информации.',
     },
     zh_CN: {
       // AI Search
@@ -1154,6 +1282,7 @@ const RealtySoftLabels: RealtySoftLabelsModule = (function () {
       wishlist_remove: '从收藏夹移除',
       pagination_prev: '上一页',
       pagination_next: '下一页',
+      inquiry_default_message: '我对房产"{title}"{ref}感兴趣。请与我联系以获取更多信息。',
     },
     ja_JP: {
       // AI Search
@@ -1191,6 +1320,7 @@ const RealtySoftLabels: RealtySoftLabelsModule = (function () {
       wishlist_remove: 'お気に入りから削除',
       pagination_prev: '前へ',
       pagination_next: '次へ',
+      inquiry_default_message: '物件「{title}」{ref}に興味があります。詳細についてご連絡ください。',
     },
     ar_SA: {
       // AI Search
@@ -1228,6 +1358,7 @@ const RealtySoftLabels: RealtySoftLabelsModule = (function () {
       wishlist_remove: 'إزالة من المفضلة',
       pagination_prev: 'السابق',
       pagination_next: 'التالي',
+      inquiry_default_message: 'أنا مهتم بالعقار "{title}"{ref}. يرجى التواصل معي لمزيد من المعلومات.',
     },
     sv_SE: {
       // AI Search
@@ -1265,6 +1396,7 @@ const RealtySoftLabels: RealtySoftLabelsModule = (function () {
       wishlist_remove: 'Ta bort från favoriter',
       pagination_prev: 'Föregående',
       pagination_next: 'Nästa',
+      inquiry_default_message: 'Jag är intresserad av fastigheten "{title}"{ref}. Vänligen kontakta mig för mer information.',
     },
     no_NO: {
       // AI Search
@@ -1302,6 +1434,7 @@ const RealtySoftLabels: RealtySoftLabelsModule = (function () {
       wishlist_remove: 'Fjern fra favoritter',
       pagination_prev: 'Forrige',
       pagination_next: 'Neste',
+      inquiry_default_message: 'Jeg er interessert i eiendommen "{title}"{ref}. Vennligst ta kontakt for mer informasjon.',
     },
     da_DK: {
       // AI Search
@@ -1339,6 +1472,7 @@ const RealtySoftLabels: RealtySoftLabelsModule = (function () {
       wishlist_remove: 'Fjern fra favoritter',
       pagination_prev: 'Forrige',
       pagination_next: 'Næste',
+      inquiry_default_message: 'Jeg er interesseret i ejendommen "{title}"{ref}. Kontakt mig venligst for mere information.',
     },
     fi_FI: {
       // AI Search
@@ -1376,6 +1510,7 @@ const RealtySoftLabels: RealtySoftLabelsModule = (function () {
       wishlist_remove: 'Poista suosikeista',
       pagination_prev: 'Edellinen',
       pagination_next: 'Seuraava',
+      inquiry_default_message: 'Olen kiinnostunut kiinteistöstä "{title}"{ref}. Ota minuun yhteyttä lisätietoja varten.',
     },
   };
 
@@ -1452,6 +1587,17 @@ const RealtySoftLabels: RealtySoftLabelsModule = (function () {
   }
 
   /**
+   * Initialize labels with static defaults only (no API call).
+   * Used when labelsMode is 'static' or as first step in 'hybrid' mode.
+   */
+  function initStatic(language: string): void {
+    currentLanguage = language;
+    const langDefaults = languageDefaults[language] || {};
+    labels = { ...defaults, ...langDefaults };
+    console.log('[RealtySoft Labels] Initialized static labels for:', language, '- Total labels:', Object.keys(labels).length);
+  }
+
+  /**
    * Load labels from API
    */
   async function loadFromAPI(apiLabels: Record<string, string>): Promise<void> {
@@ -1479,13 +1625,53 @@ const RealtySoftLabels: RealtySoftLabelsModule = (function () {
   }
 
   /**
-   * Apply client-specific label overrides
+   * Check if overrides use the new per-language format
+   * New format: { _default: { key: value }, es_ES: { key: value } }
+   * Old format: { key: value }
    */
-  function applyOverrides(overrides: Record<string, string>): void {
-    if (overrides && typeof overrides === 'object') {
-      const overrideCount = Object.keys(overrides).length;
+  function isPerLanguageFormat(overrides: LabelOverrides): overrides is Record<string, Record<string, string>> {
+    if (!overrides || typeof overrides !== 'object') return false;
+    const keys = Object.keys(overrides);
+    // Check if keys look like language codes or _default
+    return keys.some(key => key === '_default' || /^[a-z]{2}_[A-Z]{2}$/.test(key));
+  }
+
+  /**
+   * Apply client-specific label overrides.
+   * Supports two formats:
+   * - Flat format (legacy): { search_button: 'Find' }
+   * - Per-language format: { _default: { search_button: 'Find' }, es_ES: { search_button: 'Buscar' } }
+   */
+  function applyOverrides(overrides: LabelOverrides, language?: string): void {
+    if (!overrides || typeof overrides !== 'object') return;
+
+    const lang = language || currentLanguage;
+
+    if (isPerLanguageFormat(overrides)) {
+      // New per-language format
+      let appliedCount = 0;
+
+      // Apply _default overrides first (all languages)
+      const defaultOverrides = overrides['_default'];
+      if (defaultOverrides && typeof defaultOverrides === 'object') {
+        labels = { ...labels, ...defaultOverrides };
+        appliedCount += Object.keys(defaultOverrides).length;
+      }
+
+      // Then apply language-specific overrides (takes priority)
+      const langOverrides = overrides[lang];
+      if (langOverrides && typeof langOverrides === 'object') {
+        labels = { ...labels, ...langOverrides };
+        appliedCount += Object.keys(langOverrides).length;
+      }
+
+      console.log('[RealtySoft Labels] Applied', appliedCount, 'per-language overrides for:', lang);
+    } else {
+      // Legacy flat format - apply directly
+      const flatOverrides = overrides as Record<string, string>;
+      const overrideCount = Object.keys(flatOverrides).length;
       console.log('[RealtySoft Labels] Applying', overrideCount, 'client label overrides');
-      labels = { ...labels, ...overrides };
+      labels = { ...labels, ...flatOverrides };
     }
   }
 
@@ -1582,6 +1768,7 @@ const RealtySoftLabels: RealtySoftLabelsModule = (function () {
   // Public API
   return {
     init,
+    initStatic,
     loadFromAPI,
     applyOverrides,
     reloadForLanguage,

@@ -19,4 +19,5 @@ import './energy';
 import './resources';
 import './pdf-button';
 import './back-button';
+import './video-embed';
 import './property-detail-template';

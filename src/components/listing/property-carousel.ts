@@ -129,8 +129,17 @@ class RSPropertyCarousel extends RSBaseComponent {
 
     const pageSlug = (typeof RealtySoftState !== 'undefined' && RealtySoftState.get<string>('config.propertyPageSlug')) || 'property';
     const ref = property.ref || property.id;
-    const title = property.title || '';
+    const urlFormat = (typeof RealtySoftState !== 'undefined' && RealtySoftState.get<string>('config.propertyUrlFormat')) || 'seo';
 
+    if (urlFormat === 'query') {
+      return `/${pageSlug}?ref=${ref}`;
+    }
+
+    if (urlFormat === 'ref') {
+      return `/${pageSlug}/${ref}`;
+    }
+
+    const title = property.title || '';
     const titleSlug = title
       .toLowerCase()
       .normalize('NFD')
@@ -216,6 +225,16 @@ class RSPropertyCarousel extends RSBaseComponent {
     this.emptyState = this.element.querySelector('.rs-property-carousel__empty');
     this.leftArrow = this.element.querySelector('.rs-property-carousel__arrow--left');
     this.rightArrow = this.element.querySelector('.rs-property-carousel__arrow--right');
+
+    // If properties are already loaded (e.g., after language change re-render),
+    // re-render the items with updated labels
+    if (this.properties.length > 0) {
+      // Reset V2/V3 initialized flags so items are recreated with new labels
+      this.v2Initialized = false;
+      this.v3Initialized = false;
+      this.hideLoader();
+      this.renderItems();
+    }
   }
 
   bindEvents(): void {

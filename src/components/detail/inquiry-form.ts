@@ -217,7 +217,7 @@ class RSDetailInquiryForm extends RSBaseComponent {
     this.detectCountry();
 
     // Listen for language changes to update labels
-    this.subscribe('language', () => {
+    this.subscribe('config.language', () => {
       this.updateLabelsInPlace();
     });
   }

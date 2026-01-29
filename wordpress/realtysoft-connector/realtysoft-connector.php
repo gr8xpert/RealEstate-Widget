@@ -167,9 +167,26 @@ class RealtySoft_Connector {
         // Non-expiring token for OG cache (nonces expire, breaking OG on cached pages)
         $js_config['wpOgToken'] = hash_hmac('sha256', 'rs_og_cache', wp_salt('auth'));
 
+        // Parse and merge advanced config (JSON)
+        $advancedConfig = [];
+        if (!empty($config['advancedConfig'])) {
+            $advancedRaw = trim($config['advancedConfig']);
+            // Wrap in braces if needed
+            if (substr($advancedRaw, 0, 1) !== '{') {
+                $advancedRaw = '{' . $advancedRaw . '}';
+            }
+            $parsed = json_decode($advancedRaw, true);
+            if (json_last_error() === JSON_ERROR_NONE && is_array($parsed)) {
+                $advancedConfig = $parsed;
+            }
+        }
+
+        // Merge: base config + advanced config (advanced takes priority)
+        $final_config = array_merge($js_config, $advancedConfig);
+
         // Output config script
-        if (!empty($js_config)) {
-            echo "<script>\nwindow.RealtySoftConfig = " . wp_json_encode($js_config, JSON_UNESCAPED_SLASHES) . ";\n</script>\n";
+        if (!empty($final_config)) {
+            echo "<script>\nwindow.RealtySoftConfig = " . wp_json_encode($final_config, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) . ";\n</script>\n";
         }
 
         // Preconnect + DNS prefetch for faster API calls and asset loading
@@ -725,7 +742,8 @@ class RealtySoft_Connector {
 
     public function sanitize_widget_config($input) {
         if (!is_array($input)) return [];
-        return [
+
+        $sanitized = [
             'ownerEmail'              => sanitize_email($input['ownerEmail'] ?? ''),
             'inquiryThankYouMessage'  => sanitize_text_field($input['inquiryThankYouMessage'] ?? ''),
             'inquiryThankYouUrl'      => esc_url_raw($input['inquiryThankYouUrl'] ?? ''),
@@ -733,6 +751,35 @@ class RealtySoft_Connector {
             'propertyUrlFormat'       => in_array($input['propertyUrlFormat'] ?? '', ['seo', 'ref', 'query'])
                 ? $input['propertyUrlFormat'] : 'seo',
         ];
+
+        // Advanced config (JSON) - validate it's parseable
+        $advancedRaw = $input['advancedConfig'] ?? '';
+        if (!empty($advancedRaw)) {
+            // Wrap in braces if user didn't include them, to make it valid JSON
+            $trimmed = trim($advancedRaw);
+            if (substr($trimmed, 0, 1) !== '{') {
+                $trimmed = '{' . $trimmed . '}';
+            }
+            // Test if it's valid JSON
+            $test = json_decode($trimmed, true);
+            if (json_last_error() === JSON_ERROR_NONE) {
+                // Store the raw input (without added braces) for display in textarea
+                $sanitized['advancedConfig'] = $advancedRaw;
+            } else {
+                // Invalid JSON - add admin notice but keep the value for user to fix
+                add_settings_error(
+                    'realtysoft_settings',
+                    'invalid_json',
+                    'Advanced Configuration contains invalid JSON: ' . json_last_error_msg() . '. The config was saved but may not work correctly.',
+                    'warning'
+                );
+                $sanitized['advancedConfig'] = $advancedRaw;
+            }
+        } else {
+            $sanitized['advancedConfig'] = '';
+        }
+
+        return $sanitized;
     }
 
     // ─── Settings Page ───────────────────────────────────────────
@@ -810,6 +857,65 @@ class RealtySoft_Connector {
                         </td>
                     </tr>
                 </table>
+
+                <hr />
+
+                <!-- ── Advanced Configuration ── -->
+                <h2>Advanced Configuration</h2>
+                <p>Add custom widget configuration options in JSON format. These will be merged with the settings above.</p>
+                <table class="form-table">
+                    <tr>
+                        <th><label for="rs-advanced-config">Custom Config</label></th>
+                        <td>
+                            <textarea id="rs-advanced-config"
+                                      name="realtysoft_widget_config[advancedConfig]"
+                                      rows="12"
+                                      class="large-text code"
+                                      style="font-family: monospace; font-size: 13px;"
+                                      placeholder='labelsMode: "static",
+labelOverrides: {
+  "_default": { "search_button": "Find Properties" },
+  "es_ES": { "search_button": "Buscar" }
+}'><?php echo esc_textarea($config['advancedConfig'] ?? ''); ?></textarea>
+                            <p class="description">
+                                Enter configuration as JSON properties (with or without outer braces). Example options:<br>
+                                <code>labelsMode</code>: <code>"static"</code> (fastest, no API call), <code>"api"</code> (current behavior), <code>"hybrid"</code> (static first, API in background)<br>
+                                <code>labelOverrides</code>: Custom label text per language<br>
+                                <code>analytics</code>: <code>false</code> to disable analytics<br>
+                                <code>debug</code>: <code>true</code> for verbose console logging
+                            </p>
+                            <div id="rs-json-validation" style="margin-top: 8px;"></div>
+                        </td>
+                    </tr>
+                </table>
+
+                <script>
+                (function() {
+                    var textarea = document.getElementById('rs-advanced-config');
+                    var validation = document.getElementById('rs-json-validation');
+
+                    function validateJSON() {
+                        var val = textarea.value.trim();
+                        if (!val) {
+                            validation.innerHTML = '';
+                            return;
+                        }
+                        // Wrap in braces if needed
+                        if (val.charAt(0) !== '{') {
+                            val = '{' + val + '}';
+                        }
+                        try {
+                            JSON.parse(val);
+                            validation.innerHTML = '<span style="color: #46b450;">✓ Valid JSON</span>';
+                        } catch (e) {
+                            validation.innerHTML = '<span style="color: #dc3232;">✗ Invalid JSON: ' + e.message + '</span>';
+                        }
+                    }
+
+                    textarea.addEventListener('input', validateJSON);
+                    validateJSON(); // Initial check
+                })();
+                </script>
 
                 <hr />
 

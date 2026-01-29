@@ -48,7 +48,7 @@ class RSDetailRelated extends RSBaseComponent {
     this.loadRelated();
 
     // Listen for language changes to update labels
-    this.subscribe('language', () => {
+    this.subscribe('config.language', () => {
       this.updateLabelsInPlace();
     });
   }
@@ -133,6 +133,16 @@ class RSDetailRelated extends RSBaseComponent {
     if (property.url) return property.url;
     const pageSlug = RealtySoftState.get<string>('config.propertyPageSlug') || 'property';
     const ref = property.ref || property.id;
+    const urlFormat = RealtySoftState.get<string>('config.propertyUrlFormat') || 'seo';
+
+    if (urlFormat === 'query') {
+      return `/${pageSlug}?ref=${ref}`;
+    }
+
+    if (urlFormat === 'ref') {
+      return `/${pageSlug}/${ref}`;
+    }
+
     const title = property.title || '';
     const titleSlug = title
       .toLowerCase()

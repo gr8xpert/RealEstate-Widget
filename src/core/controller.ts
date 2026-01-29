@@ -41,7 +41,8 @@ interface ControllerConfig {
   propertyUrlFormat?: string;
   resultsPage?: string;
   detailPageTitle?: string;
-  labelOverrides?: Record<string, string>;
+  labelsMode?: 'static' | 'api' | 'hybrid';
+  labelOverrides?: import('../types/index').LabelOverrides;
   cache?: import('../types/index').CacheConfig;
   serviceWorker?: boolean;
   serviceWorkerUrl?: string;
@@ -2028,17 +2029,23 @@ const RealtySoft = (function () {
         RealtySoftState.set('config.propertyUrlFormat', globalConfig.propertyUrlFormat || 'seo');
         RealtySoftState.set('config.resultsPage', globalConfig.resultsPage || '/properties');
 
-        // Detail pages: only block on getLabels (1 call).
-        // Listing pages: block on labels + locations + propertyTypes + allLabels (4 calls).
-        // getAllLabels is deferred on detail pages — only needed for the language switcher.
-        const apiPromises: Promise<any>[] = [
-          RealtySoftAPI.getLabels().catch(() => ({ labels: {} })),
-        ];
+        // Labels mode: 'static' (default), 'api', or 'hybrid'
+        const labelsMode = globalConfig.labelsMode || 'static';
+        console.log('[RealtySoft] Labels mode:', labelsMode);
 
-        // Fire getAllLabels early (runs in parallel regardless)
+        // Fire getAllLabels early (runs in parallel regardless - needed for language switcher)
         const allLabelsPromise = RealtySoftAPI.getAllLabels().catch(() => null);
 
+        // Build API promises based on labelsMode and page type
+        const apiPromises: Promise<any>[] = [];
+
+        if (labelsMode === 'api') {
+          // API mode: blocking labels fetch (current behavior)
+          apiPromises.push(RealtySoftAPI.getLabels().catch(() => ({ labels: {} })));
+        }
+
         if (!isDetailPage) {
+          // Listing pages: always fetch locations and property types
           apiPromises.push(
             RealtySoftAPI.getLocations().catch(() => ({ data: [] })),
             RealtySoftAPI.getPropertyTypes().catch(() => ({ data: [] })),
@@ -2046,27 +2053,63 @@ const RealtySoft = (function () {
           );
         }
 
+        // Static and hybrid modes: initialize labels from static defaults FIRST (instant)
+        if (labelsMode === 'static' || labelsMode === 'hybrid') {
+          RealtySoftLabels.initStatic(language);
+          if (globalConfig.labelOverrides) {
+            RealtySoftLabels.applyOverrides(globalConfig.labelOverrides, language);
+          }
+          RealtySoftState.set('data.labels', RealtySoftLabels.getAll());
+        }
+
+        // Hybrid mode: fire API labels in background (non-blocking)
+        if (labelsMode === 'hybrid') {
+          RealtySoftAPI.getLabels()
+            .then((labelsData) => {
+              const apiLabels = transformAPILabels(labelsData, language);
+              if (Object.keys(apiLabels).length > 0) {
+                RealtySoftLabels.loadFromAPI(apiLabels);
+                if (globalConfig.labelOverrides) {
+                  RealtySoftLabels.applyOverrides(globalConfig.labelOverrides, language);
+                }
+                RealtySoftState.set('data.labels', RealtySoftLabels.getAll());
+                console.log('[RealtySoft] Hybrid mode: API labels merged in background');
+              }
+            })
+            .catch(() => {
+              console.log('[RealtySoft] Hybrid mode: API labels fetch failed, using static');
+            });
+        }
+
+        // Wait for blocking API calls
         const results = await Promise.all(apiPromises);
-        const labelsData = results[0];
-        const locations = isDetailPage ? { data: [] as any[] } : results[1];
-        const propertyTypes = isDetailPage ? { data: [] as any[] } : results[2];
-        const allLabelsData = isDetailPage ? null : results[3];
 
         // Process API data — wrapped in try/catch so that initializeComponents()
         // ALWAYS runs even if data processing fails (critical for property detail pages)
         try {
-          const apiLabels = transformAPILabels(labelsData, language);
-          if (Object.keys(apiLabels).length > 0) {
-            await RealtySoftLabels.loadFromAPI(apiLabels);
-          } else {
-            console.log('[RealtySoft] No labels from API, using defaults');
+          // API mode: process blocking labels response
+          if (labelsMode === 'api') {
+            const labelsData = results[0];
+            const apiLabels = transformAPILabels(labelsData, language);
+            if (Object.keys(apiLabels).length > 0) {
+              await RealtySoftLabels.loadFromAPI(apiLabels);
+            } else {
+              console.log('[RealtySoft] No labels from API, using defaults');
+            }
+
+            if (globalConfig.labelOverrides) {
+              RealtySoftLabels.applyOverrides(globalConfig.labelOverrides, language);
+            }
+
+            RealtySoftState.set('data.labels', RealtySoftLabels.getAll());
           }
 
-          if (globalConfig.labelOverrides) {
-            RealtySoftLabels.applyOverrides(globalConfig.labelOverrides);
-          }
-
-          RealtySoftState.set('data.labels', RealtySoftLabels.getAll());
+          // Extract locations/propertyTypes from results
+          // Result indices shift based on whether labels was in apiPromises
+          const resultOffset = labelsMode === 'api' ? 1 : 0;
+          const locations = isDetailPage ? { data: [] as any[] } : results[resultOffset];
+          const propertyTypes = isDetailPage ? { data: [] as any[] } : results[resultOffset + 1];
+          const allLabelsData = isDetailPage ? null : results[resultOffset + 2];
 
           // Extract available languages from the unfiltered labels response
           if (allLabelsData) {
@@ -2083,8 +2126,8 @@ const RealtySoft = (function () {
             });
           }
 
-          RealtySoftState.set('data.locations', locations.data || []);
-          RealtySoftState.set('data.propertyTypes', propertyTypes.data || []);
+          RealtySoftState.set('data.locations', locations?.data || []);
+          RealtySoftState.set('data.propertyTypes', propertyTypes?.data || []);
           RealtySoftState.set('data.features', []);
           RealtySoftState.set('data.featuresLoaded', false);
 
@@ -2857,19 +2900,49 @@ const RealtySoft = (function () {
   }
 
   /**
+   * Re-render all component instances with current labels
+   */
+  function reRenderComponents(): void {
+    console.log(
+      '[RealtySoft] Re-rendering',
+      componentInstances.length,
+      'components with new labels'
+    );
+    for (const instance of componentInstances) {
+      if (instance && typeof instance.render === 'function') {
+        try {
+          instance.render();
+          if (typeof instance.bindEvents === 'function') {
+            instance.bindEvents();
+          }
+        } catch (e) {
+          console.warn('[RealtySoft] Error re-rendering component:', e);
+        }
+      }
+    }
+  }
+
+  /**
    * Change language and reload labels
    */
   async function setLanguage(newLanguage: string): Promise<void> {
     console.log('[RealtySoft] Changing language to:', newLanguage);
 
-    // IMPORTANT: Reset labels to new language defaults BEFORE changing state
+    const globalConfig = (window.RealtySoftConfig || {}) as ControllerConfig;
+    const labelsMode = globalConfig.labelsMode || 'static';
+
+    // IMPORTANT: Always reset labels to new language static defaults FIRST (instant)
     // This ensures components get correct labels when their subscriptions fire
-    await RealtySoftLabels.reloadForLanguage(newLanguage);
+    RealtySoftLabels.initStatic(newLanguage);
+    if (globalConfig.labelOverrides) {
+      RealtySoftLabels.applyOverrides(globalConfig.labelOverrides, newLanguage);
+    }
+    RealtySoftState.set('data.labels', RealtySoftLabels.getAll());
 
     // Now set state - this triggers component subscriptions, but labels are already updated
     RealtySoftState.set('config.language', newLanguage);
 
-    const globalConfig = (window.RealtySoftConfig || {}) as ControllerConfig;
+    // Re-initialize API with new language
     RealtySoftAPI.init({
       language: newLanguage,
       apiKey: globalConfig.apiKey,
@@ -2877,8 +2950,42 @@ const RealtySoft = (function () {
       cache: globalConfig.cache,
     });
 
+    // Static mode: we're done - no API call needed
+    if (labelsMode === 'static') {
+      console.log('[RealtySoft] Static mode: language changed to:', newLanguage);
+      reRenderComponents();
+      return;
+    }
+
+    // API and hybrid modes: fetch labels from API
     RealtySoftAPI.clearCache('labels_' + newLanguage);
 
+    if (labelsMode === 'hybrid') {
+      // Hybrid mode: API fetch in background (non-blocking)
+      RealtySoftAPI.getLabels()
+        .then((labelsData) => {
+          const apiLabels = transformAPILabels(labelsData, newLanguage);
+          if (Object.keys(apiLabels).length > 0) {
+            RealtySoftLabels.loadFromAPI(apiLabels);
+            if (globalConfig.labelOverrides) {
+              RealtySoftLabels.applyOverrides(globalConfig.labelOverrides, newLanguage);
+            }
+            RealtySoftState.set('data.labels', RealtySoftLabels.getAll());
+            reRenderComponents();
+            console.log('[RealtySoft] Hybrid mode: API labels merged for:', newLanguage);
+          }
+        })
+        .catch((error) => {
+          console.warn('[RealtySoft] Hybrid mode: API labels fetch failed, using static:', error);
+        });
+
+      // Re-render immediately with static labels
+      reRenderComponents();
+      console.log('[RealtySoft] Hybrid mode: language changed to:', newLanguage);
+      return;
+    }
+
+    // API mode: blocking fetch
     try {
       const labelsData = await RealtySoftAPI.getLabels();
       const apiLabels = transformAPILabels(labelsData, newLanguage);
@@ -2887,32 +2994,16 @@ const RealtySoft = (function () {
       }
 
       if (globalConfig.labelOverrides) {
-        RealtySoftLabels.applyOverrides(globalConfig.labelOverrides);
+        RealtySoftLabels.applyOverrides(globalConfig.labelOverrides, newLanguage);
       }
 
       RealtySoftState.set('data.labels', RealtySoftLabels.getAll());
-
-      console.log(
-        '[RealtySoft] Re-rendering',
-        componentInstances.length,
-        'components with new labels'
-      );
-      for (const instance of componentInstances) {
-        if (instance && typeof instance.render === 'function') {
-          try {
-            instance.render();
-            if (typeof instance.bindEvents === 'function') {
-              instance.bindEvents();
-            }
-          } catch (e) {
-            console.warn('[RealtySoft] Error re-rendering component:', e);
-          }
-        }
-      }
-
-      console.log('[RealtySoft] Language changed successfully to:', newLanguage);
+      reRenderComponents();
+      console.log('[RealtySoft] API mode: language changed successfully to:', newLanguage);
     } catch (error) {
       console.error('[RealtySoft] Error loading labels for language:', newLanguage, error);
+      // Still re-render with static labels on error
+      reRenderComponents();
     }
   }
 

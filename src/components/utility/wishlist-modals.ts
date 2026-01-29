@@ -49,6 +49,9 @@ class RSWishlistModals extends RSBaseComponent {
   private emailModal: HTMLElement | null = null;
   private noteModal: HTMLElement | null = null;
   private compareModal: HTMLElement | null = null;
+  private windowEventsbound: boolean = false;
+  private modalOpenHandler: ((e: Event) => void) | null = null;
+  private modalCloseHandler: ((e: Event) => void) | null = null;
 
   constructor(element: HTMLElement, options: ComponentOptions = {}) {
     super(element, options);
@@ -213,17 +216,22 @@ class RSWishlistModals extends RSBaseComponent {
   }
 
   bindEvents(): void {
-    // Listen for modal open requests
-    window.addEventListener(WishlistManager.EVENTS.MODAL_OPEN, ((e: CustomEvent) => {
-      this.handleModalOpen(e.detail.modalType, e.detail.data);
-    }) as EventListener);
+    // Window event listeners - only bind once to prevent duplicates on language change
+    if (!this.windowEventsbound) {
+      this.modalOpenHandler = ((e: CustomEvent) => {
+        this.handleModalOpen(e.detail.modalType, e.detail.data);
+      }) as EventListener;
 
-    // Listen for modal close requests
-    window.addEventListener(WishlistManager.EVENTS.MODAL_CLOSE, ((e: CustomEvent) => {
-      this.closeModal(e.detail.modalType);
-    }) as EventListener);
+      this.modalCloseHandler = ((e: CustomEvent) => {
+        this.closeModal(e.detail.modalType);
+      }) as EventListener;
 
-    // Modal close handlers
+      window.addEventListener(WishlistManager.EVENTS.MODAL_OPEN, this.modalOpenHandler);
+      window.addEventListener(WishlistManager.EVENTS.MODAL_CLOSE, this.modalCloseHandler);
+      this.windowEventsbound = true;
+    }
+
+    // Modal close handlers (re-bind after render since DOM is replaced)
     this.element.querySelectorAll('.rs-modal__backdrop, .rs-modal__close').forEach(el => {
       el.addEventListener('click', (e: Event) => {
         const modal = (e.target as HTMLElement).closest('.rs-modal');
@@ -458,8 +466,17 @@ class RSWishlistModals extends RSBaseComponent {
 
     const pageSlug = RealtySoftState.get<string>('config.propertyPageSlug') || 'property';
     const ref = (p.ref_no || p.ref || p.id || '') as string;
-    const title = (p.name || p.title || '') as string;
+    const urlFormat = RealtySoftState.get<string>('config.propertyUrlFormat') || 'seo';
 
+    if (urlFormat === 'query') {
+      return `/${pageSlug}?ref=${ref}`;
+    }
+
+    if (urlFormat === 'ref') {
+      return `/${pageSlug}/${ref}`;
+    }
+
+    const title = (p.name || p.title || '') as string;
     const titleSlug = title
       .toLowerCase()
       .normalize('NFD')

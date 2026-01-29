@@ -326,16 +326,16 @@ class RSPropertyDetailTemplate extends RSBaseComponent {
     }
 
     this.element.innerHTML = `
-      <!-- Gallery Section -->
-      <div class="rs-template__gallery" id="rs-template-gallery"></div>
+      <!-- Gallery Section with Wishlist Overlay -->
+      <div class="rs-template__gallery-wrapper">
+        <div class="rs-template__gallery" id="rs-template-gallery"></div>
+        <div class="rs-template__gallery-wishlist" id="rs-template-wishlist"></div>
+      </div>
 
       <!-- Header Section -->
       <div class="rs-template__header">
         <div class="rs-template__header-main">
           <h1 class="rs-template__title">${this.escapeHtml(p.title || '')}</h1>
-          <div class="rs-template__price ${p.price_on_request ? 'rs-template__price--por' : ''}">
-            ${p.price_on_request ? this.label('detail_price_on_request') : RealtySoftLabels.formatPrice(p.price)}
-          </div>
           <div class="rs-template__location">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
@@ -343,24 +343,20 @@ class RSPropertyDetailTemplate extends RSBaseComponent {
             </svg>
             <span>${this.escapeHtml(p.location || p.address || '')}</span>
           </div>
-          ${p.ref ? `<div class="rs-template__ref">Ref: ${this.escapeHtml(p.ref)}</div>` : ''}
         </div>
         <div class="rs-template__header-actions">
-          <div class="rs-template__share" id="rs-template-share"></div>
-          <div class="rs-template__wishlist" id="rs-template-wishlist"></div>
+          <div class="rs-template__price ${p.price_on_request ? 'rs-template__price--por' : ''}">
+            ${p.price_on_request ? this.label('detail_price_on_request') : RealtySoftLabels.formatPrice(p.price)}
+          </div>
         </div>
-      </div>
-
-      <!-- Key Specs -->
-      <div class="rs-template__specs">
-        ${this.renderKeySpecs(p)}
       </div>
 
       <!-- Main Content -->
       <div class="rs-template__content">
         <div class="rs-template__main">
-          ${this.renderPropertyInfo(p)}
-          ${this.renderAdditionalSizes(p)}
+          <!-- Property Information Grid -->
+          ${this.renderPropertyInfoGrid(p)}
+
           ${p.description ? `
             <div class="rs-template__section">
               <h2 class="rs-template__section-title rs-template__section-title--description">${this.label('detail_description')}</h2>
@@ -370,7 +366,6 @@ class RSPropertyDetailTemplate extends RSBaseComponent {
               </button>
             </div>
           ` : ''}
-          ${this.renderFeatures(p)}
           ${this.renderResources(p)}
           ${this.renderTaxes(p)}
           ${this.renderEnergy(p)}
@@ -380,6 +375,8 @@ class RSPropertyDetailTemplate extends RSBaseComponent {
           ${this.renderAgentCard(p)}
           ${this.renderSidebarPdf(p)}
           <div class="rs-template__inquiry-form" id="rs-template-inquiry"></div>
+          ${this.renderFeatures(p)}
+          <div class="rs-template__sidebar-share" id="rs-template-share"></div>
         </div>
       </div>
 
@@ -460,6 +457,120 @@ class RSPropertyDetailTemplate extends RSBaseComponent {
     return specs.join('');
   }
 
+  /**
+   * Render combined property information grid (table-style cards)
+   * 4 columns on desktop, 2 on mobile
+   */
+  private renderPropertyInfoGrid(p: Property): string {
+    const items: { label: string; value: string }[] = [];
+
+    // Reference
+    if (p.ref) {
+      items.push({ label: this.label('detail_reference') || 'Reference', value: p.ref });
+    }
+
+    // Property Type
+    if (p.type) {
+      items.push({ label: this.label('detail_property_type') || 'Property Type', value: p.type });
+    }
+
+    // Bedrooms
+    if (p.beds && parseFloat(String(p.beds)) > 0) {
+      items.push({ label: this.label('card_beds') || 'Bedrooms', value: String(p.beds) });
+    }
+
+    // Bathrooms
+    if (p.baths && parseFloat(String(p.baths)) > 0) {
+      items.push({ label: this.label('card_baths') || 'Bathrooms', value: String(p.baths) });
+    }
+
+    // Plot Size
+    if (p.plot_size && parseFloat(String(p.plot_size)) > 0) {
+      items.push({ label: this.label('detail_plot_size') || 'Plot Size', value: `${p.plot_size} m²` });
+    }
+
+    // Built Area
+    if (p.built_area && parseFloat(String(p.built_area)) > 0) {
+      items.push({ label: this.label('detail_built_area') || 'Built', value: `${p.built_area} m²` });
+    }
+
+    // Terrace
+    if (p.terrace_size && parseFloat(String(p.terrace_size)) > 0) {
+      items.push({ label: this.label('detail_terrace') || 'Terrace', value: `${p.terrace_size} m²` });
+    }
+
+    // Garden
+    if (p.garden_size && parseFloat(String(p.garden_size)) > 0) {
+      items.push({ label: this.label('detail_garden') || 'Garden', value: `${p.garden_size} m²` });
+    }
+
+    // Solarium
+    if (p.solarium_size && parseFloat(String(p.solarium_size)) > 0) {
+      items.push({ label: this.label('detail_solarium') || 'Solarium', value: `${p.solarium_size} m²` });
+    }
+
+    // Usable Area
+    if (p.usable_area && parseFloat(String(p.usable_area)) > 0) {
+      items.push({ label: this.label('detail_usable_area') || 'Usable Area', value: `${p.usable_area} m²` });
+    }
+
+    // Year Built
+    if (p.year_built) {
+      items.push({ label: this.label('detail_year_built') || 'Year Built', value: String(p.year_built) });
+    }
+
+    // Status
+    if (p.status) {
+      items.push({ label: this.label('detail_status') || 'Status', value: p.status });
+    }
+
+    // Floor
+    if (p.floor) {
+      items.push({ label: this.label('detail_floor') || 'Floor', value: p.floor });
+    }
+
+    // Orientation
+    if (p.orientation) {
+      items.push({ label: this.label('detail_orientation') || 'Orientation', value: p.orientation });
+    }
+
+    // Condition
+    if (p.condition) {
+      items.push({ label: this.label('detail_condition') || 'Condition', value: p.condition });
+    }
+
+    // Furnished
+    if (p.furnished) {
+      items.push({ label: this.label('detail_furnished') || 'Furnished', value: p.furnished });
+    }
+
+    // Views
+    if (p.views) {
+      items.push({ label: this.label('detail_views') || 'Views', value: p.views });
+    }
+
+    // Parking
+    if (p.parking) {
+      items.push({ label: this.label('detail_parking') || 'Parking', value: p.parking });
+    }
+
+    if (items.length === 0) return '';
+
+    return `
+      <div class="rs-template__section rs-template__section--info-grid">
+        <h2 class="rs-template__section-title rs-template__section-title--info-grid">${this.label('detail_property_info') || 'Property Information'}</h2>
+        <div class="rs-template__info-cards">
+          ${items.map(item => `
+            <div class="rs-template__info-card">
+              <div class="rs-template__info-card-label">${this.escapeHtml(item.label)}</div>
+              <div class="rs-template__info-card-value">${this.escapeHtml(item.value)}</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }
+
   private renderPropertyInfo(p: Property): string {
     const rows: { label: string; value: string | number }[] = [];
 
@@ -527,42 +638,98 @@ class RSPropertyDetailTemplate extends RSBaseComponent {
   }
 
   private renderResources(p: Property): string {
-    const resources: string[] = [];
+    const sections: string[] = [];
 
+    // Embed video directly if YouTube or Vimeo
     if (p.video_url) {
-      resources.push(`
-        <a href="${p.video_url}" target="_blank" rel="noopener" class="rs-template__resource rs-template__resource--video">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polygon points="5 3 19 12 5 21 5 3"></polygon>
-          </svg>
-          <span class="rs-template__resource-text">${this.label('detail_video_tour')}</span>
-        </a>
-      `);
+      const embedUrl = this.getVideoEmbedUrl(p.video_url);
+      if (embedUrl) {
+        sections.push(`
+          <div class="rs-template__section rs-template__section--video">
+            <h2 class="rs-template__section-title rs-template__section-title--video">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="5 3 19 12 5 21 5 3"></polygon>
+              </svg>
+              ${this.label('detail_video_tour') || 'Video Tour'}
+            </h2>
+            <div class="rs-template__video-container">
+              <iframe
+                src="${embedUrl}"
+                frameborder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowfullscreen
+                loading="lazy"
+                class="rs-template__video-iframe"
+              ></iframe>
+            </div>
+          </div>
+        `);
+      } else {
+        // Fallback to link for unsupported video URLs
+        sections.push(`
+          <a href="${p.video_url}" target="_blank" rel="noopener" class="rs-template__resource rs-template__resource--video">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="5 3 19 12 5 21 5 3"></polygon>
+            </svg>
+            <span class="rs-template__resource-text">${this.label('detail_video_tour')}</span>
+          </a>
+        `);
+      }
     }
 
+    // Embed virtual tour directly as iframe
     if (p.virtual_tour_url) {
-      resources.push(`
-        <a href="${p.virtual_tour_url}" target="_blank" rel="noopener" class="rs-template__resource rs-template__resource--virtual">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="10"></circle>
-            <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"></path>
-            <path d="M2 12h20"></path>
-          </svg>
-          <span class="rs-template__resource-text">${this.label('detail_virtual_tour')}</span>
-        </a>
+      sections.push(`
+        <div class="rs-template__section rs-template__section--virtual-tour">
+          <h2 class="rs-template__section-title rs-template__section-title--virtual-tour">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"></path>
+              <path d="M2 12h20"></path>
+            </svg>
+            ${this.label('detail_virtual_tour') || 'Virtual Tour'}
+          </h2>
+          <div class="rs-template__virtual-tour-container">
+            <iframe
+              src="${p.virtual_tour_url}"
+              frameborder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; xr-spatial-tracking"
+              allowfullscreen
+              loading="lazy"
+              class="rs-template__virtual-tour-iframe"
+            ></iframe>
+          </div>
+        </div>
       `);
     }
 
-    if (resources.length === 0) return '';
+    if (sections.length === 0) return '';
 
-    return `
-      <div class="rs-template__section rs-template__section--resources">
-        <h2 class="rs-template__section-title rs-template__section-title--resources">${this.label('detail_additional_resources')}</h2>
-        <div class="rs-template__resources">
-          ${resources.join('')}
-        </div>
-      </div>
-    `;
+    return sections.join('');
+  }
+
+  /**
+   * Convert YouTube/Vimeo URL to embed URL
+   */
+  private getVideoEmbedUrl(url: string): string {
+    // YouTube - various URL formats
+    const ytMatch = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|v\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+    if (ytMatch) {
+      return `https://www.youtube.com/embed/${ytMatch[1]}?rel=0&modestbranding=1`;
+    }
+
+    // Vimeo
+    const vimeoMatch = url.match(/vimeo\.com\/(\d+)/);
+    if (vimeoMatch) {
+      return `https://player.vimeo.com/video/${vimeoMatch[1]}`;
+    }
+
+    // Already an embed URL
+    if (url.includes('youtube.com/embed') || url.includes('player.vimeo.com')) {
+      return url;
+    }
+
+    return '';
   }
 
   private renderTaxes(p: Property): string {
@@ -784,10 +951,8 @@ class RSPropertyDetailTemplate extends RSBaseComponent {
     // Update all section titles
     const sectionTitles: Record<string, string> = {
       'description': 'detail_description',
-      'property-info': 'detail_property_info',
-      'sizes': 'detail_sizes',
+      'info-grid': 'detail_property_info',
       'features': 'detail_features',
-      'resources': 'detail_additional_resources',
       'taxes': 'detail_taxes_fees',
       'energy': 'detail_energy_certificate'
     };
@@ -807,30 +972,16 @@ class RSPropertyDetailTemplate extends RSBaseComponent {
         : (this.label('detail_read_less') || 'Read Less');
     }
 
-    // Update property info section (re-render content since labels are dynamic)
-    const propertyInfoSection = this.element.querySelector('.rs-template__section--property-info');
-    if (propertyInfoSection) {
-      const newContent = this.renderPropertyInfo(p);
+    // Update property info grid section (re-render content since labels are dynamic)
+    const infoGridSection = this.element.querySelector('.rs-template__section--info-grid');
+    if (infoGridSection) {
+      const newContent = this.renderPropertyInfoGrid(p);
       if (newContent) {
         const temp = document.createElement('div');
         temp.innerHTML = newContent;
         const newSection = temp.firstElementChild;
         if (newSection) {
-          propertyInfoSection.innerHTML = newSection.innerHTML;
-        }
-      }
-    }
-
-    // Update sizes section (re-render content since labels are dynamic)
-    const sizesSection = this.element.querySelector('.rs-template__section--sizes');
-    if (sizesSection) {
-      const newContent = this.renderAdditionalSizes(p);
-      if (newContent) {
-        const temp = document.createElement('div');
-        temp.innerHTML = newContent;
-        const newSection = temp.firstElementChild;
-        if (newSection) {
-          sizesSection.innerHTML = newSection.innerHTML;
+          infoGridSection.innerHTML = newSection.innerHTML;
         }
       }
     }
@@ -875,6 +1026,47 @@ class RSPropertyDetailTemplate extends RSBaseComponent {
       pdfText.textContent = this.label('detail_download_pdf') || 'Download PDF';
     }
 
+    // Update video section title (embedded video)
+    const videoTitle = this.element.querySelector('.rs-template__section-title--video');
+    if (videoTitle) {
+      const svg = videoTitle.querySelector('svg');
+      if (svg) {
+        videoTitle.innerHTML = '';
+        videoTitle.appendChild(svg);
+        videoTitle.appendChild(document.createTextNode(' ' + (this.label('detail_video_tour') || 'Video Tour')));
+      }
+    }
+
+    // Update virtual tour section title (embedded)
+    const virtualTourTitle = this.element.querySelector('.rs-template__section-title--virtual-tour');
+    if (virtualTourTitle) {
+      const svg = virtualTourTitle.querySelector('svg');
+      if (svg) {
+        virtualTourTitle.innerHTML = '';
+        virtualTourTitle.appendChild(svg);
+        virtualTourTitle.appendChild(document.createTextNode(' ' + (this.label('detail_virtual_tour') || 'Virtual Tour')));
+      }
+    }
+
+    // Update features button label (popup mode)
+    const featuresBtnLabel = this.element.querySelector('.rs-template__features-btn-label');
+    if (featuresBtnLabel) {
+      featuresBtnLabel.textContent = this.label('detail_features') || 'Features';
+    }
+
+    // Update features modal title (popup mode)
+    const featuresModalTitle = this.element.querySelector('.rs-template__features-modal-title');
+    if (featuresModalTitle) {
+      const svg = featuresModalTitle.querySelector('svg');
+      const count = featuresModalTitle.querySelector('.rs-template__features-modal-count');
+      if (svg && count) {
+        featuresModalTitle.innerHTML = '';
+        featuresModalTitle.appendChild(svg);
+        featuresModalTitle.appendChild(document.createTextNode(' ' + (this.label('detail_features') || 'Features') + ' '));
+        featuresModalTitle.appendChild(count);
+      }
+    }
+
     // Note: Child components (gallery, map, inquiry form, etc.) handle their own
     // label updates via the controller's render() call which triggers their render() methods
   }
@@ -882,6 +1074,11 @@ class RSPropertyDetailTemplate extends RSBaseComponent {
   private renderFeatures(p: Property): string {
     const features = p.features;
     if (!features || features.length === 0) return '';
+
+    // Check for mode preference: 'button' (popup) or 'accordion' (inline)
+    // Default to 'button' (popup) for more compact display
+    const modeAttr = this.element.dataset.featuresMode;
+    const mode = modeAttr === 'accordion' ? 'accordion' : 'button';
 
     // Group features by category
     const grouped: Record<string, string[]> = {};
@@ -893,9 +1090,49 @@ class RSPropertyDetailTemplate extends RSBaseComponent {
     });
 
     const categories = Object.entries(grouped);
+    const totalFeatures = features.length;
 
+    if (mode === 'button') {
+      // Compact button that opens a popup modal
+      return `
+        <div class="rs-template__section rs-template__section--features rs-template__section--features-button">
+          <button type="button" class="rs-template__features-btn" id="rs-template-features-btn">
+            <span class="rs-template__features-btn-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="9 11 12 14 22 4"></polyline>
+                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+              </svg>
+            </span>
+            <span class="rs-template__features-btn-label">${this.label('detail_features') || 'Features'}</span>
+            <span class="rs-template__features-btn-count">${totalFeatures}</span>
+          </button>
+
+          <div class="rs-template__features-modal" id="rs-template-features-modal" style="display: none;">
+            <div class="rs-template__features-modal-backdrop"></div>
+            <div class="rs-template__features-modal-content">
+              <div class="rs-template__features-modal-header">
+                <h3 class="rs-template__features-modal-title">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="9 11 12 14 22 4"></polyline>
+                    <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                  </svg>
+                  ${this.label('detail_features') || 'Features'}
+                  <span class="rs-template__features-modal-count">(${totalFeatures})</span>
+                </h3>
+                <button type="button" class="rs-template__features-modal-close">&times;</button>
+              </div>
+              <div class="rs-template__features-modal-body">
+                ${this.renderFeaturesGrid(grouped, categories)}
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // Accordion mode (original behavior)
     return `
-      <div class="rs-template__section rs-template__section--features">
+      <div class="rs-template__section rs-template__section--features rs-template__section--features-accordion">
         <h2 class="rs-template__section-title rs-template__section-title--features">${this.label('detail_features') || 'Features & Amenities'}</h2>
         <div class="rs-template__accordion">
           ${categories.map(([category, items], idx) => `
@@ -926,7 +1163,47 @@ class RSPropertyDetailTemplate extends RSBaseComponent {
     `;
   }
 
+  /**
+   * Render features in a grid layout for popup modal
+   */
+  private renderFeaturesGrid(grouped: Record<string, string[]>, categories: [string, string[]][]): string {
+    // If only one category, show simple grid
+    if (categories.length <= 1) {
+      const allFeatures = categories.length === 1 ? categories[0][1] : [];
+      return `
+        <div class="rs-template__features-grid">
+          ${allFeatures.map(name => `
+            <div class="rs-template__features-grid-item">
+              <svg class="rs-template__features-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+              <span>${this.escapeHtml(name)}</span>
+            </div>
+          `).join('')}
+        </div>
+      `;
+    }
+
+    // Multiple categories - show with category headers
+    return categories.map(([category, items]) => `
+      <div class="rs-template__features-category">
+        <h4 class="rs-template__features-category-title">${this.escapeHtml(category)}</h4>
+        <div class="rs-template__features-grid">
+          ${items.map(name => `
+            <div class="rs-template__features-grid-item">
+              <svg class="rs-template__features-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+              <span>${this.escapeHtml(name)}</span>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `).join('');
+  }
+
   private initFeaturesAccordion(): void {
+    // Accordion mode: toggle panels
     const headers = this.element.querySelectorAll<HTMLButtonElement>('.rs-template__accordion-header');
     headers.forEach(header => {
       header.addEventListener('click', () => {
@@ -936,6 +1213,44 @@ class RSPropertyDetailTemplate extends RSBaseComponent {
         }
       });
     });
+
+    // Button/popup mode: modal open/close
+    const featuresBtn = this.element.querySelector<HTMLButtonElement>('#rs-template-features-btn');
+    const featuresModal = this.element.querySelector<HTMLElement>('#rs-template-features-modal');
+
+    if (featuresBtn && featuresModal) {
+      // Open modal
+      featuresBtn.addEventListener('click', () => {
+        featuresModal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+      });
+
+      // Close modal - backdrop click
+      const backdrop = featuresModal.querySelector('.rs-template__features-modal-backdrop');
+      if (backdrop) {
+        backdrop.addEventListener('click', () => {
+          featuresModal.style.display = 'none';
+          document.body.style.overflow = '';
+        });
+      }
+
+      // Close modal - close button
+      const closeBtn = featuresModal.querySelector('.rs-template__features-modal-close');
+      if (closeBtn) {
+        closeBtn.addEventListener('click', () => {
+          featuresModal.style.display = 'none';
+          document.body.style.overflow = '';
+        });
+      }
+
+      // Close modal - ESC key
+      document.addEventListener('keydown', (e: KeyboardEvent) => {
+        if (e.key === 'Escape' && featuresModal.style.display !== 'none') {
+          featuresModal.style.display = 'none';
+          document.body.style.overflow = '';
+        }
+      });
+    }
   }
 
   private formatDescription(text: string): string {

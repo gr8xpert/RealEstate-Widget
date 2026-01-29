@@ -119,7 +119,7 @@ class RSDetailMap extends RSBaseComponent {
     this.render();
 
     // Listen for language changes to update labels
-    this.subscribe('language', () => {
+    this.subscribe('config.language', () => {
       this.updateLabelsInPlace();
     });
   }
@@ -141,8 +141,11 @@ class RSDetailMap extends RSBaseComponent {
   private getVariationMode(num: number): MapMode {
     switch (num) {
       case 0:
-        if (this.hasCoords) return 'pinpoint';
+        // Auto-detect: prefer area boundary (more useful for real estate)
+        // Only use pinpoint if no location name/municipality available
+        if (this.locationName || this.municipality) return 'municipality';
         if (this.zipcode) return 'zipcode';
+        if (this.hasCoords) return 'pinpoint';
         return 'municipality';
       case 2:
         return this.hasCoords ? 'pinpoint' : 'municipality';

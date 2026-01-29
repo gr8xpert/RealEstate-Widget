@@ -80,6 +80,7 @@ class RSWishlistGrid extends RSBaseComponent {
   private isLoading: boolean = true;
   private compareEnabled: boolean = false;
   private template: string | null = null;
+  private windowEventsBound: boolean = false;
 
   constructor(element: HTMLElement, options: ComponentOptions = {}) {
     super(element, options);
@@ -135,24 +136,29 @@ class RSWishlistGrid extends RSBaseComponent {
   }
 
   bindEvents(): void {
-    // Listen for wishlist changes
-    if (!this.isSharedView) {
-      window.addEventListener(WishlistManager.EVENTS.CHANGED, () => {
-        this.loadProperties();
+    // Only bind window events once to prevent duplicates on language change
+    if (!this.windowEventsBound) {
+      // Listen for wishlist changes
+      if (!this.isSharedView) {
+        window.addEventListener(WishlistManager.EVENTS.CHANGED, () => {
+          this.loadProperties();
+        });
+      }
+
+      // Listen for sort changes
+      window.addEventListener(WishlistManager.EVENTS.SORTED, () => {
+        this.sortAndRender();
       });
+
+      // Listen for compare changes to update checkboxes
+      window.addEventListener(WishlistManager.EVENTS.COMPARE_CHANGED, () => {
+        this.updateCompareCheckboxes();
+      });
+
+      this.windowEventsBound = true;
     }
 
-    // Listen for sort changes
-    window.addEventListener(WishlistManager.EVENTS.SORTED, () => {
-      this.sortAndRender();
-    });
-
-    // Listen for compare changes to update checkboxes
-    window.addEventListener(WishlistManager.EVENTS.COMPARE_CHANGED, () => {
-      this.updateCompareCheckboxes();
-    });
-
-    // Delegate card events
+    // Delegate card events (re-bind after render since DOM is replaced)
     this.element.addEventListener('click', (e: MouseEvent) => this.handleCardClick(e));
   }
 
@@ -394,8 +400,17 @@ class RSWishlistGrid extends RSBaseComponent {
 
     const pageSlug = RealtySoftState.get<string>('config.propertyPageSlug') || 'property';
     const ref = property.ref_no || property.ref || String(property.id);
-    const title = property.name || property.title || '';
+    const urlFormat = RealtySoftState.get<string>('config.propertyUrlFormat') || 'seo';
 
+    if (urlFormat === 'query') {
+      return `/${pageSlug}?ref=${ref}`;
+    }
+
+    if (urlFormat === 'ref') {
+      return `/${pageSlug}/${ref}`;
+    }
+
+    const title = property.name || property.title || '';
     const titleSlug = title
       .toLowerCase()
       .normalize('NFD')

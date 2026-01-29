@@ -133,9 +133,20 @@ class RSPropertyGrid extends RSBaseComponent {
     // Get config from state
     const pageSlug = RealtySoftState.get<string>('config.propertyPageSlug') || 'property';
     const ref = property.ref || property.id;
-    const title = property.title || '';
+    const urlFormat = RealtySoftState.get<string>('config.propertyUrlFormat') || 'seo';
 
-    // Generate SEO-friendly title slug
+    if (urlFormat === 'query') {
+      // /property?ref=V12345
+      return `/${pageSlug}?ref=${ref}`;
+    }
+
+    if (urlFormat === 'ref') {
+      // /property/V12345
+      return `/${pageSlug}/${ref}`;
+    }
+
+    // Default 'seo': /property/luxury-villa-marbella-V12345
+    const title = property.title || '';
     const titleSlug = title
       .toLowerCase()
       .normalize('NFD')

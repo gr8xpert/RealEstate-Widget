@@ -18,6 +18,7 @@ declare const RealtySoftToast: RealtySoftToastModule | undefined;
 
 class RSWishlistActions extends RSBaseComponent {
   private isSharedView: boolean = false;
+  private windowEventsBound: boolean = false;
 
   constructor(element: HTMLElement, options: ComponentOptions = {}) {
     super(element, options);
@@ -98,7 +99,7 @@ class RSWishlistActions extends RSBaseComponent {
   bindEvents(): void {
     if (this.isSharedView) return;
 
-    // Back button
+    // Back button (re-bind after render since DOM is replaced)
     this.element.querySelector('.rs-wishlist-back')?.addEventListener('click', () => {
       window.history.back();
     });
@@ -123,10 +124,13 @@ class RSWishlistActions extends RSBaseComponent {
       WishlistManager.openModal('email');
     });
 
-    // Listen for wishlist changes to update visibility
-    window.addEventListener(WishlistManager.EVENTS.CHANGED, () => {
-      this.updateVisibility();
-    });
+    // Only bind window events once to prevent duplicates on language change
+    if (!this.windowEventsBound) {
+      window.addEventListener(WishlistManager.EVENTS.CHANGED, () => {
+        this.updateVisibility();
+      });
+      this.windowEventsBound = true;
+    }
   }
 
   private clearWishlist(): void {
