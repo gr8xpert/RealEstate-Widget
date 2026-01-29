@@ -559,14 +559,7 @@ Instead of using dropdown filters, visitors can type natural language queries li
 - *"Piso con 2 habitaciones en Madrid"* (Spanish)
 - *"Wohnung mit Balkon in München"* (German)
 
-The AI parses the query and automatically sets the appropriate filters.
-
-### Supported Languages
-
-AI Search understands queries in:
-- English
-- Spanish
-- German
+The AI parses the query and automatically sets the appropriate filters. AI Search supports all 16 languages listed in the [Configuration Options](#configuration-options) section.
 
 ### What AI Search Extracts
 
