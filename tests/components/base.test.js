@@ -4,97 +4,41 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// Import the TypeScript modules directly
+import { RealtySoftState } from '../../src/core/state';
+import { RealtySoftLabels } from '../../src/core/labels';
+import { RSBaseComponent } from '../../src/components/base';
 
-// Load the state module first (dependency)
-const stateCode = fs.readFileSync(
-  path.resolve(__dirname, '../../src/core/state.js'),
-  'utf-8'
-);
+// Mock RealtySoft controller (it's the main controller which depends on many things)
+const mockRealtySoft = {
+  setFilter: vi.fn(),
+};
 
-// Load the labels module (dependency)
-const labelsCode = fs.readFileSync(
-  path.resolve(__dirname, '../../src/core/labels.js'),
-  'utf-8'
-);
-
-// Load the base component
-const baseCode = fs.readFileSync(
-  path.resolve(__dirname, '../../src/components/base.js'),
-  'utf-8'
-);
-
-// Create all modules in a browser-like environment
-function createEnvironment() {
-  // Create State
-  const stateModuleCode = stateCode.replace(
-    /if \(typeof module !== 'undefined'[\s\S]*$/,
-    ''
-  );
-  const stateFn = new Function('localStorage', `${stateModuleCode}; return RealtySoftState;`);
-  const State = stateFn(globalThis.localStorage);
-
-  // Create Labels
-  const labelsModuleCode = labelsCode.replace(
-    /if \(typeof module !== 'undefined'[\s\S]*$/,
-    ''
-  );
-  const labelsFn = new Function(
-    'navigator',
-    'document',
-    'Intl',
-    `${labelsModuleCode}; return RealtySoftLabels;`
-  );
-  const Labels = labelsFn(
-    { language: 'en-US', userLanguage: 'en-US' },
-    { documentElement: { lang: 'en' } },
-    Intl
-  );
-  Labels.init('en_US');
-
-  // Create Base Component with dependencies
-  const baseModuleCode = baseCode.replace(
-    /if \(typeof module !== 'undefined'[\s\S]*$/,
-    ''
-  );
-  const baseFn = new Function(
-    'RealtySoftState',
-    'RealtySoftLabels',
-    'RealtySoft',
-    'document',
-    `${baseModuleCode}; return RSBaseComponent;`
-  );
-
-  // Mock RealtySoft controller
-  const mockRealtySoft = {
-    setFilter: vi.fn(),
-  };
-
-  const BaseComponent = baseFn(State, Labels, mockRealtySoft, document);
-
-  return { State, Labels, BaseComponent, mockRealtySoft };
-}
+// Set up global for base component
+globalThis.RealtySoft = mockRealtySoft;
 
 describe('RSBaseComponent', () => {
-  let State, Labels, BaseComponent, mockRealtySoft;
+  let State, Labels, BaseComponent;
   let testElement;
 
   beforeEach(() => {
-    const env = createEnvironment();
-    State = env.State;
-    Labels = env.Labels;
-    BaseComponent = env.BaseComponent;
-    mockRealtySoft = env.mockRealtySoft;
+    State = RealtySoftState;
+    Labels = RealtySoftLabels;
+    BaseComponent = RSBaseComponent;
+
+    // Reset state
+    State.resetFilters();
+    State.setLockedFilters({});
+    Labels.init('en_US');
 
     // Create a test element
     testElement = document.createElement('div');
     testElement.id = 'test-component';
     document.body.appendChild(testElement);
+
+    // Reset mock
+    mockRealtySoft.setFilter.mockClear();
   });
 
   afterEach(() => {
@@ -124,21 +68,22 @@ describe('RSBaseComponent', () => {
       expect(testElement.dataset.rsInit).toBe('true');
     });
 
-    it('should call init on construction', () => {
+    it('should NOT call init automatically (subclasses must call it)', () => {
       const initSpy = vi.spyOn(BaseComponent.prototype, 'init');
       const component = new BaseComponent(testElement);
 
-      expect(initSpy).toHaveBeenCalled();
+      expect(initSpy).not.toHaveBeenCalled();
       initSpy.mockRestore();
     });
   });
 
   describe('init', () => {
-    it('should call render and bindEvents', () => {
+    it('should call render and bindEvents when init() is called', () => {
       const renderSpy = vi.spyOn(BaseComponent.prototype, 'render');
       const bindEventsSpy = vi.spyOn(BaseComponent.prototype, 'bindEvents');
 
       const component = new BaseComponent(testElement);
+      component.init();
 
       expect(renderSpy).toHaveBeenCalled();
       expect(bindEventsSpy).toHaveBeenCalled();
@@ -312,6 +257,10 @@ describe('RSBaseComponent', () => {
   describe('subclass usage', () => {
     it('should allow subclassing with custom render', () => {
       class CustomComponent extends BaseComponent {
+        constructor(el, opts) {
+          super(el, opts);
+          this.init();
+        }
         render() {
           this.element.innerHTML = '<p>Custom Content</p>';
         }
@@ -326,6 +275,10 @@ describe('RSBaseComponent', () => {
       const clickHandler = vi.fn();
 
       class ClickableComponent extends BaseComponent {
+        constructor(el, opts) {
+          super(el, opts);
+          this.init();
+        }
         render() {
           this.element.innerHTML = '<button>Click</button>';
         }

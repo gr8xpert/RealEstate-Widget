@@ -1,8 +1,8 @@
-# RealtySoft Widget v2
+# RealtySoft Widget v3
 
-A modular "Lego blocks" real estate property search widget system built with vanilla JavaScript.
+A modular "Lego blocks" real estate property search widget system built with TypeScript and Vite.
 
-**Current Version:** 2.3.0 | **Last Updated:** January 25, 2026
+**Current Version:** 3.0.0 | **Last Updated:** January 26, 2026
 
 ---
 
@@ -23,7 +23,7 @@ A modular "Lego blocks" real estate property search widget system built with van
 **Option A: Auto-Updating Loader (Recommended for production)**
 
 ```html
-<script src="https://realtysoft.ai/realtysoft/dist/realtysoft-loader.min.js"></script>
+<script src="https://realtysoft.ai/propertymanager/dist/realtysoft-loader.min.js"></script>
 ```
 
 The loader automatically handles cache busting - clients always get the latest version without manual updates.
@@ -31,8 +31,8 @@ The loader automatically handles cache busting - clients always get the latest v
 **Option B: Direct Include (for development/testing)**
 
 ```html
-<link rel="stylesheet" href="https://realtysoft.ai/realtysoft/dist/realtysoft.min.css?v=2.3.0">
-<script src="https://realtysoft.ai/realtysoft/dist/realtysoft.min.js?v=2.3.0"></script>
+<link rel="stylesheet" href="https://realtysoft.ai/propertymanager/dist/realtysoft.min.css?v=3.0.0">
+<script src="https://realtysoft.ai/propertymanager/dist/realtysoft.min.js?v=3.0.0"></script>
 ```
 
 ### 2. Add Configuration (Optional)
@@ -90,6 +90,17 @@ window.RealtySoftConfig = {
 | `rs_search_button` | - | Search trigger |
 | `rs_reset_button` | - | Reset filters |
 
+### Search Templates (6)
+
+| Template | Class | Description |
+|----------|-------|-------------|
+| 01 | `rs-search-template-01` | Compact 2-row horizontal search form |
+| 02 | `rs-search-template-02` | Single-row search bar |
+| 03 | `rs-search-template-03` | Tab-based search (listing type tabs + fields) |
+| 04 | `rs-search-template-04` | Dark horizontal bar (2-row with labels) |
+| 05 | `rs-search-template-05` | Vertical card/sidebar (stacked fields) |
+| 06 | `rs-search-template-06` | Minimal single row (location + type + search) |
+
 ### Listing Components (7)
 
 | Component | Description |
@@ -102,6 +113,46 @@ window.RealtySoftConfig = {
 | `rs_active_filters` | Active filter tags |
 | `rs_view_toggle` | Grid/List switch |
 
+### Card Sub-Components (14)
+
+Standalone card sub-components for fully custom layouts outside the property grid.
+
+| Component | Description |
+|-----------|-------------|
+| `rs_card_image` | Image carousel with lazy loading |
+| `rs_card_price` | Formatted price |
+| `rs_card_title` | Property title |
+| `rs_card_location` | Location with icon |
+| `rs_card_beds` | Bedrooms with icon |
+| `rs_card_baths` | Bathrooms with icon |
+| `rs_card_built` | Built area (m²) |
+| `rs_card_plot` | Plot size (m²) |
+| `rs_card_ref` | Reference number |
+| `rs_card_type` | Property type |
+| `rs_card_status` | Listing type badges |
+| `rs_card_description` | Description |
+| `rs_card_wishlist` | Heart toggle |
+| `rs_card_link` | Detail page link |
+
+Use `data-rs-property-ref="R123456"` on each component. See [DOCUMENTATION.md](DOCUMENTATION.md) for full usage.
+
+### Listing Templates (12)
+
+| Template | Class | Description |
+|----------|-------|-------------|
+| 01 | `rs-listing-template-01` | Location-first cards |
+| 02 | `rs-listing-template-02` | Price on image overlay |
+| 03 | `rs-listing-template-03` | Tag + icon specs card (pill badges, SVG icons) |
+| 04 | `rs-listing-template-04` | Airbnb style (meta separator, location pin) |
+| 05 | `rs-listing-template-05` | Hover overlay (content shown on hover) |
+| 06 | `rs-listing-template-06` | Gradient overlay (permanent dark gradient) |
+| 07 | `rs-listing-template-07` | Dark overlay with badges (price-first) |
+| 08 | `rs-listing-template-08` | Minimal card design |
+| 09 | `rs-listing-template-09` | Modern card with accent |
+| 10 | `rs-listing-template-10` | Compact list-style card |
+| 11 | `rs-listing-template-11` | Full-featured card with status tags |
+| 12 | `rs-listing-template-12` | Magazine layout card |
+
 ### Carousel Templates (6)
 
 | Template | Description |
@@ -109,8 +160,8 @@ window.RealtySoftConfig = {
 | 1 | Standard horizontal carousel |
 | 2 | 3D stacked cards with perspective |
 | 3 | Coverflow with grayscale effect |
-| 4 | Full-width hero carousel |
-| 5 | Cards with info overlay |
+| 4 | Full-width hero carousel (info always visible) |
+| 5 | Cards with info overlay (info always visible) |
 | 6 | Dark cards with numbers |
 
 ### Detail Components (17)
@@ -124,10 +175,10 @@ window.RealtySoftConfig = {
 | `rs_detail_description` | Full description |
 | `rs_detail_features` | Features list |
 | `rs_detail_map` | Location map |
-| `rs_detail_inquiry_form` | Contact form |
+| `rs_detail_inquiry_form` | Contact form (sends to owner + client confirmation) |
 | `rs_detail_wishlist` | Wishlist button |
 | `rs_detail_share` | Share buttons |
-| `rs_detail_related` | Similar properties |
+| `rs_detail_related` | Similar properties (SEO-friendly URLs) |
 | ... | See DOCUMENTATION.md for full list |
 
 ### Utility Components (5)
@@ -201,25 +252,43 @@ See [DOCUMENTATION.md](DOCUMENTATION.md#widget-modes) for full details.
 ## Building
 
 ```bash
-cd C:\Users\shahzaib\realtysoft
-node build.js
+cd C:\Users\shahzaib\RealtysoftV3
+
+# Type checking
+npx tsc --noEmit
+
+# Production build (IIFE bundle)
+npx vite build
+
+# All build targets (IIFE + ES modules + Service Worker)
+npm run build:all
+
+# Run tests
+npx vitest run
+
+# Development server
+npm run dev
 ```
 
 **Output:**
-- `dist/realtysoft.js` - Unminified JS
-- `dist/realtysoft.min.js` - Minified JS
-- `dist/realtysoft.css` - Unminified CSS
-- `dist/realtysoft.min.css` - Minified CSS
-- `dist/realtysoft-loader.js` - Auto-versioning loader (unminified)
-- `dist/realtysoft-loader.min.js` - Auto-versioning loader (~600 bytes, for production)
+- `dist/realtysoft.js` - IIFE bundle
+- `dist/realtysoft.min.js` - Minified IIFE bundle
+- `dist/realtysoft.css` - Styles
+- `dist/realtysoft.min.css` - Minified styles
+- `dist/realtysoft-loader.js` - Auto-versioning loader
+- `dist/realtysoft-loader.min.js` - Minified loader (~600 bytes)
 
 ---
 
 ## File Structure
 
 ```
-realtysoft/
-├── build.js                     # Build script
+RealtysoftV3/
+├── vite.config.ts               # Vite build configuration
+├── tsconfig.json                # TypeScript configuration
+├── vitest.config.js             # Test configuration
+├── package.json                 # Dependencies & scripts
+├── build.js                     # Legacy build script
 ├── README.md                    # This file
 ├── DOCUMENTATION.md             # Full documentation
 ├── DEVELOPMENT_STATUS.md        # Development status
@@ -241,16 +310,43 @@ realtysoft/
 │
 ├── php/                         # Backend
 │   ├── api-proxy.php            # API proxy
-│   ├── send-inquiry.php         # Inquiry handler
+│   ├── send-inquiry.php         # Inquiry handler (owner + confirmation emails)
+│   ├── send-wishlist-email.php  # Wishlist email handler (recipient + owner notification)
 │   ├── analytics-track.php      # Analytics tracking
 │   ├── analytics-api.php        # Analytics API endpoints
 │   ├── wishlist-pdf.php         # PDF generation
 │   └── share.php                # Social sharing
 │
-└── src/                         # Source code
-    ├── core/                    # Core modules (6 files)
-    ├── components/              # Components (40+ files)
-    └── styles/                  # CSS (6,734 lines)
+├── tests/                       # Test suite (889 tests)
+│   ├── core/                    # Core module tests
+│   ├── components/              # Component tests (51 files)
+│   ├── helpers/                 # Test utilities
+│   └── setup.js                 # Test setup
+│
+└── src/                         # Source code (TypeScript)
+    ├── index.ts                 # Main entry point
+    ├── index-es.ts              # ES module entry point
+    ├── sw.ts                    # Service worker
+    ├── types/
+    │   └── index.ts             # TypeScript type definitions
+    ├── core/                    # Core modules (8 files)
+    │   ├── state.ts             # Pub/sub state management
+    │   ├── api.ts               # API service with caching
+    │   ├── controller.ts        # Main controller + templates
+    │   ├── labels.ts            # i18n labels (14+ languages)
+    │   ├── analytics.ts         # Event tracking
+    │   ├── toast.ts             # Toast notifications
+    │   ├── lru-cache.ts         # LRU cache utility
+    │   └── wishlist-manager.ts  # Wishlist state management
+    ├── components/              # Components (54 TypeScript files)
+    │   ├── base.ts              # Base component class
+    │   ├── search/              # 12 search components
+    │   ├── listing/             # 7 listing components
+    │   │   └── card/            # 14 card sub-components + utils
+    │   ├── detail/              # 17 detail components
+    │   └── utility/             # 13 utility components
+    └── styles/
+        └── realtysoft.css       # Styles (15,154 lines)
 ```
 
 ---
@@ -275,7 +371,7 @@ Edit `config/clients.php`:
 
 ```html
 <!-- Single line - auto-updates, no version management needed -->
-<script src="https://realtysoft.ai/realtysoft/dist/realtysoft-loader.min.js"></script>
+<script src="https://realtysoft.ai/propertymanager/dist/realtysoft-loader.min.js"></script>
 ```
 
 The loader automatically loads both CSS and JS with hourly cache busting.
@@ -292,36 +388,40 @@ The loader automatically loads both CSS and JS with hourly cache busting.
 
 | Phase | Status |
 |-------|--------|
-| Core System | ✅ Complete |
-| Search Components (12) | ✅ Complete |
-| Listing Components (6) | ✅ Complete |
-| Detail Components (17) | ✅ Complete |
-| Utility Components (5) | ✅ Complete |
-| PHP Backend (5) | ✅ Complete |
-| Performance Optimization | ✅ Complete |
-| Templates | ⚠️ Partial (Carousels complete) |
-| Analytics Dashboard | ✅ Complete |
+| Core System | Complete |
+| Search Components (12) | Complete |
+| Listing Components (7) | Complete |
+| Detail Components (17) | Complete |
+| Utility Components (5) | Complete |
+| PHP Backend (7) | Complete |
+| Performance Optimization | Complete |
+| Search Templates (6) | Complete |
+| Listing Templates (12) | Complete |
+| Carousel Templates (6) | Complete |
+| Analytics Dashboard | Complete |
+| Test Suite (889 tests) | Complete |
+| TypeScript Migration | Complete |
+| Granular Card Sub-Components (14) | Complete |
+| CSV Export (5 export types) | Complete |
+| Enhanced i18n Testing (16 languages) | Complete |
+| Lazy Loading (IntersectionObserver) | Complete |
 
-### Recent Updates (v2.3.0)
-- **Property Carousel Templates:** 6 carousel templates with unique designs
-- **Template 06 (Dark Cards):** Dark cards with numbers, property type, location, price, specs, View Detail button
-- **Carousel Mobile:** 1 card at a time on mobile for all carousel templates
-- **Template 02 Mobile Fix:** Fixed layout overflow on mobile devices
-
-### Previous Updates (v2.2.2)
-- **Script Loader:** Auto-versioning loader for multi-client deployment - clients always get latest version
-- **Search-Only Mode:** Add search on homepage that redirects to results page
-- **URL Parameter Parsing:** Automatically applies filters from URL parameters
-- **Grid Columns:** Configure 1-4 property cards per row with `data-rs-columns` attribute
-- **Mobile Layout:** Improved responsive layout with search button at bottom
-- **View Toggle:** Hidden on mobile (grid/list look the same on small screens)
-- **Carousel Fix:** Fixed navigation arrow shifting on hover
-
-### Previous Updates (v2.2.1)
-- **Performance:** Reduced first-load API requests from 230+ to ~5 (10x faster)
-- **Request Deduplication:** Prevents duplicate concurrent API calls
-- **Loading Skeletons:** Shows animated placeholders while loading
-- **Caching:** 24-hour localStorage cache for locations, property types, labels
+### Recent Updates (v3.0.0)
+- **TypeScript Rewrite:** Full codebase migrated from vanilla JS to TypeScript
+- **Vite Build System:** Replaced custom `build.js` with Vite (IIFE, ES module, and SW build targets)
+- **Granular Card Sub-Components:** 14 standalone card sub-components for fully custom layouts
+- **CSV Export:** 5 analytics export types (raw events, property performance, trends, search insights, funnel)
+- **Lazy Loading:** Viewport-based rendering via IntersectionObserver for card sub-components and grid images
+- **Enhanced i18n Testing:** Comprehensive tests across all 16 supported languages (906-line card-i18n test)
+- **Search Templates 03-06:** 4 new search template layouts (tab-based, dark bar, vertical sidebar, minimal)
+- **Listing Templates 03-12:** 10 new listing card templates with unique designs
+- **Carousel V4/V5 Overlay:** Property info always visible (not hover-only)
+- **Inquiry Form Emails:** Owner notification + styled client confirmation with View Property button
+- **Wishlist Owner Notification:** Owner receives email when client shares a wishlist
+- **CORS Headers:** Proper `Access-Control-Allow-Headers` for `X-Requested-With` support
+- **Related Properties URLs:** SEO-friendly URLs matching property grid format
+- **LRU Cache:** New core module for efficient memory caching
+- **Test Suite:** 889 tests with Vitest + jsdom
 
 See [DEVELOPMENT_STATUS.md](DEVELOPMENT_STATUS.md) for detailed status.
 
@@ -332,13 +432,13 @@ See [DEVELOPMENT_STATUS.md](DEVELOPMENT_STATUS.md) for detailed status.
 The widget includes a complete analytics dashboard for tracking user behavior.
 
 ### Admin Dashboard
-Access at: `realtysoft/analytics/admin.php`
+Access at: `propertymanager/analytics/admin.php`
 - View analytics for all clients
 - Aggregate statistics across domains
 - Property-level performance analytics
 
 ### Client Dashboard
-Access at: `realtysoft/analytics/client.php?client=domain.com`
+Access at: `propertymanager/analytics/client.php?client=domain.com`
 - Client-specific analytics with login
 - Property rankings and performance
 - Conversion funnel analysis
@@ -349,6 +449,10 @@ Access at: `realtysoft/analytics/client.php?client=domain.com`
 - Wishlist adds/removes
 - Inquiry submissions
 - Search events
+
+### CSV Export
+Export analytics data from the dashboard dropdown:
+- Raw Events, Property Performance, Daily Trends, Search Insights, Conversion Funnel
 
 ---
 

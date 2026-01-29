@@ -9,6 +9,7 @@
 
 export interface FilterState {
   location: number | number[] | null;
+  sublocation?: number | null;
   locationName: string;
   listingType: string | null;
   propertyType: number | number[] | null;
@@ -63,6 +64,21 @@ export interface UIState {
 }
 
 // ============================================================
+// Cache Config Types
+// ============================================================
+
+export interface CacheConfig {
+  locations?: number;
+  propertyTypes?: number;
+  features?: number;
+  labels?: number;
+  search?: number;
+  property?: number;
+  disabled?: boolean;
+  maxCacheEntries?: number;
+}
+
+// ============================================================
 // Config Types
 // ============================================================
 
@@ -76,6 +92,7 @@ export interface WidgetConfig {
   propertyPageSlug: string;
   useWidgetPropertyTemplate: boolean;
   useQueryParamUrls: boolean;
+  propertyUrlFormat: 'seo' | 'ref' | 'query';
   resultsPage: string;
   defaultCountryCode: string;
   inquiryThankYouMessage: string | null;
@@ -83,6 +100,12 @@ export interface WidgetConfig {
   labelOverrides?: Record<string, string>;
   analytics?: boolean;
   debug?: boolean;
+  cache?: CacheConfig;
+  serviceWorker?: boolean;
+  serviceWorkerUrl?: string;
+  siteName?: string;
+  wpRestUrl?: string;
+  wpApiNonce?: string;
 }
 
 // ============================================================
@@ -238,6 +261,7 @@ export interface APIConfig {
   apiKey: string | null;
   apiUrl: string | null;
   language: string;
+  cache?: CacheConfig;
 }
 
 export interface APIResponse<T> {
@@ -344,6 +368,7 @@ export interface RealtySoftAPIModule {
   getPropertyTypes(): Promise<APIResponse<PropertyType[]>>;
   getFeatures(): Promise<APIResponse<Feature[]>>;
   getLabels(): Promise<Record<string, string>>;
+  getAllLabels(): Promise<unknown>;
   searchProperties(params: Partial<SearchParams>): Promise<APIResponse<Property[]>>;
   getProperty(id: number, options?: { forceRefresh?: boolean; skipBackgroundRefresh?: boolean }): Promise<{ data: Property; fromCache?: boolean }>;
   getPropertyByRef(ref: string, options?: { forceRefresh?: boolean; skipBackgroundRefresh?: boolean }): Promise<{ data: Property; fromCache?: boolean }>;
@@ -371,26 +396,80 @@ export interface RealtySoftLabelsModule {
   formatArea(value: number | null | undefined): string;
 }
 
+// Analytics filter data interface (more permissive for tracking)
+export interface AnalyticsFilterData {
+  location?: number | number[] | null;
+  listingType?: string | null;
+  propertyType?: string | string[] | number | number[] | null;
+  bedsMin?: number | null;
+  bedsMax?: number | null;
+  priceMin?: number | null;
+  priceMax?: number | null;
+  features?: number[] | null;
+}
+
+// Analytics module interface
+export interface RealtySoftAnalyticsModule {
+  init(options?: { enabled?: boolean; debug?: boolean; endpoint?: string }): void;
+  track(category: string, action: string, data?: Record<string, unknown>): void;
+  flush(): void;
+  trackSearch(filters?: AnalyticsFilterData): void;
+  trackPropertyView(property?: Partial<Property>): void;
+  trackCardClick(property?: Partial<Property>): void;
+  trackGalleryView(propertyId: number, imageIndex: number): void;
+  trackWishlistAdd(propertyId: number): void;
+  trackWishlistRemove(propertyId: number): void;
+  trackWishlistView(propertyIds?: number[]): void;
+  trackWishlistShare(method: string): void;
+  trackInquiry(propertyId: number, propertyRef?: string): void;
+  trackShare(platform: string, propertyId: number): void;
+  trackLinkClick(linkType: string, url: string): void;
+  trackFilterChange(filterName: string, value: unknown): void;
+  trackPagination(page: number, totalPages: number): void;
+  trackSortChange(sortValue: string): void;
+  trackViewToggle(view: string): void;
+  trackResourceClick(resourceType: string, propertyId: number): void;
+}
+
+// Component instance interface
+export interface ComponentInstance {
+  render?: () => void;
+  [key: string]: unknown;
+}
+
 export interface RealtySoftModule {
-  init(): Promise<void>;
+  init(): Promise<boolean>;
   registerComponent(name: string, componentClass: ComponentConstructor): void;
-  getComponent(name: string): ComponentConstructor | undefined;
-  search(): Promise<void>;
-  loadProperty(id: number): Promise<void>;
-  loadPropertyByRef(ref: string): Promise<void>;
+  getComponent(element: HTMLElement): ComponentInstance | undefined;
+  search(): Promise<unknown>;
+  loadProperty(id: number): Promise<Property>;
+  loadPropertyByRef(ref: string): Promise<Property>;
   reset(): void;
-  goToPage(page: number): Promise<void>;
-  setSort(sort: SortType): Promise<void>;
-  setView(view: ViewType): void;
+  goToPage(page: number): void;
+  setSort(sort: string): void;
+  setView(view: string): void;
   setFilter(name: string, value: unknown): void;
   setLanguage(newLanguage: string): Promise<void>;
-  getState(): AppState;
-  subscribe<T = unknown>(path: string, callback: SubscriptionCallback<T>): UnsubscribeFunction;
+  getState(): Record<string, unknown>;
+  subscribe(path: string, callback: (value: unknown, oldValue: unknown, path: string) => void): UnsubscribeFunction;
   isReady(): boolean;
   getMode(): 'combined' | 'search-only' | 'results-only' | null;
   State: RealtySoftStateModule;
   API: RealtySoftAPIModule;
   Labels: RealtySoftLabelsModule;
+  Analytics: RealtySoftAnalyticsModule;
+}
+
+// ============================================================
+// Router Module Interface
+// ============================================================
+
+export interface RealtySoftRouterModule {
+  init(): void;
+  isEnabled(): boolean;
+  navigateToProperty(property: Property, url: string): void;
+  navigateToListing(): void;
+  canGoBackToListing(): boolean;
 }
 
 // ============================================================
@@ -403,7 +482,9 @@ declare global {
     RealtySoftState: RealtySoftStateModule;
     RealtySoftAPI: RealtySoftAPIModule;
     RealtySoftLabels: RealtySoftLabelsModule;
+    RealtySoftRouter: RealtySoftRouterModule;
     RealtySoftConfig?: Partial<WidgetConfig>;
+    _rsAutoInjectedRef?: string;
   }
 }
 

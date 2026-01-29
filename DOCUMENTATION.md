@@ -1,6 +1,6 @@
-# RealtySoft Widget v2 - Complete Documentation
+# RealtySoft Widget v3 - Complete Documentation
 
-> Version 2.3.0 | Last Updated: January 25, 2026
+> Version 3.0.0 | Last Updated: January 26, 2026
 
 ---
 
@@ -39,7 +39,7 @@
 
 ## Overview
 
-RealtySoft Widget v2 is a modular real estate property search widget built with vanilla JavaScript. It uses a "Lego blocks" architecture where each component can be placed independently and they all communicate through a central state management system.
+RealtySoft Widget v3 is a modular real estate property search widget built with TypeScript and Vite. It uses a "Lego blocks" architecture where each component can be placed independently and they all communicate through a central state management system.
 
 ### Architecture
 
@@ -86,7 +86,7 @@ RealtySoft Widget v2 is a modular real estate property search widget built with 
 **Option A: Auto-Updating Loader (Recommended)**
 
 ```html
-<script src="https://realtysoft.ai/realtysoft/dist/realtysoft-loader.min.js"></script>
+<script src="https://realtysoft.ai/propertymanager/dist/realtysoft-loader.min.js"></script>
 ```
 
 The loader script:
@@ -98,8 +98,8 @@ The loader script:
 **Option B: Direct Include**
 
 ```html
-<link rel="stylesheet" href="https://realtysoft.ai/realtysoft/dist/realtysoft.min.css?v=2.3.0">
-<script src="https://realtysoft.ai/realtysoft/dist/realtysoft.min.js?v=2.3.0"></script>
+<link rel="stylesheet" href="https://realtysoft.ai/propertymanager/dist/realtysoft.min.css?v=3.0.0">
+<script src="https://realtysoft.ai/propertymanager/dist/realtysoft.min.js?v=3.0.0"></script>
 ```
 
 ### 2. Optional Configuration
@@ -185,7 +185,7 @@ Footer: Advanced Search | Map Search links
      data-rs-listing-type="resale"></div>
 ```
 
-**Preview:** [View Demo](https://realtysoft.ai/realtysoft/src/templates/search/template-01-compact-horizontal.html)
+**Preview:** [View Demo](https://realtysoft.ai/propertymanager/src/templates/search/template-01-compact-horizontal.html)
 
 ---
 
@@ -223,7 +223,7 @@ Property cards with location as the main title, property type as subtitle, and p
      data-rs-listing-type="resale"></div>
 ```
 
-**Preview:** [View Demo](https://realtysoft.ai/realtysoft/src/templates/listing/template-01-location-first.html)
+**Preview:** [View Demo](https://realtysoft.ai/propertymanager/src/templates/listing/template-01-location-first.html)
 
 ---
 
@@ -265,7 +265,7 @@ Can also be applied to the property grid directly:
 <!DOCTYPE html>
 <html>
 <head>
-    <link rel="stylesheet" href="https://realtysoft.ai/realtysoft/dist/realtysoft.min.css">
+    <link rel="stylesheet" href="https://realtysoft.ai/propertymanager/dist/realtysoft.min.css">
 </head>
 <body>
     <!-- Search Form -->
@@ -274,7 +274,7 @@ Can also be applied to the property grid directly:
     <!-- Property Listings -->
     <div class="rs-listing-template-01"></div>
 
-    <script src="https://realtysoft.ai/realtysoft/dist/realtysoft.min.js"></script>
+    <script src="https://realtysoft.ai/propertymanager/dist/realtysoft.min.js"></script>
 </body>
 </html>
 ```
@@ -336,10 +336,33 @@ Add `data-rs-*` attributes to lock or preset filters. Locked filters cannot be c
 
 ### Available Templates
 
+**Search Templates:**
+
 | Template Class | Description |
 |----------------|-------------|
 | `rs-search-template-01` | Compact 2-row horizontal search form |
+| `rs-search-template-02` | Single-row search bar |
+| `rs-search-template-03` | Tab-based search (listing type tabs + fields row) |
+| `rs-search-template-04` | Dark horizontal bar (2-row with labels) |
+| `rs-search-template-05` | Vertical card/sidebar (stacked fields) |
+| `rs-search-template-06` | Minimal single row (location + type + search) |
+
+**Listing Templates:**
+
+| Template Class | Description |
+|----------------|-------------|
 | `rs-listing-template-01` | Location-first property cards |
+| `rs-listing-template-02` | Price on image overlay |
+| `rs-listing-template-03` | Tag + icon specs card (pill badges, SVG icons) |
+| `rs-listing-template-04` | Airbnb style (meta separator, location pin) |
+| `rs-listing-template-05` | Hover overlay (content shown on hover) |
+| `rs-listing-template-06` | Gradient overlay (permanent dark gradient) |
+| `rs-listing-template-07` | Dark overlay with badges (price-first) |
+| `rs-listing-template-08` | Minimal card design |
+| `rs-listing-template-09` | Modern card with accent |
+| `rs-listing-template-10` | Compact list-style card |
+| `rs-listing-template-11` | Full-featured card with status tags on image |
+| `rs-listing-template-12` | Magazine layout card |
 
 ---
 
@@ -360,8 +383,8 @@ Add `data-rs-*` attributes to lock or preset filters. Locked filters cannot be c
 | 1 | `rs-property-carousel--v1` | Standard horizontal carousel |
 | 2 | `rs-property-carousel--v2` | 3D stacked cards with perspective effect |
 | 3 | `rs-property-carousel--v3` | Coverflow style with grayscale inactive cards |
-| 4 | `rs-property-carousel--v4` | Full-width hero carousel |
-| 5 | `rs-property-carousel--v5` | Cards with info overlay |
+| 4 | `rs-property-carousel--v4` | Full-width hero carousel (info always visible) |
+| 5 | `rs-property-carousel--v5` | Cards with info overlay (info always visible) |
 | 6 | `rs-property-carousel--v6` | Dark cards with numbers |
 
 ---
@@ -550,7 +573,7 @@ console.log(mode); // 'combined', 'search-only', or 'results-only'
 <html>
 <head>
     <title>Find Your Dream Property</title>
-    <link rel="stylesheet" href="https://realtysoft.ai/realtysoft/dist/realtysoft.min.css">
+    <link rel="stylesheet" href="https://realtysoft.ai/propertymanager/dist/realtysoft.min.css">
 </head>
 <body>
     <h1>Search Properties</h1>
@@ -563,7 +586,7 @@ console.log(mode); // 'combined', 'search-only', or 'results-only'
         resultsPage: '/properties'
     };
     </script>
-    <script src="https://realtysoft.ai/realtysoft/dist/realtysoft.min.js"></script>
+    <script src="https://realtysoft.ai/propertymanager/dist/realtysoft.min.js"></script>
 </body>
 </html>
 ```
@@ -574,7 +597,7 @@ console.log(mode); // 'combined', 'search-only', or 'results-only'
 <html>
 <head>
     <title>Property Listings</title>
-    <link rel="stylesheet" href="https://realtysoft.ai/realtysoft/dist/realtysoft.min.css">
+    <link rel="stylesheet" href="https://realtysoft.ai/propertymanager/dist/realtysoft.min.css">
 </head>
 <body>
     <h1>Property Listings</h1>
@@ -583,7 +606,7 @@ console.log(mode); // 'combined', 'search-only', or 'results-only'
     <div class="rs-search-template-01"></div>
     <div class="rs-listing-template-01"></div>
 
-    <script src="https://realtysoft.ai/realtysoft/dist/realtysoft.min.js"></script>
+    <script src="https://realtysoft.ai/propertymanager/dist/realtysoft.min.js"></script>
 </body>
 </html>
 ```
@@ -862,6 +885,57 @@ Place a template inside the grid to customize card layout:
 | `rs_card_status` | Status badge |
 | `rs_card_wishlist` | Heart button |
 | `rs_card_link` | Link to detail |
+
+---
+
+### Granular Card Sub-Components
+
+15 standalone card sub-components that can be placed independently outside the property grid for fully custom card layouts. Each component reads its property from `data-rs-property-ref` or `data-rs-property-id` attributes and renders lazily via IntersectionObserver.
+
+**Standalone Usage:**
+
+```html
+<!-- Custom card layout using individual sub-components -->
+<div class="my-custom-card">
+    <div class="rs_card_image" data-rs-property-ref="R123456"></div>
+    <h3 class="rs_card_title" data-rs-property-ref="R123456"></h3>
+    <div class="rs_card_price" data-rs-property-ref="R123456"></div>
+    <div class="rs_card_location" data-rs-property-ref="R123456"></div>
+    <div class="rs_card_beds" data-rs-property-ref="R123456"></div>
+    <div class="rs_card_baths" data-rs-property-ref="R123456"></div>
+    <div class="rs_card_built" data-rs-property-ref="R123456"></div>
+    <div class="rs_card_wishlist" data-rs-property-ref="R123456"></div>
+    <a class="rs_card_link" data-rs-property-ref="R123456">View Details</a>
+</div>
+```
+
+**All Sub-Components:**
+
+| Class | Description |
+|-------|-------------|
+| `rs_card_image` | Image carousel with navigation, lazy loading, srcset support |
+| `rs_card_price` | Formatted price or "Price on Request" |
+| `rs_card_title` | Property title |
+| `rs_card_location` | Location with map pin icon |
+| `rs_card_beds` | Bedroom count with icon and singular/plural label |
+| `rs_card_baths` | Bathroom count with icon and singular/plural label |
+| `rs_card_built` | Built area (m²) with icon |
+| `rs_card_plot` | Plot size (m²) with icon |
+| `rs_card_ref` | Reference number |
+| `rs_card_type` | Property type |
+| `rs_card_status` | Listing type badges (sale/rental/development/featured) |
+| `rs_card_description` | Property description |
+| `rs_card_wishlist` | Heart toggle with WishlistManager integration |
+| `rs_card_link` | Link to property detail page |
+
+**Options:**
+
+```html
+<!-- Limit carousel images -->
+<div class="rs_card_image" data-rs-property-ref="R123456" data-rs-max-images="3"></div>
+```
+
+**Note:** Sub-components skip initialization when placed inside `.rs_property_grid` (the grid handles rendering internally).
 
 ---
 
@@ -1556,9 +1630,9 @@ Users can email their wishlist to anyone.
 **Configuration:**
 ```javascript
 window.RealtySoftConfig = {
-    phpBase: 'https://yoursite.com/realtysoft/php',
+    phpBase: 'https://realtysoft.ai/propertymanager/php',
     // or
-    wishlistEmailEndpoint: 'https://yoursite.com/api/send-wishlist-email.php'
+    wishlistEmailEndpoint: 'https://realtysoft.ai/propertymanager/php/send-wishlist-email.php'
 };
 ```
 
@@ -1566,7 +1640,12 @@ window.RealtySoftConfig = {
 - Property images
 - Property details (price, beds, baths, location)
 - Personal message
-- Links to property pages
+- Links to property pages with styled "View Property" buttons
+
+**Email recipients:**
+- Recipient (the person the wishlist is shared with)
+- Sender copy (confirmation to the person sharing)
+- Owner notification (site owner receives notification of shared wishlist)
 
 ---
 
@@ -2001,6 +2080,31 @@ Property Rankings Tabs:
 engagement = (views × 1) + (wishlists × 3) + (inquiries × 5)
 ```
 
+### CSV Export
+
+The analytics dashboard supports exporting data as CSV files. Available from the export dropdown in both admin and client dashboards.
+
+**Export Types:**
+
+| Export | API Action | Description |
+|--------|------------|-------------|
+| Raw Events | `?action=export` | All tracked events with timestamps, sessions, property data |
+| Property Performance | `?action=export_properties` | Views, clicks, wishlists, inquiries, conversion rates per property |
+| Daily Trends | `?action=export_trends` | Daily breakdown of searches, views, clicks, wishlists, inquiries |
+| Search Insights | `?action=export_searches` | Most searched locations, property types, listing types |
+| Conversion Funnel | `?action=export_funnel` | Funnel steps with session counts and conversion percentages |
+
+**Usage (JavaScript):**
+
+```javascript
+// Trigger CSV download from dashboard
+window.location.href = 'php/analytics-api.php?action=export&client=domain.com&from=2026-01-01&to=2026-01-31';
+```
+
+All exports support date range filtering via `from` and `to` parameters.
+
+---
+
 ### Analytics API Endpoints
 
 The analytics system exposes several API endpoints via `php/analytics-api.php`:
@@ -2066,7 +2170,7 @@ return [
 
 ### Send Inquiry (`send-inquiry.php`)
 
-Handles contact form submissions and sends emails.
+Handles contact form submissions. Sends styled HTML emails to property owner (with all inquiry details) and a confirmation email to the sender (with "View Property" button). Supports CORS with `Content-Type`, `X-Requested-With`, and `Accept` headers.
 
 ### Analytics Track (`analytics-track.php`)
 
@@ -2156,6 +2260,7 @@ The widget includes several performance optimizations for fast loading:
 | Request Deduplication | Prevents duplicate concurrent API calls | ~50% fewer requests |
 | 24-Hour Cache | localStorage caching for static data | Near-instant repeat visits |
 | Loading Skeletons | Animated placeholders during load | Better perceived performance |
+| Lazy Loading | Viewport-based rendering via IntersectionObserver | Deferred off-screen work |
 
 ### Performance Metrics
 
@@ -2211,25 +2316,62 @@ The widget shows animated skeleton placeholders immediately on load:
 - **Property Grid**: Skeleton cards with pulse animation
 - **Auto-hiding**: Skeletons removed once components initialize
 
+### Lazy Loading
+
+Components not in the viewport are deferred using IntersectionObserver:
+
+- **14 card sub-components** — viewport-based lazy loading via `onElementVisible()` in `card-utils.ts` (200px margin)
+- **Property grid** — IntersectionObserver for carousel image lazy loading (`data-src` swapped to `src` on visibility)
+- **Wishlist grid** — image lazy loading
+
+**Eager by design (not lazy loaded):**
+- Search components (12) — always above the fold
+- Listing controls (5) — lightweight UI tied to search results
+- Detail components (17) — render pre-fetched data
+- Utility/wishlist components (13) — dedicated page, user navigated intentionally
+
 ---
 
 ## Build Process
 
-### Build Command
+### Build Commands
 
 ```bash
-cd C:\Users\shahzaib\realtysoft
-node build.js
+cd C:\Users\shahzaib\RealtysoftV3
+
+# Type checking
+npx tsc --noEmit
+
+# Production build (IIFE bundle - backward compatible)
+npx vite build
+
+# ES module build (code-split chunks)
+npm run build:es
+
+# Service worker build
+npm run build:sw
+
+# All targets at once
+npm run build:all
+
+# Development server with HMR
+npm run dev
+
+# Run tests
+npx vitest run
+
+# Lint
+npm run lint
 ```
 
 ### Output Files
 
 ```
 dist/
-├── realtysoft.js            # Unminified JS
-├── realtysoft.min.js        # Minified JS (~360KB)
-├── realtysoft.css           # Unminified CSS
-├── realtysoft.min.css       # Minified CSS (~117KB)
+├── realtysoft.js            # IIFE bundle
+├── realtysoft.min.js        # Minified IIFE bundle
+├── realtysoft.css           # Styles
+├── realtysoft.min.css       # Minified styles
 ├── realtysoft-loader.js     # Auto-versioning loader
 └── realtysoft-loader.min.js # Minified loader (~600 bytes)
 ```
@@ -2279,7 +2421,7 @@ var version = Math.floor(Date.now() / 86400000);
 Give clients this single line:
 
 ```html
-<script src="https://realtysoft.ai/realtysoft/dist/realtysoft-loader.min.js"></script>
+<script src="https://realtysoft.ai/propertymanager/dist/realtysoft-loader.min.js"></script>
 ```
 
 That's it! No CSS link needed, no version numbers to manage.
@@ -2294,7 +2436,7 @@ window.RealtySoftConfig = {
     language: 'es_ES'
 };
 </script>
-<script src="https://realtysoft.ai/realtysoft/dist/realtysoft-loader.min.js"></script>
+<script src="https://realtysoft.ai/propertymanager/dist/realtysoft-loader.min.js"></script>
 ```
 
 ### Loader Events
@@ -2309,11 +2451,12 @@ document.addEventListener('realtysoft:loader-complete', function() {
 
 ### Build Script Features
 
-- Concatenates all JS files in dependency order
-- Wraps in IIFE for namespace isolation
-- Concatenates CSS files
-- Creates both minified and unminified versions
-- Simple minification (removes comments and whitespace)
+- Vite-based build with TypeScript compilation
+- Multiple build targets: IIFE (default), ES modules, Service Worker
+- Tree shaking and minification via Rollup
+- Path aliases (`@/`, `@core/`, `@components/`)
+- TypeScript strict mode type checking
+- 889 automated tests (Vitest + jsdom)
 
 ---
 
@@ -2358,6 +2501,176 @@ document.addEventListener('realtysoft:loader-complete', function() {
 
 ---
 
+## Platform Setup Guides
+
+The RealtySoft widget can be deployed on any website platform. Each platform requires a slightly different setup to ensure property detail URLs work correctly (HTTP 200 instead of 404).
+
+### SPA Router (All Platforms)
+
+The widget includes a built-in SPA (Single Page Application) router that intercepts property card clicks and navigates without a page reload. This is automatic and requires no configuration.
+
+**How it works:**
+- When a user clicks a property card on the listing page, the router hides the listing and shows the detail view in-place
+- The URL updates via `history.pushState()` to the SEO-friendly URL
+- Browser back button returns to the listing with scroll position preserved
+- Ctrl+click / Cmd+click / Shift+click still opens in a new tab
+- If the router cannot activate (e.g. no listing containers found), it falls back to normal navigation
+
+### WordPress Setup
+
+#### 1. Install the RealtySoft Connector Plugin
+
+The plugin adds WordPress rewrite rules so property detail URLs serve your property page with HTTP 200 instead of 404.
+
+**Installation:**
+1. Download `realtysoft-connector.zip` from the `wordpress/` directory
+2. Go to WordPress Admin > Plugins > Add New > Upload Plugin
+3. Upload the zip and click "Install Now"
+4. Activate the plugin
+
+**Configuration:**
+1. Go to Settings > RealtySoft
+2. The default slug `property` works out of the box
+3. For multi-language sites, add additional slugs (e.g. `propiedad`, `immobilie`)
+
+**Multi-Language Setup:**
+
+Each language needs its own WordPress page and slug:
+
+| Language | Page URL | Slug Setting |
+|----------|----------|--------------|
+| English  | `/property/` | `property` |
+| Spanish  | `/propiedad/` | `propiedad` |
+| German   | `/immobilie/` | `immobilie` |
+
+Each page should have the RealtySoft widget embed code. The plugin creates a rewrite rule for each slug:
+- `/property/villa-name-REF123` → serves `/property/` page (HTTP 200)
+- `/propiedad/villa-name-REF123` → serves `/propiedad/` page (HTTP 200)
+
+**Troubleshooting:**
+- If property URLs still show 404: Go to Settings > Permalinks > Save Changes
+- Verify your property page exists at the configured slug URL
+- Check that the plugin is activated in Plugins list
+
+#### 2. Embed the Widget
+
+Add the RealtySoft widget script to your property page:
+```html
+<script>
+window.RealtySoftConfig = {
+  propertyPageSlug: 'property'
+};
+</script>
+<script src="https://realtysoft.ai/propertymanager/dist/realtysoft-loader.js"></script>
+```
+
+### Wix Setup
+
+Wix does not support custom server-side rewrite rules. Use **query parameter URLs** instead.
+
+#### 1. Create Property Page
+
+Create a page in the Wix Editor at `/property` (or your preferred path).
+
+#### 2. Add Widget Embed Code
+
+Add the RealtySoft widget using a Custom HTML embed element:
+
+```html
+<script>
+window.RealtySoftConfig = {
+  propertyPageSlug: 'property',
+  useQueryParamUrls: true  // Required for Wix
+};
+</script>
+<script src="https://realtysoft.ai/propertymanager/dist/realtysoft-loader.js"></script>
+```
+
+#### 3. How URLs Work
+
+With `useQueryParamUrls: true`, property URLs use query parameters:
+- Listing page: `/property`
+- Detail page: `/property?ref=REF123`
+
+The page exists natively in Wix (HTTP 200), and the widget reads the `ref` query parameter to load the property.
+
+### Squarespace Setup
+
+Similar to Wix — use query parameter URLs.
+
+#### 1. Create Property Page
+
+Create a page at `/property` in the Squarespace editor.
+
+#### 2. Add Widget via Code Injection
+
+Add the widget code via Settings > Advanced > Code Injection (Header), or use a Code Block on the page:
+
+```html
+<script>
+window.RealtySoftConfig = {
+  propertyPageSlug: 'property',
+  useQueryParamUrls: true  // Required for Squarespace
+};
+</script>
+<script src="https://realtysoft.ai/propertymanager/dist/realtysoft-loader.js"></script>
+```
+
+### Static HTML / Custom Hosting
+
+For sites with server access, configure URL rewriting at the server level.
+
+#### Apache (.htaccess)
+
+```apache
+RewriteEngine On
+RewriteRule ^property/.+$ /property/ [L]
+```
+
+#### Nginx
+
+```nginx
+location ~ ^/property/.+ {
+    try_files $uri /property/index.html;
+}
+```
+
+This gives you SEO-friendly URLs (`/property/villa-name-REF123`) with HTTP 200.
+
+### Social Sharing Configuration
+
+The widget generates share links that pass through `share.php` to provide proper Open Graph meta tags for social media crawlers (Facebook, WhatsApp, LinkedIn, Twitter/X).
+
+**Automatic behavior:**
+- `og:site_name` is automatically set to the client's domain name
+- `og:url` points to the client's property page (not realtysoft.ai)
+- The page title uses the client's domain name
+
+**Custom site name:**
+
+To override the automatic domain-based name, set `siteName` in your config:
+
+```javascript
+window.RealtySoftConfig = {
+  siteName: 'Your Brand Name'  // Shown in social sharing cards
+};
+```
+
+This sets `og:site_name` to "Your Brand Name" instead of the domain. The `site_name` field can also be configured per-client in `config/clients.php`.
+
+### Early Content Hiding (Fallback)
+
+If the server-side rewrite rule is not installed, the widget includes an automatic safety net that prevents the "flash of 404" on CMS platforms:
+
+1. A CSS rule is injected synchronously during script parse
+2. It hides all body content when the URL matches a property detail pattern
+3. Once the widget initializes and injects the detail container, content becomes visible
+4. A 3-second safety timeout ensures the page is never permanently hidden
+
+This is automatic and requires no configuration. When the server-side fix (WordPress plugin or query param URLs) is in place, the early hide has no visible effect — it's removed immediately when the widget initializes.
+
+---
+
 ## Support
 
 For issues and feature requests:
@@ -2366,4 +2679,4 @@ For issues and feature requests:
 
 ---
 
-*Documentation generated January 2026*
+*Documentation for v3.0.0 - Updated January 27, 2026*

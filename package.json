@@ -6,6 +6,9 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:es": "vite build --mode es",
+    "build:sw": "vite build --mode sw",
+    "build:all": "vite build && vite build --mode es && vite build --mode sw",
     "build:legacy": "node build.js",
     "preview": "vite preview",
     "test": "vitest run",

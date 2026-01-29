@@ -7,7 +7,11 @@
  * - ?action=summary - Get summary stats for all clients (admin) or specific client
  * - ?action=trends - Get daily trends data for charts
  * - ?action=properties - Get top properties by event type
- * - ?action=export - Export data as CSV
+ * - ?action=export - Export raw event data as CSV
+ * - ?action=export_properties - Export property performance table as CSV
+ * - ?action=export_trends - Export daily trends as CSV
+ * - ?action=export_searches - Export search insights as CSV
+ * - ?action=export_funnel - Export conversion funnel as CSV
  */
 
 header('Content-Type: application/json');
@@ -846,6 +850,259 @@ switch ($action) {
             ]
         ]);
         break;
+
+    case 'export_properties':
+        $files = getCsvFiles($dataDir, $clientId);
+        $events = readEvents($files, $startDate, $endDate, null, null);
+
+        // Aggregate by property (reuse property_table logic)
+        $propertyStats = [];
+        foreach ($events as $event) {
+            $ref = $event['property_ref'] ?: $event['property_id'];
+            if (!$ref) continue;
+
+            if (!isset($propertyStats[$ref])) {
+                $propertyStats[$ref] = [
+                    'property_ref' => $ref,
+                    'location' => $event['location'],
+                    'property_type' => $event['property_type'],
+                    'price' => $event['price'],
+                    'views' => 0,
+                    'clicks' => 0,
+                    'wishlist_adds' => 0,
+                    'inquiries' => 0,
+                    'shares' => 0,
+                    'unique_sessions' => [],
+                    'last_activity' => $event['timestamp']
+                ];
+            }
+
+            $propertyStats[$ref]['unique_sessions'][$event['session_id']] = true;
+
+            if ($event['action'] === 'property_view') $propertyStats[$ref]['views']++;
+            if ($event['action'] === 'card_click') $propertyStats[$ref]['clicks']++;
+            if ($event['action'] === 'add' && $event['category'] === 'wishlist') $propertyStats[$ref]['wishlist_adds']++;
+            if ($event['action'] === 'submit') $propertyStats[$ref]['inquiries']++;
+            if ($event['action'] === 'share') $propertyStats[$ref]['shares']++;
+
+            if ($event['timestamp'] > $propertyStats[$ref]['last_activity']) {
+                $propertyStats[$ref]['last_activity'] = $event['timestamp'];
+            }
+        }
+
+        // Process stats
+        foreach ($propertyStats as $ref => &$pStats) {
+            $pStats['unique_users'] = count($pStats['unique_sessions']);
+            unset($pStats['unique_sessions']);
+            $totalInteractions = $pStats['views'] + $pStats['clicks'];
+            $pStats['conversion_rate'] = $totalInteractions > 0 ? round(($pStats['inquiries'] / $totalInteractions) * 100, 1) : 0;
+        }
+        unset($pStats);
+
+        // Sort by views desc
+        uasort($propertyStats, function($a, $b) { return $b['views'] - $a['views']; });
+
+        header('Content-Type: text/csv');
+        header('Content-Disposition: attachment; filename="property_performance_' . date('Y-m-d') . '.csv"');
+
+        $output = fopen('php://output', 'w');
+        fputcsv($output, ['Property Ref', 'Location', 'Property Type', 'Price', 'Views', 'Clicks', 'Wishlist Adds', 'Inquiries', 'Shares', 'Unique Users', 'Conversion Rate (%)', 'Last Activity']);
+
+        foreach ($propertyStats as $ps) {
+            fputcsv($output, [
+                $ps['property_ref'],
+                $ps['location'],
+                $ps['property_type'],
+                $ps['price'],
+                $ps['views'],
+                $ps['clicks'],
+                $ps['wishlist_adds'],
+                $ps['inquiries'],
+                $ps['shares'],
+                $ps['unique_users'],
+                $ps['conversion_rate'],
+                $ps['last_activity']
+            ]);
+        }
+
+        fclose($output);
+        exit;
+
+    case 'export_trends':
+        $dailyStats = getDailyStats($dataDir, $clientId, $startDate, $endDate);
+
+        // Fill missing dates with zeros
+        $trendRows = [];
+        $current = clone $startDate;
+        while ($current <= $endDate) {
+            $dateStr = $current->format('Y-m-d');
+            $dayData = $dailyStats[$dateStr] ?? null;
+            $trendRows[] = [
+                'date' => $dateStr,
+                'searches' => $dayData['searches'] ?? 0,
+                'property_views' => $dayData['property_views'] ?? 0,
+                'card_clicks' => $dayData['card_clicks'] ?? 0,
+                'wishlist_adds' => $dayData['wishlist_adds'] ?? 0,
+                'inquiries' => $dayData['inquiries'] ?? 0
+            ];
+            $current->modify('+1 day');
+        }
+
+        header('Content-Type: text/csv');
+        header('Content-Disposition: attachment; filename="daily_trends_' . date('Y-m-d') . '.csv"');
+
+        $output = fopen('php://output', 'w');
+        fputcsv($output, ['Date', 'Searches', 'Property Views', 'Card Clicks', 'Wishlist Adds', 'Inquiries']);
+
+        foreach ($trendRows as $row) {
+            fputcsv($output, [
+                $row['date'],
+                $row['searches'],
+                $row['property_views'],
+                $row['card_clicks'],
+                $row['wishlist_adds'],
+                $row['inquiries']
+            ]);
+        }
+
+        fclose($output);
+        exit;
+
+    case 'export_searches':
+        $files = getCsvFiles($dataDir, $clientId);
+        $events = readEvents($files, $startDate, $endDate, 'search', null);
+
+        // Aggregate search patterns (reuse searches logic)
+        $locationCounts = [];
+        $typeCounts = [];
+        $listingTypeCounts = [];
+
+        foreach ($events as $event) {
+            if (!empty($event['location'])) {
+                $loc = $event['location'];
+                $locationCounts[$loc] = ($locationCounts[$loc] ?? 0) + 1;
+            }
+            if (!empty($event['property_type'])) {
+                $type = $event['property_type'];
+                $typeCounts[$type] = ($typeCounts[$type] ?? 0) + 1;
+            }
+            if (!empty($event['listing_type'])) {
+                $lt = $event['listing_type'];
+                $listingTypeCounts[$lt] = ($listingTypeCounts[$lt] ?? 0) + 1;
+            }
+        }
+
+        arsort($locationCounts);
+        arsort($typeCounts);
+        arsort($listingTypeCounts);
+
+        header('Content-Type: text/csv');
+        header('Content-Disposition: attachment; filename="search_insights_' . date('Y-m-d') . '.csv"');
+
+        $output = fopen('php://output', 'w');
+        fputcsv($output, ['Type', 'Name', 'Count']);
+
+        foreach ($locationCounts as $name => $count) {
+            fputcsv($output, ['Location', $name, $count]);
+        }
+        foreach ($typeCounts as $name => $count) {
+            fputcsv($output, ['Property Type', $name, $count]);
+        }
+        foreach ($listingTypeCounts as $name => $count) {
+            fputcsv($output, ['Listing Type', $name, $count]);
+        }
+
+        fclose($output);
+        exit;
+
+    case 'export_funnel':
+        $files = getCsvFiles($dataDir, $clientId);
+        $events = readEvents($files, $startDate, $endDate, null, null);
+
+        // Track user journeys by session (reuse property_funnel logic)
+        $sessions = [];
+        foreach ($events as $event) {
+            $sessionId = $event['session_id'];
+            if (!isset($sessions[$sessionId])) {
+                $sessions[$sessionId] = [
+                    'searched' => false,
+                    'clicked_property' => false,
+                    'viewed_detail' => false,
+                    'added_wishlist' => false,
+                    'inquired' => false
+                ];
+            }
+
+            switch ($event['action']) {
+                case 'search':
+                    $sessions[$sessionId]['searched'] = true;
+                    break;
+                case 'card_click':
+                    $sessions[$sessionId]['clicked_property'] = true;
+                    break;
+                case 'property_view':
+                    $sessions[$sessionId]['viewed_detail'] = true;
+                    break;
+                case 'add':
+                    if ($event['category'] === 'wishlist') $sessions[$sessionId]['added_wishlist'] = true;
+                    break;
+                case 'submit':
+                    $sessions[$sessionId]['inquired'] = true;
+                    break;
+            }
+        }
+
+        $totalSessions = count($sessions);
+        $funnel = [
+            'total_sessions' => $totalSessions,
+            'searched' => 0,
+            'clicked_property' => 0,
+            'viewed_detail' => 0,
+            'added_wishlist' => 0,
+            'inquired' => 0
+        ];
+
+        foreach ($sessions as $session) {
+            if ($session['searched']) $funnel['searched']++;
+            if ($session['clicked_property']) $funnel['clicked_property']++;
+            if ($session['viewed_detail']) $funnel['viewed_detail']++;
+            if ($session['added_wishlist']) $funnel['added_wishlist']++;
+            if ($session['inquired']) $funnel['inquired']++;
+        }
+
+        // Build funnel steps with conversion to next step
+        $funnelSteps = [
+            ['step' => 'Total Sessions', 'count' => $funnel['total_sessions']],
+            ['step' => 'Searched', 'count' => $funnel['searched']],
+            ['step' => 'Clicked Property', 'count' => $funnel['clicked_property']],
+            ['step' => 'Viewed Detail', 'count' => $funnel['viewed_detail']],
+            ['step' => 'Added Wishlist', 'count' => $funnel['added_wishlist']],
+            ['step' => 'Inquired', 'count' => $funnel['inquired']]
+        ];
+
+        header('Content-Type: text/csv');
+        header('Content-Disposition: attachment; filename="conversion_funnel_' . date('Y-m-d') . '.csv"');
+
+        $output = fopen('php://output', 'w');
+        fputcsv($output, ['Step', 'Sessions', 'Percentage of Total (%)', 'Conversion to Next Step (%)']);
+
+        for ($i = 0; $i < count($funnelSteps); $i++) {
+            $step = $funnelSteps[$i];
+            $pctOfTotal = $totalSessions > 0 ? round(($step['count'] / $totalSessions) * 100, 1) : 0;
+            $convToNext = '';
+            if ($i < count($funnelSteps) - 1 && $step['count'] > 0) {
+                $convToNext = round(($funnelSteps[$i + 1]['count'] / $step['count']) * 100, 1);
+            }
+            fputcsv($output, [
+                $step['step'],
+                $step['count'],
+                $pctOfTotal,
+                $convToNext
+            ]);
+        }
+
+        fclose($output);
+        exit;
 
     default:
         http_response_code(400);
