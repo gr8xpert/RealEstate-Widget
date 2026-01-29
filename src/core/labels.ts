@@ -267,6 +267,13 @@ const RealtySoftLabels: RealtySoftLabelsModule = (function () {
     map_precision_exact: 'Exact location',
     map_precision_zipcode: 'Postal code area',
     map_precision_area: 'Area',
+
+    // Map View (listing)
+    map_loading: 'Loading map...',
+    map_error: 'Unable to load map',
+    map_reset_view: 'Reset View',
+    map_properties_in_view: 'properties in view',
+    results_properties: 'properties',
   };
 
   // Language-specific defaults for labels not provided by the API
@@ -491,6 +498,11 @@ const RealtySoftLabels: RealtySoftLabelsModule = (function () {
       map_precision_exact: 'Ubicación exacta',
       map_precision_zipcode: 'Código postal',
       map_precision_area: 'Zona',
+      map_loading: 'Cargando mapa...',
+      map_error: 'No se puede cargar el mapa',
+      map_reset_view: 'Restablecer vista',
+      map_properties_in_view: 'propiedades a la vista',
+      results_properties: 'propiedades',
     },
     de_DE: {
       search_location: 'Standort',
@@ -589,6 +601,11 @@ const RealtySoftLabels: RealtySoftLabelsModule = (function () {
       save: 'Speichern',
       no_results: 'Keine Ergebnisse gefunden',
       inquiry_default_message: 'Ich interessiere mich für die Immobilie "{title}"{ref}. Bitte kontaktieren Sie mich für weitere Informationen.',
+      map_loading: 'Karte wird geladen...',
+      map_error: 'Karte kann nicht geladen werden',
+      map_reset_view: 'Ansicht zurücksetzen',
+      map_properties_in_view: 'Immobilien in Ansicht',
+      results_properties: 'Immobilien',
     },
     fr_FR: {
       search_location: 'Emplacement',
@@ -687,6 +704,11 @@ const RealtySoftLabels: RealtySoftLabelsModule = (function () {
       save: 'Enregistrer',
       no_results: 'Aucun résultat trouvé',
       inquiry_default_message: 'Je suis intéressé(e) par la propriété "{title}"{ref}. Veuillez me contacter pour plus d\'informations.',
+      map_loading: 'Chargement de la carte...',
+      map_error: 'Impossible de charger la carte',
+      map_reset_view: 'Réinitialiser la vue',
+      map_properties_in_view: 'propriétés visibles',
+      results_properties: 'propriétés',
     },
     nl_NL: {
       // Search
@@ -908,6 +930,11 @@ const RealtySoftLabels: RealtySoftLabelsModule = (function () {
       map_precision_exact: 'Exacte locatie',
       map_precision_zipcode: 'Postcodegebied',
       map_precision_area: 'Gebied',
+      map_loading: 'Kaart laden...',
+      map_error: 'Kan kaart niet laden',
+      map_reset_view: 'Weergave resetten',
+      map_properties_in_view: 'woningen in beeld',
+      results_properties: 'woningen',
     },
     pl_PL: {
       // Search
@@ -1129,6 +1156,11 @@ const RealtySoftLabels: RealtySoftLabelsModule = (function () {
       map_precision_exact: 'Dok\u0142adna lokalizacja',
       map_precision_zipcode: 'Kod pocztowy',
       map_precision_area: 'Obszar',
+      map_loading: '\u0141adowanie mapy...',
+      map_error: 'Nie mo\u017cna za\u0142adowa\u0107 mapy',
+      map_reset_view: 'Resetuj widok',
+      map_properties_in_view: 'nieruchomo\u015bci w widoku',
+      results_properties: 'nieruchomo\u015bci',
     },
     it_IT: {
       // AI Search
@@ -1169,6 +1201,11 @@ const RealtySoftLabels: RealtySoftLabelsModule = (function () {
       pagination_prev: 'Precedente',
       pagination_next: 'Successivo',
       inquiry_default_message: 'Sono interessato/a alla proprietà "{title}"{ref}. Vi prego di contattarmi per maggiori informazioni.',
+      map_loading: 'Caricamento mappa...',
+      map_error: 'Impossibile caricare la mappa',
+      map_reset_view: 'Reimposta vista',
+      map_properties_in_view: 'proprietà visibili',
+      results_properties: 'proprietà',
     },
     pt_PT: {
       // AI Search
@@ -1207,6 +1244,11 @@ const RealtySoftLabels: RealtySoftLabelsModule = (function () {
       pagination_prev: 'Anterior',
       pagination_next: 'Seguinte',
       inquiry_default_message: 'Estou interessado/a no imóvel "{title}"{ref}. Por favor, contactem-me para mais informações.',
+      map_loading: 'A carregar mapa...',
+      map_error: 'Não foi possível carregar o mapa',
+      map_reset_view: 'Repor vista',
+      map_properties_in_view: 'imóveis à vista',
+      results_properties: 'imóveis',
     },
     ru_RU: {
       // AI Search
@@ -1245,6 +1287,11 @@ const RealtySoftLabels: RealtySoftLabelsModule = (function () {
       pagination_prev: 'Назад',
       pagination_next: 'Далее',
       inquiry_default_message: 'Меня интересует недвижимость "{title}"{ref}. Пожалуйста, свяжитесь со мной для получения дополнительной информации.',
+      map_loading: 'Загрузка карты...',
+      map_error: 'Не удалось загрузить карту',
+      map_reset_view: 'Сбросить вид',
+      map_properties_in_view: 'объектов в поле зрения',
+      results_properties: 'объектов',
     },
     zh_CN: {
       // AI Search
@@ -1283,6 +1330,11 @@ const RealtySoftLabels: RealtySoftLabelsModule = (function () {
       pagination_prev: '上一页',
       pagination_next: '下一页',
       inquiry_default_message: '我对房产"{title}"{ref}感兴趣。请与我联系以获取更多信息。',
+      map_loading: '加载地图中...',
+      map_error: '无法加载地图',
+      map_reset_view: '重置视图',
+      map_properties_in_view: '个房产可见',
+      results_properties: '个房产',
     },
     ja_JP: {
       // AI Search
@@ -1321,6 +1373,11 @@ const RealtySoftLabels: RealtySoftLabelsModule = (function () {
       pagination_prev: '前へ',
       pagination_next: '次へ',
       inquiry_default_message: '物件「{title}」{ref}に興味があります。詳細についてご連絡ください。',
+      map_loading: '地図を読み込み中...',
+      map_error: '地図を読み込めません',
+      map_reset_view: '表示をリセット',
+      map_properties_in_view: '件の物件が表示中',
+      results_properties: '件の物件',
     },
     ar_SA: {
       // AI Search
@@ -1359,6 +1416,11 @@ const RealtySoftLabels: RealtySoftLabelsModule = (function () {
       pagination_prev: 'السابق',
       pagination_next: 'التالي',
       inquiry_default_message: 'أنا مهتم بالعقار "{title}"{ref}. يرجى التواصل معي لمزيد من المعلومات.',
+      map_loading: 'جاري تحميل الخريطة...',
+      map_error: 'تعذر تحميل الخريطة',
+      map_reset_view: 'إعادة ضبط العرض',
+      map_properties_in_view: 'عقارات في العرض',
+      results_properties: 'عقارات',
     },
     sv_SE: {
       // AI Search
@@ -1397,6 +1459,11 @@ const RealtySoftLabels: RealtySoftLabelsModule = (function () {
       pagination_prev: 'Föregående',
       pagination_next: 'Nästa',
       inquiry_default_message: 'Jag är intresserad av fastigheten "{title}"{ref}. Vänligen kontakta mig för mer information.',
+      map_loading: 'Laddar karta...',
+      map_error: 'Kunde inte ladda kartan',
+      map_reset_view: 'Återställ vy',
+      map_properties_in_view: 'fastigheter i vyn',
+      results_properties: 'fastigheter',
     },
     no_NO: {
       // AI Search
@@ -1435,6 +1502,11 @@ const RealtySoftLabels: RealtySoftLabelsModule = (function () {
       pagination_prev: 'Forrige',
       pagination_next: 'Neste',
       inquiry_default_message: 'Jeg er interessert i eiendommen "{title}"{ref}. Vennligst ta kontakt for mer informasjon.',
+      map_loading: 'Laster kart...',
+      map_error: 'Kunne ikke laste kartet',
+      map_reset_view: 'Tilbakestill visning',
+      map_properties_in_view: 'eiendommer synlig',
+      results_properties: 'eiendommer',
     },
     da_DK: {
       // AI Search
@@ -1473,6 +1545,11 @@ const RealtySoftLabels: RealtySoftLabelsModule = (function () {
       pagination_prev: 'Forrige',
       pagination_next: 'Næste',
       inquiry_default_message: 'Jeg er interesseret i ejendommen "{title}"{ref}. Kontakt mig venligst for mere information.',
+      map_loading: 'Indlæser kort...',
+      map_error: 'Kunne ikke indlæse kortet',
+      map_reset_view: 'Nulstil visning',
+      map_properties_in_view: 'ejendomme synlige',
+      results_properties: 'ejendomme',
     },
     fi_FI: {
       // AI Search
@@ -1511,6 +1588,11 @@ const RealtySoftLabels: RealtySoftLabelsModule = (function () {
       pagination_prev: 'Edellinen',
       pagination_next: 'Seuraava',
       inquiry_default_message: 'Olen kiinnostunut kiinteistöstä "{title}"{ref}. Ota minuun yhteyttä lisätietoja varten.',
+      map_loading: 'Ladataan karttaa...',
+      map_error: 'Karttaa ei voitu ladata',
+      map_reset_view: 'Palauta näkymä',
+      map_properties_in_view: 'kohdetta näkyvissä',
+      results_properties: 'kohdetta',
     },
   };
 

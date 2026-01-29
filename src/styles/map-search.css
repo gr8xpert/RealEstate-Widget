@@ -1,0 +1,450 @@
+/**
+ * RealtySoft Widget v3 - Map Search Styles
+ * Styles for map view, markers, popups, and clustering
+ */
+
+/* ==========================================================================
+   Map View Container
+   ========================================================================== */
+
+.rs-map-view {
+  width: 100%;
+  height: 500px;
+  min-height: 400px;
+  position: relative;
+  background: var(--rs-gray-100, #f5f5f5);
+  border-radius: var(--rs-border-radius, 8px);
+  overflow: hidden;
+}
+
+.rs-map-view__container {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+.rs-map-view__map {
+  width: 100%;
+  height: 100%;
+}
+
+/* Loading state */
+.rs-map-view__loading {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: var(--rs-bg-primary, #fff);
+  z-index: 10;
+}
+
+.rs-map-view__spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--rs-gray-200, #e5e7eb);
+  border-top-color: var(--rs-primary, #0066cc);
+  border-radius: 50%;
+  animation: rs-map-spin 0.8s linear infinite;
+  margin-bottom: 12px;
+}
+
+@keyframes rs-map-spin {
+  to { transform: rotate(360deg); }
+}
+
+.rs-map-view__loading p {
+  margin: 0;
+  color: var(--rs-text-secondary, #6c757d);
+  font-size: 14px;
+}
+
+.rs-map-view__error {
+  color: var(--rs-danger, #dc3545);
+  font-size: 14px;
+}
+
+/* Info bar */
+.rs-map-view__info {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--rs-bg-primary, #fff);
+  padding: 8px 16px;
+  border-radius: var(--rs-border-radius-pill, 9999px);
+  box-shadow: var(--rs-shadow-lg, 0 10px 15px -3px rgba(0, 0, 0, 0.08));
+  z-index: 1000;
+  font-size: 13px;
+}
+
+.rs-map-view__count {
+  color: var(--rs-text-secondary, #6c757d);
+}
+
+.rs-map-view__reset-bounds {
+  background: var(--rs-primary, #0066cc);
+  color: #fff;
+  border: none;
+  padding: 6px 12px;
+  border-radius: var(--rs-border-radius-sm, 4px);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.rs-map-view__reset-bounds:hover {
+  background: var(--rs-primary-hover, #0052a3);
+}
+
+/* ==========================================================================
+   Custom Map Markers
+   ========================================================================== */
+
+.rs-map-marker {
+  background: transparent;
+  border: none;
+}
+
+.rs-map-marker__pin {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--rs-primary, #0066cc);
+  color: #fff;
+  padding: 6px 10px;
+  border-radius: var(--rs-border-radius-sm, 4px);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  box-shadow: var(--rs-shadow-md, 0 4px 6px -1px rgba(0, 0, 0, 0.08));
+  position: relative;
+  transition: transform 0.2s, background-color 0.2s;
+  cursor: pointer;
+}
+
+.rs-map-marker__pin::after {
+  content: '';
+  position: absolute;
+  bottom: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 6px solid var(--rs-primary, #0066cc);
+}
+
+.rs-map-marker__pin:hover {
+  transform: scale(1.1);
+  background: var(--rs-primary-hover, #0052a3);
+}
+
+.rs-map-marker__pin:hover::after {
+  border-top-color: var(--rs-primary-hover, #0052a3);
+}
+
+.rs-map-marker__price {
+  font-size: 11px;
+  letter-spacing: 0.3px;
+}
+
+/* Featured property marker */
+.rs-map-marker--featured .rs-map-marker__pin {
+  background: var(--rs-warning, #f59e0b);
+}
+
+.rs-map-marker--featured .rs-map-marker__pin::after {
+  border-top-color: var(--rs-warning, #f59e0b);
+}
+
+/* ==========================================================================
+   Map Popup
+   ========================================================================== */
+
+.rs-map-popup .leaflet-popup-content-wrapper {
+  padding: 0;
+  border-radius: var(--rs-border-radius, 8px);
+  overflow: hidden;
+  box-shadow: var(--rs-shadow-xl, 0 20px 25px -5px rgba(0, 0, 0, 0.08));
+}
+
+.rs-map-popup .leaflet-popup-content {
+  margin: 0;
+  width: 280px !important;
+}
+
+.rs-map-popup .leaflet-popup-tip {
+  background: var(--rs-bg-primary, #fff);
+}
+
+.rs-map-popup__content {
+  width: 100%;
+}
+
+.rs-map-popup__link {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+}
+
+.rs-map-popup__link:hover {
+  text-decoration: none;
+}
+
+.rs-map-popup__image {
+  width: 100%;
+  height: 140px;
+  overflow: hidden;
+  background: var(--rs-gray-200, #e5e7eb);
+}
+
+.rs-map-popup__image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s;
+}
+
+.rs-map-popup__link:hover .rs-map-popup__image img {
+  transform: scale(1.05);
+}
+
+.rs-map-popup__details {
+  padding: 12px;
+}
+
+.rs-map-popup__price {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--rs-primary, #0066cc);
+  margin-bottom: 4px;
+}
+
+.rs-map-popup__title {
+  margin: 0 0 4px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--rs-text-primary, #212529);
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.rs-map-popup__location {
+  margin: 0 0 8px 0;
+  font-size: 12px;
+  color: var(--rs-text-secondary, #6c757d);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.rs-map-popup__specs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+  font-size: 12px;
+  color: var(--rs-text-secondary, #6c757d);
+}
+
+.rs-map-popup__specs span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.rs-map-popup__view {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--rs-primary, #0066cc);
+  transition: color 0.2s;
+}
+
+.rs-map-popup__link:hover .rs-map-popup__view {
+  color: var(--rs-primary-hover, #0052a3);
+}
+
+/* ==========================================================================
+   Marker Cluster Customization
+   ========================================================================== */
+
+.marker-cluster {
+  background: var(--rs-primary-alpha-20, rgba(0, 102, 204, 0.2)) !important;
+}
+
+.marker-cluster div {
+  background: var(--rs-primary, #0066cc) !important;
+  color: #fff !important;
+  font-weight: 600 !important;
+  font-size: 12px !important;
+}
+
+.marker-cluster-small {
+  background: var(--rs-primary-alpha-20, rgba(0, 102, 204, 0.2)) !important;
+}
+
+.marker-cluster-small div {
+  background: var(--rs-primary, #0066cc) !important;
+}
+
+.marker-cluster-medium {
+  background: var(--rs-primary-alpha-20, rgba(0, 102, 204, 0.3)) !important;
+}
+
+.marker-cluster-medium div {
+  background: var(--rs-primary-dark, #0052a3) !important;
+}
+
+.marker-cluster-large {
+  background: var(--rs-primary-alpha-50, rgba(0, 102, 204, 0.4)) !important;
+}
+
+.marker-cluster-large div {
+  background: var(--rs-gray-800, #1f2937) !important;
+}
+
+/* ==========================================================================
+   View Toggle - Map Button
+   ========================================================================== */
+
+.rs-view-toggle__btn--map {
+  /* Inherits styles from existing .rs-view-toggle__btn */
+}
+
+.rs-view-toggle__btn--map svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* ==========================================================================
+   Map Search Template
+   ========================================================================== */
+
+.rs-map-search-template-01 {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.rs-map-search-template-01__filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 16px;
+  background: var(--rs-bg-secondary, #f8f9fa);
+  border-radius: var(--rs-border-radius, 8px);
+}
+
+.rs-map-search-template-01__map-container {
+  position: relative;
+  width: 100%;
+}
+
+.rs-map-search-template-01 .rs-map-view {
+  height: 600px;
+}
+
+.rs-map-search-template-01__results-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: var(--rs-bg-primary, #fff);
+  border-radius: var(--rs-border-radius, 8px);
+  box-shadow: var(--rs-shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.06));
+}
+
+/* ==========================================================================
+   Responsive Adjustments
+   ========================================================================== */
+
+@media (max-width: 768px) {
+  .rs-map-view {
+    height: 400px;
+    min-height: 300px;
+    border-radius: 0;
+  }
+
+  .rs-map-view__info {
+    bottom: 12px;
+    left: 12px;
+    right: 12px;
+    transform: none;
+    justify-content: center;
+  }
+
+  .rs-map-popup .leaflet-popup-content {
+    width: 260px !important;
+  }
+
+  .rs-map-popup__image {
+    height: 120px;
+  }
+
+  .rs-map-popup__details {
+    padding: 10px;
+  }
+
+  .rs-map-popup__price {
+    font-size: 16px;
+  }
+
+  .rs-map-popup__title {
+    font-size: 13px;
+  }
+
+  .rs-map-search-template-01 .rs-map-view {
+    height: 450px;
+  }
+}
+
+@media (max-width: 480px) {
+  .rs-map-view {
+    height: 350px;
+  }
+
+  .rs-map-view__info {
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px 12px;
+  }
+
+  .rs-map-marker__pin {
+    padding: 4px 8px;
+    font-size: 10px;
+  }
+
+  .rs-map-popup .leaflet-popup-content {
+    width: 240px !important;
+  }
+}
+
+/* ==========================================================================
+   Print Styles
+   ========================================================================== */
+
+@media print {
+  .rs-map-view {
+    display: none;
+  }
+
+  .rs-view-toggle__btn--map {
+    display: none;
+  }
+}

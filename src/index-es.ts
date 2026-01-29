@@ -8,6 +8,7 @@
 
 // Import styles
 import './styles/realtysoft.css';
+import './styles/map-search.css';
 
 // Import core modules eagerly (always needed)
 import { RealtySoftState } from './core/state';
@@ -49,7 +50,9 @@ async function loadRequiredChunks(): Promise<void> {
     !!doc.querySelector('.rs_results_count') ||
     !!doc.querySelector('.rs_active_filters') ||
     !!doc.querySelector('.rs_view_toggle') ||
-    !!doc.querySelector('[class*="rs-listing-template"]');
+    !!doc.querySelector('.rs_map_view') ||
+    !!doc.querySelector('[class*="rs-listing-template"]') ||
+    !!doc.querySelector('[class*="rs-map-search-template"]');
 
   const needsDetail =
     !!doc.querySelector('.rs_detail') ||

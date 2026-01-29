@@ -2,7 +2,7 @@
 
 A modular "Lego blocks" real estate property search widget system built with TypeScript and Vite.
 
-**Current Version:** 3.3.0 | **Last Updated:** January 29, 2026
+**Current Version:** 3.4.0 | **Last Updated:** January 29, 2026
 
 ---
 
@@ -46,7 +46,11 @@ window.RealtySoftConfig = {
     labelOverrides: {
         _default: { search_button: 'Find Properties' },
         es_ES: { search_button: 'Buscar' }
-    }
+    },
+    // Map View Settings
+    enableMapView: true,   // Enable/disable map view toggle (default: true)
+    perPage: 12,           // Items per page for grid/list view (default: 12)
+    mapPerPage: 50         // Items per page for map view (default: 50)
 };
 </script>
 ```
@@ -113,17 +117,18 @@ window.RealtySoftConfig = {
 | 05 | `rs-search-template-05` | Vertical card/sidebar (stacked fields) |
 | 06 | `rs-search-template-06` | Minimal single row (location + type + search) |
 
-### Listing Components (7)
+### Listing Components (8)
 
 | Component | Description |
 |-----------|-------------|
 | `rs_property_grid` | Property cards (grid/list, `data-rs-columns="1-4"`) |
 | `rs_property_carousel` | Property carousel (`data-rs-template="1-6"`) |
+| `rs_map_view` | **NEW** Interactive map with property markers |
 | `rs_pagination` | Page navigation |
 | `rs_sort` | Sort dropdown |
 | `rs_results_count` | "X properties found" |
 | `rs_active_filters` | Active filter tags |
-| `rs_view_toggle` | Grid/List switch |
+| `rs_view_toggle` | Grid/List/Map switch |
 
 ### Card Sub-Components (14)
 
@@ -425,13 +430,14 @@ The widget works across multiple website platforms with smart content detection:
 |-------|--------|
 | Core System | Complete |
 | Search Components (12) | Complete |
-| Listing Components (7) | Complete |
+| Listing Components (8) | Complete |
 | Detail Components (17) | Complete |
 | Utility Components (5) | Complete |
 | PHP Backend (7) | Complete |
 | Performance Optimization | Complete |
 | Search Templates (6) | Complete |
 | Listing Templates (12) | Complete |
+| Map Search Template (1) | Complete |
 | Carousel Templates (6) | Complete |
 | Analytics Dashboard | Complete |
 | Test Suite (889 tests) | Complete |
@@ -440,8 +446,17 @@ The widget works across multiple website platforms with smart content detection:
 | CSV Export (5 export types) | Complete |
 | Enhanced i18n Testing (16 languages) | Complete |
 | Lazy Loading (IntersectionObserver) | Complete |
+| Map Search Feature | Complete |
 
-### Recent Updates (v3.3.0) - January 29, 2026
+### Recent Updates (v3.4.0) - January 29, 2026
+- **Map Search Feature:** Interactive map view with property markers, marker clustering, and bounds-based filtering
+- **Grid/List/Map Toggle:** View toggle now includes Map option (configurable via `enableMapView`)
+- **Configurable Pagination:** New `perPage` (default: 12) and `mapPerPage` (default: 50) config options
+- **Map Search Template:** New `rs-map-search-template-01` with filters and full-width map
+- **Detail Page Map Fix:** Municipality polygon boundaries now display correctly (prioritizes municipality over neighborhood)
+- **Map Labels Translated:** All map-related labels translated in 15 languages
+
+### Previous Updates (v3.3.0) - January 29, 2026
 - **Widget Duplicate Prevention:** Fixed issue where widget appeared multiple times when page builders copy content to header/footer
 - **Multi-Platform Support:** Added detection for Wix, Webflow, and Squarespace (in addition to WordPress)
 - **Smart Content Detection:** Widget now prioritizes main content area over header/footer zones

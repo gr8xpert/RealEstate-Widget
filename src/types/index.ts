@@ -48,7 +48,7 @@ export interface ResultsState {
 // UI Types
 // ============================================================
 
-export type ViewType = 'grid' | 'list';
+export type ViewType = 'grid' | 'list' | 'map';
 export type SortType =
   | 'create_date_desc'
   | 'create_date_asc'
@@ -61,6 +61,21 @@ export interface UIState {
   sort: SortType;
   loading: boolean;
   error: string | null;
+}
+
+// ============================================================
+// Map Types
+// ============================================================
+
+export interface MapBounds {
+  ne: [number, number] | null;  // Northeast corner [lat, lng]
+  sw: [number, number] | null;  // Southwest corner [lat, lng]
+}
+
+export interface MapState {
+  bounds: MapBounds;
+  zoom: number;
+  center: [number, number] | null;
 }
 
 // ============================================================
@@ -110,6 +125,9 @@ export interface WidgetConfig {
   siteName?: string;
   wpRestUrl?: string;
   wpApiNonce?: string;
+  enableMapView?: boolean;
+  perPage?: number;      // Items per page for grid/list view (default: 12)
+  mapPerPage?: number;   // Items per page for map view (default: 50)
 }
 
 // ============================================================
@@ -235,6 +253,7 @@ export interface AppState {
   results: ResultsState;
   currentProperty: Property | null;
   ui: UIState;
+  map: MapState;
   wishlist: number[];
   data: {
     locations: Location[];

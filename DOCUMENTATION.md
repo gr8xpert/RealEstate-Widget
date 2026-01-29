@@ -1,6 +1,6 @@
 # RealtySoft Widget v3 - Complete Documentation
 
-> Version 3.3.0 | Last Updated: January 29, 2026
+> Version 3.4.0 | Last Updated: January 29, 2026
 
 ---
 
@@ -482,6 +482,11 @@ window.RealtySoftConfig = {
     privacyPolicyUrl: '/privacy',   // Privacy policy link
     propertyPageSlug: 'property',   // URL slug for property pages
     resultsPage: '/properties',     // Redirect URL for search-only mode (default: /properties)
+
+    // Map View Settings
+    enableMapView: true,            // Enable/disable map view toggle (default: true)
+    perPage: 12,                    // Items per page for grid/list view (default: 12)
+    mapPerPage: 50,                 // Items per page for map view (default: 50)
 
     // Locked filters (visitor cannot change these)
     lockedFilters: {
@@ -1006,11 +1011,90 @@ Shows selected filters as removable tags.
 
 ### View Toggle (`rs_view_toggle`)
 
-Toggle between grid and list views.
+Toggle between grid, list, and map views.
 
 ```html
 <div class="rs_view_toggle"></div>
 ```
+
+**Features:**
+- Grid view button (default)
+- List view button
+- Map view button (when `enableMapView: true`)
+
+**Configuration:**
+
+```javascript
+window.RealtySoftConfig = {
+  enableMapView: true,  // Show/hide map button (default: true)
+};
+```
+
+---
+
+### Map View (`rs_map_view`)
+
+Interactive Leaflet map displaying properties as markers with clustering and bounds-based filtering.
+
+```html
+<div class="rs_map_view"></div>
+```
+
+**Features:**
+- Interactive Leaflet map with OpenStreetMap tiles
+- Property markers with formatted price labels
+- Marker clustering when zoomed out
+- Click marker to see popup with property info (image, title, specs)
+- Click "View Details" in popup to navigate to property
+- Pan/zoom to filter visible properties (client-side)
+- Reset View button to show all properties
+- Responsive design (full-width on mobile)
+
+**Configuration:**
+
+```javascript
+window.RealtySoftConfig = {
+  enableMapView: true,   // Enable/disable map view toggle (default: true)
+  perPage: 12,           // Items per page for grid/list view (default: 12)
+  mapPerPage: 50         // Items per page for map view (default: 50)
+};
+```
+
+**Behavior:**
+- When switching to map view, fetches `mapPerPage` properties (default: 50)
+- When switching back to grid/list, fetches `perPage` properties (default: 12)
+- Properties without coordinates are excluded from map but included in count
+- Map info bar shows "X of Y properties in view"
+
+**Popup Icons:**
+Property popups display specs with icons:
+- 🛏️ Bed icon for bedrooms
+- 🚿 Bath icon for bathrooms
+- 📐 Area icon for built area (m²)
+
+**Dependencies:**
+- Leaflet 1.9.4 (loaded dynamically from CDN)
+- Leaflet.MarkerCluster 1.4.1 (loaded dynamically from CDN)
+
+---
+
+### Map Search Template (`rs-map-search-template-01`)
+
+Pre-built template combining search filters with a full-width map view.
+
+```html
+<div class="rs-map-search-template-01"></div>
+```
+
+**Includes:**
+- Location filter
+- Listing type filter
+- Property type filter
+- Bedrooms filter
+- Price range filter
+- Search button
+- Full-width map view with markers
+- Results count
 
 ---
 

@@ -10,4 +10,5 @@ import './sort';
 import './results-count';
 import './active-filters';
 import './view-toggle';
+import './map-view';
 import './card/index';

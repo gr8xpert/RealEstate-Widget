@@ -316,22 +316,41 @@ class RSDetailMap extends RSBaseComponent {
         if (data && data.length > 0 && data[0].geojson) {
           const result = data[0];
           const geojson = result.geojson;
+          const geomType = geojson.type;
 
-          // Add boundary polygon
-          const layer = L.geoJSON(geojson, {
-            style: () => ({
+          // Check if the geometry is actually a polygon (not a Point)
+          // Nominatim can return Point geometry for small locations
+          const isPolygon = geomType === 'Polygon' || geomType === 'MultiPolygon';
+
+          if (isPolygon) {
+            // Add boundary polygon
+            const layer = L.geoJSON(geojson, {
+              style: () => ({
+                color: '#0066cc',
+                weight: 3,
+                opacity: 0.8,
+                fillColor: '#0066cc',
+                fillOpacity: 0.1
+              })
+            });
+            layer.addTo(map);
+
+            // Fit map to boundary bounds
+            const bounds = layer.getBounds();
+            map.fitBounds(bounds, { padding: [30, 30] });
+          } else {
+            // geoJSON is a Point or other non-polygon type - use circleMarker
+            const lat = parseFloat(result.lat);
+            const lng = parseFloat(result.lon);
+            map.setView([lat, lng], 14);
+            L.circleMarker([lat, lng], {
+              radius: 10,
               color: '#0066cc',
-              weight: 3,
-              opacity: 0.8,
               fillColor: '#0066cc',
-              fillOpacity: 0.1
-            })
-          });
-          layer.addTo(map);
-
-          // Fit map to boundary bounds
-          const bounds = layer.getBounds();
-          map.fitBounds(bounds, { padding: [30, 30] });
+              fillOpacity: 0.2,
+              weight: 2
+            }).addTo(map);
+          }
         } else if (data && data.length > 0) {
           // No polygon, but have coordinates - center on point
           const lat = parseFloat(data[0].lat);
@@ -361,9 +380,9 @@ class RSDetailMap extends RSBaseComponent {
   }
 
   /**
-   * Build query string for Nominatim search
+   * Build query string for Nominatim search (municipality-first for polygon boundaries)
    */
-  private buildNominatimQuery(): string {
+  private buildNominatimQuery(useMunicipality: boolean = true): string {
     if (this.currentMode === 'zipcode' && this.zipcode) {
       const parts = [this.zipcode];
       if (this.province) parts.push(this.province);
@@ -371,17 +390,25 @@ class RSDetailMap extends RSBaseComponent {
       return parts.join(', ');
     }
 
-    // Municipality/Location mode — prioritize location name (what's shown below price)
-    // This ensures the map shows the same area the user sees in the property details
+    // Municipality mode: prioritize municipality for polygon boundaries
+    // Neighborhoods (locationName) often don't have polygon boundaries in Nominatim
     const parts: string[] = [];
-    if (this.locationName) {
-      // Use location name first (e.g., "Nueva Andalucía")
-      parts.push(this.locationName);
-      if (this.province) parts.push(this.province);
-    } else if (this.municipality) {
+
+    if (useMunicipality && this.municipality) {
+      // Use municipality (e.g., "Torremolinos") - more likely to have polygon
       parts.push(this.municipality);
-      if (this.province) parts.push(this.province);
+    } else if (this.locationName) {
+      // Use location name (e.g., "Torremolinos Centro")
+      parts.push(this.locationName);
+    } else if (this.municipality) {
+      // Fallback to municipality if no location name
+      parts.push(this.municipality);
     } else if (this.province) {
+      // Use province as last resort
+      parts.push(this.province);
+    }
+
+    if (this.province && parts[0] !== this.province) {
       parts.push(this.province);
     }
     parts.push(this.country);

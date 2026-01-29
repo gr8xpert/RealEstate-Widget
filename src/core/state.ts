@@ -18,6 +18,7 @@ import type {
   SubscriptionCallback,
   UnsubscribeFunction,
   RealtySoftStateModule,
+  MapState,
 } from '../types/index';
 
 // Type for subscribers map
@@ -70,6 +71,16 @@ const RealtySoftState: RealtySoftStateModule = (function () {
       sort: 'create_date_desc',
       loading: false,
       error: null,
+    },
+
+    // Map state
+    map: {
+      bounds: {
+        ne: null,
+        sw: null,
+      },
+      zoom: 10,
+      center: null,
     },
 
     // Wishlist

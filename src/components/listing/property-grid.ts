@@ -964,8 +964,15 @@ class RSPropertyGrid extends RSBaseComponent {
   }
 
   private updateViewClass(): void {
-    this.element.classList.remove('rs-property-grid--grid', 'rs-property-grid--list');
+    this.element.classList.remove('rs-property-grid--grid', 'rs-property-grid--list', 'rs-property-grid--map');
     this.element.classList.add(`rs-property-grid--${this.view}`);
+
+    // Hide grid when map view is active (map component handles display)
+    if (this.view === 'map') {
+      this.element.style.display = 'none';
+    } else {
+      this.element.style.display = '';
+    }
   }
 
   private updateLoadingState(): void {

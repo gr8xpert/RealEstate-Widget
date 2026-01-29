@@ -1,6 +1,6 @@
 # RealtySoft Widget v3 - Development Status
 
-> **Version:** 3.3.0 | **Last Updated:** January 29, 2026
+> **Version:** 3.4.0 | **Last Updated:** January 29, 2026
 
 ---
 
@@ -32,6 +32,7 @@
 | Phase 12: Labels Optimization & Detail UX | Complete | 100% |
 | Phase 13: Dynamic Language Content Switching | Complete | 100% |
 | Phase 14: Widget Duplicate Prevention & Multi-Platform | Complete | 100% |
+| Phase 15: Map Search Feature | Complete | 100% |
 
 ---
 
@@ -179,13 +180,14 @@ if (labelsData && labelsData.labels) {
 |-----------|------|--------|-------------|
 | Property Grid | `property-grid.ts` | Complete | Grid/list display with carousels |
 | Property Carousel | `property-carousel.ts` | Complete | 6 carousel templates |
+| Map View | `map-view.ts` | Complete | Interactive map with markers (Phase 15) |
 | Pagination | `pagination.ts` | Complete | Page navigation (prev/next/numbers) |
 | Sort | `sort.ts` | Complete | Sort dropdown |
 | Results Count | `results-count.ts` | Complete | "X properties found" |
 | Active Filters | `active-filters.ts` | Complete | Filter tags with remove |
-| View Toggle | `view-toggle.ts` | Complete | Grid/list switch |
+| View Toggle | `view-toggle.ts` | Complete | Grid/List/Map switch |
 
-**Total: 7 Components**
+**Total: 8 Components**
 
 ---
 
@@ -541,6 +543,81 @@ These components can be placed ANYWHERE on the page (including header/footer/men
 | `rs_wishlist_button` | Add to wishlist button |
 | `rs_language_selector` | Language dropdown |
 | `rs_share_buttons` | Social share buttons |
+
+---
+
+### Phase 15: Map Search Feature (v3.4.0)
+
+Interactive map view allowing users to view properties as markers on a map, search by map bounds, and toggle between Grid/List/Map views.
+
+#### Features Implemented
+
+| Feature | Description |
+|---------|-------------|
+| **Map View Component** | Interactive Leaflet map displaying property markers |
+| **Marker Clustering** | Markers grouped when zoomed out (Leaflet.MarkerCluster) |
+| **Bounds-Based Filtering** | Pan/zoom updates visible properties (client-side filtering) |
+| **View Toggle Update** | Grid/List/Map toggle (configurable via `enableMapView`) |
+| **Custom Price Markers** | Property markers showing formatted price |
+| **Property Popups** | Click marker to see property info with image, specs, and "View Details" |
+| **Reset View Button** | Reset map to show all properties |
+| **Configurable Pagination** | Separate `perPage` (12) and `mapPerPage` (50) settings |
+| **Map Search Template** | Pre-built `rs-map-search-template-01` with filters + map |
+
+#### Files Created/Modified
+
+| File | Change |
+|------|--------|
+| `src/components/listing/map-view.ts` | **NEW** - Main map view component |
+| `src/styles/map-search.css` | **NEW** - Map-specific styles |
+| `src/types/index.ts` | Added MapState, MapBounds types; `enableMapView`, `perPage`, `mapPerPage` to config |
+| `src/core/state.ts` | Added map state (bounds, zoom, center) |
+| `src/core/controller.ts` | Added map template, component registration, perPage handling on view switch |
+| `src/components/listing/view-toggle.ts` | Added Map button, checks `enableMapView` setting |
+| `src/components/listing/property-grid.ts` | Hide grid when map view active |
+| `src/components/listing/index.ts` | Export map-view |
+| `src/components/detail/map.ts` | Fixed municipality polygon (prioritize municipality over neighborhood) |
+| `src/core/labels.ts` | Added map labels in 15 languages |
+| `src/index.ts`, `src/index-es.ts` | Import map-search.css |
+
+#### Configuration Options
+
+```javascript
+window.RealtySoftConfig = {
+  enableMapView: true,   // Enable/disable map view toggle (default: true)
+  perPage: 12,           // Items per page for grid/list view (default: 12)
+  mapPerPage: 50         // Items per page for map view (default: 50)
+};
+```
+
+#### Map Labels (Translated in 15 Languages)
+
+| Label Key | English | Description |
+|-----------|---------|-------------|
+| `map_loading` | "Loading map..." | Map loading state |
+| `map_error` | "Unable to load map" | Map error state |
+| `map_reset_view` | "Reset View" | Reset view button |
+| `map_properties_in_view` | "properties in view" | Count suffix |
+| `results_properties` | "properties" | Generic property count |
+
+Languages: English, Spanish, German, French, Dutch, Polish, Italian, Portuguese, Russian, Chinese, Japanese, Arabic, Swedish, Norwegian, Danish, Finnish
+
+#### Technical Details
+
+- **Leaflet 1.9.4** - Map library (dynamically loaded from CDN)
+- **Leaflet.MarkerCluster 1.4.1** - Marker clustering plugin
+- **Client-side filtering** - API doesn't support geo-bounds, filters cached results
+- **Debounced updates** - 300ms debounce on pan/zoom filtering
+- **SPA Navigation** - Marker popups use RealtySoftRouter when available
+
+#### Detail Page Map Fix
+
+Fixed issue where detail page map showed pinpoint marker instead of municipality polygon boundary:
+
+| Issue | Cause | Fix |
+|-------|-------|-----|
+| Pin instead of polygon | Nominatim query used neighborhood name (no polygon data) | Query municipality first |
+| Point geometry rendered as marker | `L.geoJSON()` renders Point as default marker | Check geometry type, use circleMarker for non-polygons |
 
 ---
 

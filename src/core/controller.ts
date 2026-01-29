@@ -49,6 +49,9 @@ interface ControllerConfig {
   wpRestUrl?: string;
   wpApiNonce?: string;
   siteName?: string;
+  enableMapView?: boolean;
+  perPage?: number;      // Items per page for grid/list view (default: 12)
+  mapPerPage?: number;   // Items per page for map view (default: 50)
 }
 
 // Widget mode type
@@ -424,7 +427,8 @@ const RealtySoft = (function () {
       !!document.querySelector('.rs-listing-template-09') ||
       !!document.querySelector('.rs-listing-template-10') ||
       !!document.querySelector('.rs-listing-template-11') ||
-      !!document.querySelector('.rs-listing-template-12');
+      !!document.querySelector('.rs-listing-template-12') ||
+      !!document.querySelector('.rs-map-search-template-01');
 
     // Standalone listings fetch their own data independently — don't count for widget mode
     if (hasListing) {
@@ -892,6 +896,7 @@ const RealtySoft = (function () {
         </div>
       </div>
       <div class="rs_active_filters" style="margin-bottom: 20px;"></div>
+      <div class="rs_map_view"></div>
       <div class="rs_property_grid">
         <div class="rs_card rs-template-card-01">
           <div class="rs-template-card-01__image-section">
@@ -967,6 +972,7 @@ const RealtySoft = (function () {
         </div>
       </div>
       <div class="rs_active_filters" style="margin-bottom: 20px;"></div>
+      <div class="rs_map_view"></div>
       <div class="rs_property_grid">
         <div class="rs_card rs-template-card-02">
           <div class="rs-template-card-02__image-section">
@@ -1032,6 +1038,7 @@ const RealtySoft = (function () {
         </div>
       </div>
       <div class="rs_active_filters" style="margin-bottom: 20px;"></div>
+      <div class="rs_map_view"></div>
       <div class="rs_property_grid">
         <div class="rs_card rs-template-card-03">
           <div class="rs-template-card-03__image-section">
@@ -1104,6 +1111,7 @@ const RealtySoft = (function () {
         </div>
       </div>
       <div class="rs_active_filters" style="margin-bottom: 20px;"></div>
+      <div class="rs_map_view"></div>
       <div class="rs_property_grid">
         <div class="rs_card rs-template-card-04">
           <div class="rs-template-card-04__image-section">
@@ -1156,6 +1164,7 @@ const RealtySoft = (function () {
         </div>
       </div>
       <div class="rs_active_filters" style="margin-bottom: 20px;"></div>
+      <div class="rs_map_view"></div>
       <div class="rs_property_grid">
         <div class="rs_card rs-template-card-05">
           <a class="rs_card_link rs-template-card-05__link">
@@ -1229,6 +1238,7 @@ const RealtySoft = (function () {
         </div>
       </div>
       <div class="rs_active_filters" style="margin-bottom: 20px;"></div>
+      <div class="rs_map_view"></div>
       <div class="rs_property_grid">
         <div class="rs_card rs-template-card-06">
           <a class="rs_card_link rs-template-card-06__link">
@@ -1286,6 +1296,7 @@ const RealtySoft = (function () {
         </div>
       </div>
       <div class="rs_active_filters" style="margin-bottom: 20px;"></div>
+      <div class="rs_map_view"></div>
       <div class="rs_property_grid">
         <div class="rs_card rs-template-card-07">
           <a class="rs_card_link rs-template-card-07__link">
@@ -1354,6 +1365,7 @@ const RealtySoft = (function () {
         </div>
       </div>
       <div class="rs_active_filters" style="margin-bottom: 20px;"></div>
+      <div class="rs_map_view"></div>
       <div class="rs_property_grid">
         <div class="rs_card rs-template-card-08">
           <a class="rs_card_link rs-template-card-08__link">
@@ -1422,6 +1434,7 @@ const RealtySoft = (function () {
         </div>
       </div>
       <div class="rs_active_filters" style="margin-bottom: 20px;"></div>
+      <div class="rs_map_view"></div>
       <div class="rs_property_grid">
         <div class="rs_card rs-template-card-09">
           <a class="rs_card_link rs-template-card-09__link">
@@ -1497,6 +1510,7 @@ const RealtySoft = (function () {
         </div>
       </div>
       <div class="rs_active_filters" style="margin-bottom: 20px;"></div>
+      <div class="rs_map_view"></div>
       <div class="rs_property_grid">
         <div class="rs_card rs-template-card-10">
           <a class="rs_card_link rs-template-card-10__link">
@@ -1572,6 +1586,7 @@ const RealtySoft = (function () {
         </div>
       </div>
       <div class="rs_active_filters" style="margin-bottom: 20px;"></div>
+      <div class="rs_map_view"></div>
       <div class="rs_property_grid">
         <div class="rs_card rs-template-card-11">
           <a class="rs_card_link rs-template-card-11__link">
@@ -1649,6 +1664,7 @@ const RealtySoft = (function () {
         </div>
       </div>
       <div class="rs_active_filters" style="margin-bottom: 20px;"></div>
+      <div class="rs_map_view"></div>
       <div class="rs_property_grid">
         <div class="rs_card rs-template-card-12">
           <a class="rs_card_link rs-template-card-12__link">
@@ -1711,6 +1727,41 @@ const RealtySoft = (function () {
         </div>
       </div>
       <div class="rs_pagination" style="margin-top: 30px;"></div>
+    `,
+
+    // Map Search Template 01: Full-width map with filters on top
+    'rs-map-search-template-01': `
+      <div class="rs-map-search-template-01">
+        <div class="rs-map-search-template-01__filters">
+          <div class="rs-map-search-template-01__field">
+            <div class="rs_location" data-rs-variation="2"></div>
+          </div>
+          <div class="rs-map-search-template-01__field">
+            <div class="rs_property_type" data-rs-variation="2"></div>
+          </div>
+          <div class="rs-map-search-template-01__field">
+            <div class="rs_bedrooms" data-rs-variation="1"></div>
+          </div>
+          <div class="rs-map-search-template-01__field">
+            <div class="rs_price" data-rs-variation="1" data-rs-type="min"></div>
+          </div>
+          <div class="rs-map-search-template-01__field">
+            <div class="rs_price" data-rs-variation="1" data-rs-type="max"></div>
+          </div>
+          <div class="rs-map-search-template-01__field">
+            <div class="rs_search_button"></div>
+          </div>
+        </div>
+        <div class="rs-map-search-template-01__map-container">
+          <div class="rs_map_view"></div>
+        </div>
+        <div class="rs-map-search-template-01__results-bar">
+          <div class="rs_results_count"></div>
+          <div class="rs_view_toggle"></div>
+        </div>
+        <div class="rs_property_grid"></div>
+        <div class="rs_pagination" style="margin-top: 30px;"></div>
+      </div>
     `,
   };
 
@@ -2226,6 +2277,14 @@ const RealtySoft = (function () {
         RealtySoftState.set('config.useQueryParamUrls', globalConfig.useQueryParamUrls === true);
         RealtySoftState.set('config.propertyUrlFormat', globalConfig.propertyUrlFormat || 'seo');
         RealtySoftState.set('config.resultsPage', globalConfig.resultsPage || '/properties');
+        RealtySoftState.set('config.enableMapView', globalConfig.enableMapView !== false);
+
+        // Pagination settings
+        const defaultPerPage = globalConfig.perPage || 12;
+        const defaultMapPerPage = globalConfig.mapPerPage || 50;
+        RealtySoftState.set('config.perPage', defaultPerPage);
+        RealtySoftState.set('config.mapPerPage', defaultMapPerPage);
+        RealtySoftState.set('results.perPage', defaultPerPage);
 
         // Labels mode: 'static' (default), 'api', or 'hybrid'
         const labelsMode = globalConfig.labelsMode || 'static';
@@ -2426,6 +2485,11 @@ const RealtySoft = (function () {
       '.rs-listing-template-10',
       '.rs-listing-template-11',
       '.rs-listing-template-12',
+      // Map search templates
+      '.rs-map-search-template-01',
+      // Standalone components (can be placed without a container)
+      '.rs_property_carousel',
+      '.rs_property_grid',
       // Standalone listings
       '[data-rs-standalone]',
     ];
@@ -2507,6 +2571,23 @@ const RealtySoft = (function () {
       console.log('[RealtySoft] Found', containers.length, 'widget container(s)');
 
       for (const container of containers) {
+        // Check if the container ITSELF is a component that needs initialization
+        // (e.g., property-detail-container is both a container and a component)
+        const rsContainer = container as RSHTMLElement;
+        if (!rsContainer._rsComponent) {
+          for (const name of containerComponents) {
+            if (rsContainer.classList.contains(name) && components[name]) {
+              const variation = rsContainer.dataset.rsVariation || '1';
+              console.log(`[RealtySoft] Initializing container-component ${name} with variation: ${variation}`);
+              const instance = new components[name](rsContainer, { variation });
+              componentInstances.push(instance);
+              rsContainer._rsComponent = instance;
+              break;
+            }
+          }
+        }
+
+        // Then search for components INSIDE the container
         container.querySelectorAll<RSHTMLElement>(containerSelectors).forEach((element) => {
           // Skip if already initialized
           if (element._rsComponent) return;
@@ -2774,11 +2855,30 @@ const RealtySoft = (function () {
   }
 
   /**
-   * Change view (grid/list)
+   * Change view (grid/list/map)
+   * When switching to/from map view, adjust perPage and re-fetch if needed
    */
   function setView(view: string): void {
+    const previousView = RealtySoftState.get<string>('ui.view') || 'grid';
+    const wasMapView = previousView === 'map';
+    const isMapView = view === 'map';
+
     RealtySoftState.set('ui.view', view);
     RealtySoftAnalytics.trackViewToggle(view);
+
+    // Check if perPage needs to change
+    if (wasMapView !== isMapView) {
+      const listPerPage = RealtySoftState.get<number>('config.perPage') || 12;
+      const mapPerPage = RealtySoftState.get<number>('config.mapPerPage') || 50;
+      const newPerPage = isMapView ? mapPerPage : listPerPage;
+      const currentPerPage = RealtySoftState.get<number>('results.perPage') || 12;
+
+      if (newPerPage !== currentPerPage) {
+        RealtySoftState.set('results.perPage', newPerPage);
+        RealtySoftState.set('results.page', 1); // Reset to page 1
+        search();
+      }
+    }
   }
 
   /**

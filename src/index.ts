@@ -8,6 +8,7 @@
 
 // Import styles
 import './styles/realtysoft.css';
+import './styles/map-search.css';
 
 // Import core modules (order matters - dependencies first)
 // Named imports ensure Rollup keeps these variables in the IIFE scope,
