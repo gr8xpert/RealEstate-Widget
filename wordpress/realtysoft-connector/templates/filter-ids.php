@@ -1,9 +1,20 @@
+<?php
+/**
+ * RealtySoft Filter IDs Reference Page
+ * White-labeled version for WordPress
+ */
+
+if (!defined('ABSPATH')) exit;
+
+$domain = preg_replace('/^www\./', '', parse_url(home_url(), PHP_URL_HOST));
+$proxy_url = 'https://realtysoft.ai/propertymanager/php/api-proxy.php';
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Filter IDs Reference - RealtySoft</title>
+    <title>Filter IDs Reference - <?php echo esc_html(get_bloginfo('name')); ?></title>
     <style>
         * {
             box-sizing: border-box;
@@ -51,6 +62,18 @@
             font-size: 14px;
             margin-top: 10px;
             font-family: monospace;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-left: 15px;
+            color: rgba(255,255,255,0.7);
+            font-size: 12px;
+            text-decoration: underline;
+        }
+
+        .back-link:hover {
+            color: white;
         }
 
         .search-bar {
@@ -106,70 +129,6 @@
             padding: 20px;
             border-radius: 6px;
             text-align: center;
-        }
-
-        /* Domain Entry Form */
-        .domain-form {
-            text-align: center;
-            padding: 60px 20px;
-        }
-
-        .domain-form h2 {
-            font-size: 22px;
-            color: #2c3e50;
-            margin-bottom: 10px;
-        }
-
-        .domain-form p {
-            color: #666;
-            margin-bottom: 30px;
-        }
-
-        .domain-input-group {
-            display: flex;
-            max-width: 500px;
-            margin: 0 auto 20px;
-            gap: 10px;
-        }
-
-        .domain-input-group input {
-            flex: 1;
-            padding: 14px 18px;
-            border: 2px solid #ddd;
-            border-radius: 6px;
-            font-size: 16px;
-        }
-
-        .domain-input-group input:focus {
-            outline: none;
-            border-color: #3498db;
-        }
-
-        .domain-input-group button {
-            background: #3498db;
-            color: white;
-            border: none;
-            padding: 14px 28px;
-            border-radius: 6px;
-            font-size: 16px;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-
-        .domain-input-group button:hover {
-            background: #2980b9;
-        }
-
-        .domain-examples {
-            color: #888;
-            font-size: 13px;
-        }
-
-        .domain-examples code {
-            background: #f0f0f0;
-            padding: 2px 6px;
-            border-radius: 3px;
-            margin: 0 3px;
         }
 
         .section {
@@ -365,19 +324,6 @@
             display: none !important;
         }
 
-        .change-domain {
-            display: inline-block;
-            margin-left: 15px;
-            color: rgba(255,255,255,0.7);
-            font-size: 12px;
-            text-decoration: underline;
-            cursor: pointer;
-        }
-
-        .change-domain:hover {
-            color: white;
-        }
-
         @media (max-width: 600px) {
             body {
                 padding: 10px;
@@ -400,10 +346,6 @@
             .item.level-2 { margin-left: 30px; }
             .item.level-3 { margin-left: 45px; }
             .item.level-4 { margin-left: 60px; }
-
-            .domain-input-group {
-                flex-direction: column;
-            }
         }
     </style>
 </head>
@@ -412,31 +354,18 @@
         <header>
             <h1>Filter IDs Reference</h1>
             <p>Use these IDs to lock filters on your property search pages</p>
-            <div id="domainDisplay" class="hidden">
-                <span class="domain-badge" id="currentDomain"></span>
-                <span class="change-domain" onclick="changeDomain()">Change domain</span>
+            <div>
+                <span class="domain-badge"><?php echo esc_html($domain); ?></span>
+                <a href="<?php echo esc_url(admin_url('options-general.php?page=realtysoft-settings')); ?>" class="back-link">Back to Settings</a>
             </div>
         </header>
 
-        <div class="search-bar hidden" id="searchBar">
+        <div class="search-bar">
             <input type="text" id="searchInput" placeholder="Search by name or ID...">
         </div>
 
         <div class="content">
-            <!-- Domain Entry Form -->
-            <div id="domainForm" class="domain-form">
-                <h2>Enter Your Website Domain</h2>
-                <p>To view your filter IDs, please enter the domain where your RealtySoft widget is installed.</p>
-                <div class="domain-input-group">
-                    <input type="text" id="domainInput" placeholder="example.com" onkeypress="handleDomainKeypress(event)">
-                    <button onclick="loadDomain()">Load Data</button>
-                </div>
-                <p class="domain-examples">
-                    Examples: <code>mywebsite.com</code> <code>witos323.sg-host.com</code> <code>properties.myagency.es</code>
-                </p>
-            </div>
-
-            <div id="loading" class="loading hidden">
+            <div id="loading" class="loading">
                 <div class="spinner"></div>
                 <p>Loading data from API...</p>
             </div>
@@ -503,8 +432,8 @@
 
     <script>
         // Configuration
-        const PROXY_URL = '../php/api-proxy.php';
-        let currentDomainValue = null;
+        const PROXY_URL = <?php echo json_encode($proxy_url); ?>;
+        const DOMAIN = <?php echo json_encode($domain); ?>;
 
         // Data storage
         let allData = {
@@ -515,78 +444,16 @@
 
         // Initialize on page load
         document.addEventListener('DOMContentLoaded', function() {
-            // Check for domain in URL parameter
-            const urlParams = new URLSearchParams(window.location.search);
-            const domainParam = urlParams.get('domain');
-
-            if (domainParam) {
-                document.getElementById('domainInput').value = domainParam;
-                loadDomain();
-            }
+            loadAllData();
         });
 
-        function handleDomainKeypress(event) {
-            if (event.key === 'Enter') {
-                loadDomain();
-            }
-        }
-
-        function loadDomain() {
-            const domainInput = document.getElementById('domainInput');
-            let domain = domainInput.value.trim().toLowerCase();
-
-            // Clean up domain (remove protocol, trailing slash, paths)
-            domain = domain.replace(/^https?:\/\//, '');
-            domain = domain.replace(/\/.*$/, '');
-            domain = domain.replace(/^www\./, '');
-
-            if (!domain) {
-                alert('Please enter a valid domain');
-                return;
-            }
-
-            // Update URL with domain parameter
-            const url = new URL(window.location.href);
-            url.searchParams.set('domain', domain);
-            window.history.replaceState({}, '', url);
-
-            currentDomainValue = domain;
-
-            // Show domain in header
-            document.getElementById('currentDomain').textContent = domain;
-            document.getElementById('domainDisplay').classList.remove('hidden');
-
-            // Hide domain form, show loading
-            document.getElementById('domainForm').classList.add('hidden');
-            document.getElementById('loading').classList.remove('hidden');
-            document.getElementById('error').classList.add('hidden');
-
-            // Load data
-            loadAllData(domain);
-        }
-
-        function changeDomain() {
-            // Reset to domain form
-            document.getElementById('domainForm').classList.remove('hidden');
-            document.getElementById('domainDisplay').classList.add('hidden');
-            document.getElementById('searchBar').classList.add('hidden');
-            document.getElementById('data').classList.add('hidden');
-            document.getElementById('loading').classList.add('hidden');
-            document.getElementById('error').classList.add('hidden');
-
-            // Clear URL parameter
-            const url = new URL(window.location.href);
-            url.searchParams.delete('domain');
-            window.history.replaceState({}, '', url);
-        }
-
-        async function loadAllData(domain) {
+        async function loadAllData() {
             try {
                 // Fetch all data in parallel
                 const [locationsRes, typesRes, featuresRes] = await Promise.all([
-                    fetchFromProxy('location', domain),
-                    fetchFromProxy('type', domain),
-                    fetchFromProxy('feature', domain)
+                    fetchFromProxy('v1/location'),
+                    fetchFromProxy('v1/property_types'),
+                    fetchFromProxy('v1/property_features')
                 ]);
 
                 // Check for errors
@@ -606,30 +473,22 @@
                 // Show data, hide loading
                 document.getElementById('loading').classList.add('hidden');
                 document.getElementById('data').classList.remove('hidden');
-                document.getElementById('searchBar').classList.remove('hidden');
 
                 // Setup search
                 setupSearch();
 
             } catch (error) {
-                showError('Failed to load data: ' + error.message + '\n\nMake sure the domain is registered with RealtySoft.');
+                showError('Failed to load data: ' + error.message);
             }
         }
 
-        async function fetchFromProxy(endpoint, domain) {
-            // Map short endpoint names to API paths
-            const endpointMap = {
-                'location': 'v1/location',
-                'type': 'v1/property_types',
-                'feature': 'v1/property_features'
-            };
-            const apiEndpoint = endpointMap[endpoint] || endpoint;
-            const url = `${PROXY_URL}?_endpoint=${apiEndpoint}&_domain=${encodeURIComponent(domain)}`;
+        async function fetchFromProxy(endpoint) {
+            const url = `${PROXY_URL}?_endpoint=${endpoint}&_domain=${encodeURIComponent(DOMAIN)}`;
 
             const response = await fetch(url, {
                 method: 'GET',
                 headers: {
-                    'X-RS-Domain': domain
+                    'X-RS-Domain': DOMAIN
                 }
             });
 
@@ -666,7 +525,20 @@
 
             // Recursive function to render location and its children
             function renderLocationTree(location, level) {
-                html += createLocationItemHTML(location, level);
+                const propertyCount = location.property_count !== undefined ?
+                    `<span class="property-count">${location.property_count} properties</span>` : '';
+
+                const levelClass = level > 0 ? `level-${Math.min(level, 4)}` : '';
+                const typeLabel = location.type ? `<span class="type-label">${location.type}</span>` : '';
+
+                html += `
+                    <div class="item ${levelClass}" data-name="${location.name.toLowerCase()}" data-id="${location.id}">
+                        <span class="name">${location.name} ${typeLabel}</span>
+                        ${propertyCount}
+                        <span class="id">ID: ${location.id}</span>
+                        <button class="copy-btn" onclick="copyId(${location.id}, 'data-rs-location', this)">Copy</button>
+                    </div>
+                `;
                 count++;
 
                 // Get and render children
@@ -685,23 +557,6 @@
 
             container.innerHTML = html || '<div class="no-results">No locations found</div>';
             document.getElementById('locationsCount').textContent = count;
-        }
-
-        function createLocationItemHTML(item, level) {
-            const propertyCount = item.property_count !== undefined ?
-                `<span class="property-count">${item.property_count} properties</span>` : '';
-
-            const levelClass = level > 0 ? `level-${Math.min(level, 4)}` : '';
-            const typeLabel = item.type ? `<span class="type-label">${item.type}</span>` : '';
-
-            return `
-                <div class="item ${levelClass}" data-name="${item.name.toLowerCase()}" data-id="${item.id}">
-                    <span class="name">${item.name} ${typeLabel}</span>
-                    ${propertyCount}
-                    <span class="id">ID: ${item.id}</span>
-                    <button class="copy-btn" onclick="copyId(${item.id}, 'data-rs-location', this)">Copy</button>
-                </div>
-            `;
         }
 
         function renderPropertyTypes() {
@@ -730,7 +585,19 @@
 
             // Recursive function to render type and its children
             function renderTypeTree(type, level) {
-                html += createTypeItemHTML(type, level);
+                const propertyCount = type.property_count !== undefined ?
+                    `<span class="property-count">${type.property_count} properties</span>` : '';
+
+                const levelClass = level > 0 ? `level-${Math.min(level, 4)}` : '';
+
+                html += `
+                    <div class="item ${levelClass}" data-name="${type.name.toLowerCase()}" data-id="${type.id}">
+                        <span class="name">${type.name}</span>
+                        ${propertyCount}
+                        <span class="id">ID: ${type.id}</span>
+                        <button class="copy-btn" onclick="copyId(${type.id}, 'data-rs-property-type', this)">Copy</button>
+                    </div>
+                `;
                 count++;
 
                 // Get and render children
@@ -749,22 +616,6 @@
 
             container.innerHTML = html || '<div class="no-results">No property types found</div>';
             document.getElementById('propertyTypesCount').textContent = count;
-        }
-
-        function createTypeItemHTML(item, level) {
-            const propertyCount = item.property_count !== undefined ?
-                `<span class="property-count">${item.property_count} properties</span>` : '';
-
-            const levelClass = level > 0 ? `level-${Math.min(level, 4)}` : '';
-
-            return `
-                <div class="item ${levelClass}" data-name="${item.name.toLowerCase()}" data-id="${item.id}">
-                    <span class="name">${item.name}</span>
-                    ${propertyCount}
-                    <span class="id">ID: ${item.id}</span>
-                    <button class="copy-btn" onclick="copyId(${item.id}, 'data-rs-property-type', this)">Copy</button>
-                </div>
-            `;
         }
 
         function renderFeatures() {
