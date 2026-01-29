@@ -1,6 +1,6 @@
 # RealtySoft Widget v3 - Complete Documentation
 
-> Version 3.0.0 | Last Updated: January 26, 2026
+> Version 3.1.0 | Last Updated: January 29, 2026
 
 ---
 
@@ -109,10 +109,27 @@ The loader script:
 window.RealtySoftConfig = {
     ownerEmail: 'agent@example.com',
     privacyPolicyUrl: '/privacy-policy',
-    language: 'en_US'
+    language: 'en_US',
+    labelsMode: 'static',  // 'static' | 'api' | 'hybrid'
+    labelOverrides: {
+        _default: { search_button: 'Find Properties' },
+        es_ES: { search_button: 'Buscar Propiedades' }
+    }
 };
 </script>
 ```
+
+**Labels Mode Options:**
+
+| Mode | Behavior | API Calls | Performance |
+|------|----------|-----------|-------------|
+| `static` | Use hardcoded labels only | 0 | Fastest - no blocking |
+| `hybrid` | Static first, API in background | 1 (non-blocking) | Fast initial, updates later |
+| `api` | Original blocking behavior | 1 (blocking) | Slower - waits for API |
+
+**Label Overrides Format:**
+- `_default`: Applied to all languages
+- `es_ES`, `de_DE`, etc.: Language-specific overrides
 
 ### 3. Add Components
 

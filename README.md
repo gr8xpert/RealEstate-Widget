@@ -2,7 +2,7 @@
 
 A modular "Lego blocks" real estate property search widget system built with TypeScript and Vite.
 
-**Current Version:** 3.0.0 | **Last Updated:** January 26, 2026
+**Current Version:** 3.1.0 | **Last Updated:** January 29, 2026
 
 ---
 
@@ -41,10 +41,22 @@ The loader automatically handles cache busting - clients always get the latest v
 <script>
 window.RealtySoftConfig = {
     ownerEmail: 'agent@domain.com',
-    privacyPolicyUrl: '/privacy'
+    privacyPolicyUrl: '/privacy',
+    labelsMode: 'static',  // 'static' (fastest), 'api', or 'hybrid'
+    labelOverrides: {
+        _default: { search_button: 'Find Properties' },
+        es_ES: { search_button: 'Buscar' }
+    }
 };
 </script>
 ```
+
+**Labels Mode Options:**
+| Mode | Behavior | API Calls | Best For |
+|------|----------|-----------|----------|
+| `static` (default) | Use hardcoded labels only | 0 | Most users - fastest |
+| `hybrid` | Static first, API in background | 1 (non-blocking) | Users needing API sync |
+| `api` | Original blocking behavior | 1 (blocking) | Admin-managed labels |
 
 ### 3. Add Components
 
@@ -164,7 +176,7 @@ Use `data-rs-property-ref="R123456"` on each component. See [DOCUMENTATION.md](D
 | 5 | Cards with info overlay (info always visible) |
 | 6 | Dark cards with numbers |
 
-### Detail Components (17)
+### Detail Components (18)
 
 | Component | Description |
 |-----------|-------------|
@@ -173,8 +185,9 @@ Use `data-rs-property-ref="R123456"` on each component. See [DOCUMENTATION.md](D
 | `rs_detail_title` | Property title |
 | `rs_detail_price` | Formatted price |
 | `rs_detail_description` | Full description |
-| `rs_detail_features` | Features list |
-| `rs_detail_map` | Location map |
+| `rs_detail_features` | Features (button popup or accordion mode) |
+| `rs_detail_video_embed` | **NEW** Embedded YouTube/Vimeo video |
+| `rs_detail_map` | Location map (with area boundary polygons) |
 | `rs_detail_inquiry_form` | Contact form (sends to owner + client confirmation) |
 | `rs_detail_wishlist` | Wishlist button |
 | `rs_detail_share` | Share buttons |
@@ -406,7 +419,18 @@ The loader automatically loads both CSS and JS with hourly cache busting.
 | Enhanced i18n Testing (16 languages) | Complete |
 | Lazy Loading (IntersectionObserver) | Complete |
 
-### Recent Updates (v3.0.0)
+### Recent Updates (v3.1.0) - January 29, 2026
+- **Labels Optimization:** New `labelsMode` config - 'static' (no API call), 'hybrid', or 'api'
+- **Video Embed:** YouTube/Vimeo videos embedded directly on detail page (keeps users on site)
+- **Virtual Tour Embed:** Virtual tours embedded as iframes instead of external links
+- **Features Popup:** Compact button that opens modal with features grid (vs accordion)
+- **Property Info Grid:** New table-style cards layout (2 columns, capitalized labels)
+- **Wishlist on Gallery:** Heart icon overlay on gallery images (circle button)
+- **Language Switching Fixes:** Fixed carousel, forms, map, and related components
+- **WordPress Admin Config:** Textarea for advanced JSON configuration in WP admin
+- **Missing Translations:** Added inquiry form default message and wishlist labels (16 languages)
+
+### Previous Updates (v3.0.0)
 - **TypeScript Rewrite:** Full codebase migrated from vanilla JS to TypeScript
 - **Vite Build System:** Replaced custom `build.js` with Vite (IIFE, ES module, and SW build targets)
 - **Granular Card Sub-Components:** 14 standalone card sub-components for fully custom layouts

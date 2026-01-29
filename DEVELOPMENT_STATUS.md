@@ -1,6 +1,6 @@
 # RealtySoft Widget v3 - Development Status
 
-> **Version:** 3.0.0 | **Last Updated:** January 26, 2026
+> **Version:** 3.1.0 | **Last Updated:** January 29, 2026
 
 ---
 
@@ -29,6 +29,7 @@
 | Phase 9: Granular Card Components | Complete | 100% |
 | Phase 10: CSV Export | Complete | 100% |
 | Phase 11: Enhanced i18n Testing | Complete | 100% |
+| Phase 12: Labels Optimization & Detail UX | Complete | 100% |
 
 ---
 
@@ -207,8 +208,9 @@ if (labelsData && labelsData.labels) {
 | Energy | `energy.ts` | Complete | Energy certificate |
 | Resources | `resources.ts` | Complete | Video, tour, PDF links |
 | PDF Button | `pdf-button.ts` | Complete | PDF download |
+| Video Embed | `video-embed.ts` | Complete | Embedded YouTube/Vimeo player |
 
-**Total: 17 Components**
+**Total: 18 Components**
 
 ---
 
@@ -370,6 +372,67 @@ Comprehensive internationalization testing across all 16 supported languages.
 - Label override hierarchy (client overrides > API labels > defaults)
 - Dynamic language switching
 - Full Spanish pass (complete verification of all components)
+
+---
+
+### Phase 12: Labels Optimization & Detail Page UX (v3.1.0)
+
+Major improvements to page load performance and property detail page user experience.
+
+#### Labels Optimization
+
+Eliminated blocking API call for labels to speed up page loads.
+
+| Mode | Behavior | API Calls | Best For |
+|------|----------|-----------|----------|
+| `static` (default) | Use hardcoded labels only | 0 | Most users - fastest |
+| `hybrid` | Static first, API in background | 1 (non-blocking) | Users needing API sync |
+| `api` | Original blocking behavior | 1 (blocking) | Admin-managed labels |
+
+**Configuration:**
+```javascript
+window.RealtySoftConfig = {
+    labelsMode: 'static',
+    labelOverrides: {
+        _default: { search_button: 'Find' },
+        es_ES: { search_button: 'Buscar' }
+    }
+};
+```
+
+#### Property Detail Template Improvements
+
+| Feature | Description |
+|---------|-------------|
+| Video Embed | YouTube/Vimeo videos embedded directly (keeps users on site) |
+| Virtual Tour Embed | Virtual tours embedded as iframes |
+| Features Popup | Compact button opens modal with features grid |
+| Property Info Grid | Table-style cards (2 columns, capitalized labels) |
+| Wishlist on Gallery | Circle heart icon overlay on gallery images |
+| Price in Header | Price moved to header right side |
+| Share/Features in Sidebar | Moved below inquiry form |
+
+#### Language Switching Fixes
+
+Fixed components not updating on language change (without refresh):
+- Property carousel
+- Inquiry form
+- Map component
+- Related properties
+- Wishlist components (prevented duplicate event listeners)
+
+#### New Translations
+
+Added missing translations for 16 languages:
+- `inquiry_default_message` - Inquiry form default message
+- Wishlist form labels (name, email, message fields)
+
+#### WordPress Integration
+
+Added advanced configuration textarea in WordPress admin settings:
+- JSON validation with error messages
+- Merges with base configuration
+- Supports all `RealtySoftConfig` options
 
 ---
 
@@ -663,6 +726,15 @@ The loader script:
 | 31 | Carousel V4/V5 info only on hover | Made overlay always visible (removed hover-only CSS) |
 | 32 | Related properties wrong URLs | Added SEO-friendly URL generation matching property grid format |
 | 33 | All server paths wrong | Updated all paths from `/realtysoft/` to `/propertymanager/` |
+| 34 | Labels API blocking page load | Added `labelsMode: 'static'` option to skip API call |
+| 35 | Carousel disappears on language switch | Added re-render check when properties already loaded |
+| 36 | Inquiry form not updating language | Fixed subscription path from `'language'` to `'config.language'` |
+| 37 | Map not updating on language switch | Fixed subscription path to `'config.language'` |
+| 38 | Related properties not updating language | Fixed subscription path to `'config.language'` |
+| 39 | Duplicate event listeners on wishlist | Added `windowEventsBound` flag to prevent duplicates |
+| 40 | Missing inquiry form translations | Added `inquiry_default_message` to all 16 languages |
+| 41 | Missing wishlist form translations | Added form labels to major languages |
+| 42 | Wishlist/fullscreen icons overlapping | Moved wishlist to `right: 70px` |
 
 ---
 
