@@ -388,20 +388,44 @@
         function renderFeatures() {
             const container = document.getElementById('featuresList');
             const features = allData.features;
-            features.sort((a, b) => a.name.localeCompare(b.name));
+            const childrenMap = {};
+
+            // Build parent-child map
+            features.forEach(f => {
+                const pid = f.parent_id;
+                if (pid && pid !== 0 && pid !== '0') {
+                    const key = String(pid);
+                    if (!childrenMap[key]) childrenMap[key] = [];
+                    childrenMap[key].push(f);
+                }
+            });
+
+            // Get root level features
+            const roots = features.filter(f => !f.parent_id || f.parent_id === 0 || f.parent_id === '0');
+            roots.sort((a, b) => a.name.localeCompare(b.name));
 
             let html = '';
-            features.forEach(f => {
+            let count = 0;
+
+            function renderTree(f, level) {
                 const cat = f.category ? `<span class="type-label">${f.category}</span>` : '';
-                html += `<div class="item" data-name="${f.name.toLowerCase()}" data-id="${f.id}">
+                const levelClass = level > 0 ? `level-${Math.min(level, 4)}` : '';
+
+                html += `<div class="item ${levelClass}" data-name="${f.name.toLowerCase()}" data-id="${f.id}">
                     <span class="name">${f.name} ${cat}</span>
                     <span class="id">ID: ${f.id}</span>
                     <button class="copy-btn" onclick="copyId(${f.id}, 'data-rs-features', this)">Copy</button>
                 </div>`;
-            });
+                count++;
 
+                const children = childrenMap[String(f.id)] || [];
+                children.sort((a, b) => a.name.localeCompare(b.name));
+                children.forEach(child => renderTree(child, level + 1));
+            }
+
+            roots.forEach(root => renderTree(root, 0));
             container.innerHTML = html || '<div class="no-results">No features found</div>';
-            document.getElementById('featuresCount').textContent = features.length;
+            document.getElementById('featuresCount').textContent = count;
         }
 
         function copyId(id, attr, btn) {

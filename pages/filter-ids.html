@@ -771,26 +771,46 @@
             const container = document.getElementById('featuresList');
             const features = allData.features;
 
-            // Sort alphabetically
-            features.sort((a, b) => a.name.localeCompare(b.name));
+            // Build parent-child map
+            const childrenMap = {};
+            features.forEach(f => {
+                const pid = f.parent_id;
+                if (pid && pid !== 0 && pid !== '0') {
+                    const key = String(pid);
+                    if (!childrenMap[key]) childrenMap[key] = [];
+                    childrenMap[key].push(f);
+                }
+            });
+
+            // Get root level features
+            const roots = features.filter(f => !f.parent_id || f.parent_id === 0 || f.parent_id === '0');
+            roots.sort((a, b) => a.name.localeCompare(b.name));
 
             let html = '';
+            let count = 0;
 
-            features.forEach(feature => {
+            function renderFeatureTree(feature, level) {
                 const category = feature.category ?
                     `<span class="type-label">${feature.category}</span>` : '';
+                const levelClass = level > 0 ? `level-${Math.min(level, 4)}` : '';
 
                 html += `
-                    <div class="item" data-name="${feature.name.toLowerCase()}" data-id="${feature.id}">
+                    <div class="item ${levelClass}" data-name="${feature.name.toLowerCase()}" data-id="${feature.id}">
                         <span class="name">${feature.name} ${category}</span>
                         <span class="id">ID: ${feature.id}</span>
                         <button class="copy-btn" onclick="copyId(${feature.id}, 'data-rs-features', this)">Copy</button>
                     </div>
                 `;
-            });
+                count++;
 
+                const children = childrenMap[String(feature.id)] || [];
+                children.sort((a, b) => a.name.localeCompare(b.name));
+                children.forEach(child => renderFeatureTree(child, level + 1));
+            }
+
+            roots.forEach(root => renderFeatureTree(root, 0));
             container.innerHTML = html || '<div class="no-results">No features found</div>';
-            document.getElementById('featuresCount').textContent = features.length;
+            document.getElementById('featuresCount').textContent = count;
         }
 
         function copyId(id, dataAttr, button) {
