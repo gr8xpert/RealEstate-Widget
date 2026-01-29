@@ -2,6 +2,14 @@
 
 A powerful, embeddable real estate property search and listing widget for websites.
 
+## Documentation
+
+| Document | Description |
+|----------|-------------|
+| [**USER_GUIDE.md**](USER_GUIDE.md) | Complete guide for deploying and customizing the widget |
+| [DOCUMENTATION.md](DOCUMENTATION.md) | Full technical documentation |
+| [DEVELOPMENT_STATUS.md](DEVELOPMENT_STATUS.md) | Development progress and status |
+
 ## Features
 
 - **Property Search** - Advanced filtering by location, listing type, property type, bedrooms, bathrooms, and price
@@ -44,44 +52,37 @@ propertymanager/
 ### 1. Include the Widget
 
 ```html
-<!-- Add configuration -->
-<script>
-    window.RealtySoftConfig = {
-        apiKey: 'your-api-key',
-        language: 'en_US'
-    };
-</script>
-
-<!-- Load the widget -->
-<script src="dist/realtysoft.js"></script>
-<link rel="stylesheet" href="dist/style.css">
+<script src="https://realtysoft.ai/propertymanager/dist/realtysoft-loader.min.js"></script>
 ```
 
-### 2. Add Search Components
+### 2. Add Search and Listings
 
 ```html
-<div id="rs_search">
-    <div class="rs_location"></div>
-    <div class="rs_listing_type"></div>
-    <div class="rs_property_type"></div>
-    <div class="rs_bedrooms"></div>
-    <div class="rs_bathrooms"></div>
-    <div class="rs_price"></div>
-    <div class="rs_search_button"></div>
-</div>
+<!-- Search Form -->
+<div class="rs-search-template-01"></div>
+
+<!-- Property Listings -->
+<div class="rs-listing-template-01"></div>
 ```
 
-### 3. Add Results Display
+That's it! The widget automatically initializes and displays your properties.
+
+### 3. Lock to Specific Filters (Optional)
 
 ```html
-<div id="rs_listing">
-    <div class="rs_results_count"></div>
-    <div class="rs_sort"></div>
-    <div class="rs_view_toggle"></div>
-    <div class="rs_property_grid"></div>
-    <div class="rs_pagination"></div>
-</div>
+<!-- Only show villas in location 505 -->
+<div class="rs-search-template-01"
+     data-rs-location="505"
+     data-rs-property-type="76"></div>
+
+<div class="rs-listing-template-01"
+     data-rs-location="505"
+     data-rs-property-type="76"></div>
 ```
+
+> **Find your filter IDs:** Visit `https://realtysoft.ai/propertymanager/pages/filter-ids.html?domain=yourdomain.com`
+
+**For complete customization options, see the [User Guide](USER_GUIDE.md).**
 
 ## Configuration Options
 
@@ -98,10 +99,21 @@ window.RealtySoftConfig = {
 
 ## Supported Languages
 
-- `en_US` - English (US)
+- `en_US` - English
 - `es_ES` - Spanish
 - `de_DE` - German
 - `fr_FR` - French
+- `it_IT` - Italian
+- `pt_PT` - Portuguese
+- `nl_NL` - Dutch
+- `ru_RU` - Russian
+- `sv_SE` - Swedish
+- `no_NO` - Norwegian
+- `da_DK` - Danish
+- `fi_FI` - Finnish
+- `pl_PL` - Polish
+
+Language is auto-detected from browser settings or `<html lang="...">` attribute.
 
 ## API Reference
 
@@ -148,6 +160,11 @@ window.RealtySoftLabels.getLanguage();
 
 - PHP 7.4+ (for backend features)
 - Modern browser with ES6 support
+
+## Learn More
+
+- **[User Guide](USER_GUIDE.md)** - Complete deployment and customization guide
+- **[Filter IDs Reference](https://realtysoft.ai/propertymanager/pages/filter-ids.html)** - Find your location, property type, and feature IDs
 
 ## License
 
