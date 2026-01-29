@@ -399,6 +399,7 @@ export interface RealtySoftLabelsModule {
   getLanguage(): string;
   setLanguage(lang: string): void;
   detectLanguage(): string;
+  mapLanguage(code: string): string;
   formatPrice(price: number | null | undefined, currency?: string): string;
   formatNumber(number: number | null | undefined): string;
   formatArea(value: number | null | undefined): string;
@@ -493,6 +494,23 @@ declare global {
     RealtySoftRouter: RealtySoftRouterModule;
     RealtySoftConfig?: Partial<WidgetConfig>;
     _rsAutoInjectedRef?: string;
+
+    // WordPress: Polylang plugin
+    pll_current_language?: string;
+
+    // WordPress: WPML plugin
+    icl_current_language?: string;
+
+    // WordPress + Other: Weglot plugin
+    Weglot?: {
+      getCurrentLang(): string;
+      on(event: string, callback: (lang: string) => void): void;
+    };
+
+    // Webflow platform
+    Webflow?: {
+      env(key: string): string | undefined;
+    };
   }
 }
 

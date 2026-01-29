@@ -396,7 +396,7 @@ class RSPropertyDetailTemplate extends RSBaseComponent {
       </div>
 
       <!-- Map Section -->
-      <div class="rs-template__section rs-template__section--full">
+      <div class="rs-template__section rs-template__section--full rs-template__section--map">
         <div class="rs-template__map" id="rs-template-map" data-variation="1"></div>
       </div>
 

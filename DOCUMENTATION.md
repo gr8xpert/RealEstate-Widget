@@ -1,6 +1,6 @@
 # RealtySoft Widget v3 - Complete Documentation
 
-> Version 3.1.0 | Last Updated: January 29, 2026
+> Version 3.3.0 | Last Updated: January 29, 2026
 
 ---
 
@@ -2570,6 +2570,35 @@ document.addEventListener('realtysoft:loader-complete', function() {
 1. Verify `analytics-track.php` is accessible
 2. Check network tab for tracking requests
 3. Verify domain is enabled for analytics in whitelist
+
+### Widget Appearing Multiple Times
+
+If the widget appears 2-3 times on the page (in header, content, and footer):
+
+1. **Cause:** Page builders (Elementor, Divi, etc.) may copy page content to auto-generated header/footer sections
+2. **Solution:** The widget (v3.3.0+) automatically detects and prevents this:
+   - Renders only in the main content area
+   - Marks duplicate containers with `data-rs-template-duplicate="true"`
+   - Skips initialization of components in duplicate containers
+
+3. **Manual Override:** If automatic detection fails, ensure your theme uses semantic HTML:
+   - Use `<header>` and `<footer>` elements for header/footer
+   - Use `<main>` or `<article>` for content area
+   - Or use classes containing "header", "footer", "content", "main"
+
+### Platform-Specific Issues
+
+**Wix:**
+- Widget detects Wix-specific containers (`#PAGES_CONTAINER`, `#SITE_PAGES`)
+- Embed using the "Embed HTML" widget
+
+**Webflow:**
+- Widget detects Webflow patterns (`.page-wrapper`, `.w-container`)
+- Add script in Project Settings > Custom Code
+
+**Squarespace:**
+- Widget detects Squarespace patterns (`#page`, `#sections`, `.page-section`)
+- Add script via Code Injection in Settings
 
 ---
 

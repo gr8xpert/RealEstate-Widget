@@ -241,6 +241,9 @@ const RealtySoftRouter = (function () {
 
     for (const sel of selectors) {
       document.querySelectorAll<HTMLElement>(sel).forEach((el) => {
+        // Skip elements marked as duplicates
+        if ((el as HTMLElement).dataset?.rsTemplateDuplicate) return;
+
         if (!seen.has(el)) {
           seen.add(el);
           found.push(el);

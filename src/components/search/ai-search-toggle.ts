@@ -502,11 +502,16 @@ async function autoInitAISearch(): Promise<void> {
   }
 
   // Find all search containers that don't already have AI toggle
-  const searchContainers = document.querySelectorAll(
+  const searchContainers = document.querySelectorAll<HTMLElement>(
     '#rs_search, .rs-search, [class*="rs-template-search"]'
   );
 
   searchContainers.forEach((container) => {
+    // Skip duplicate containers (from page builder duplication)
+    if (container.dataset?.rsTemplateDuplicate) {
+      return;
+    }
+
     // Skip if already has AI toggle
     if (container.querySelector('.rs-ai-toggle')) {
       return;
@@ -572,9 +577,9 @@ function initWhenReady(): void {
 
     const tryInit = (): void => {
       attempts++;
-      const searchContainers = document.querySelectorAll(
+      const searchContainers = Array.from(document.querySelectorAll<HTMLElement>(
         '#rs_search, .rs-search, [class*="rs-template-search"]'
-      );
+      )).filter(el => !el.dataset?.rsTemplateDuplicate);
 
       // Only initialize when both containers exist AND labels are ready
       if (searchContainers.length > 0 && areLabelsReady()) {

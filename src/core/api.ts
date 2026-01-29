@@ -366,6 +366,21 @@ const RealtySoftAPI: RealtySoftAPIModule = (function () {
   };
 
   /**
+   * Map language codes for API requests
+   * Some languages share the same API content (e.g., en_GB uses en_US)
+   */
+  const languageAliases: Record<string, string> = {
+    'en_GB': 'en_US',
+    'en_AU': 'en_US',
+    'en_CA': 'en_US',
+    // Add more aliases as needed
+  };
+
+  function getApiLanguage(lang: string): string {
+    return languageAliases[lang] || lang;
+  }
+
+  /**
    * Initialize API with config
    */
   function init(options: Partial<APIConfig>): void {
@@ -399,9 +414,9 @@ const RealtySoftAPI: RealtySoftAPIModule = (function () {
     // Add endpoint to params
     const requestParams: Record<string, unknown> = { ...params, _endpoint: endpoint };
 
-    // Add language unless skipped
+    // Add language unless skipped (use mapped language for API)
     if (!options.skipLang) {
-      requestParams._lang = config.language;
+      requestParams._lang = getApiLanguage(config.language);
     }
 
     // Add cache-busting timestamp to force fresh data from proxy/CDN
@@ -798,21 +813,27 @@ const RealtySoftAPI: RealtySoftAPIModule = (function () {
       features = rawFeatures
         .map((f): PropertyFeature | null => {
           if (typeof f === 'string') return { name: f, category: 'Features' };
+          if (!f || typeof f !== 'object') return null;
+
+          // Get feature name - check translated field first, then standard fields
           const fRecord = f as Record<string, unknown>;
-          // Check for translated name (e.g., name_es)
+          const translatedName = fRecord[`name_${langCode}`];
           const name =
-            (fRecord[`name_${langCode}`] as string) ||
+            (typeof translatedName === 'string' && translatedName) ||
             f.name ||
             f.label ||
             f.title ||
             '';
           if (!name) return null;
-          // Check for translated category
+
+          // Get category - check translated field first, then standard fields
+          const translatedCategory = fRecord[`category_${langCode}`];
           const category =
-            (fRecord[`category_${langCode}`] as string) ||
+            (typeof translatedCategory === 'string' && translatedCategory) ||
             f.attr_id?.name ||
             f.category ||
             'Features';
+
           return { name, category };
         })
         .filter((f): f is PropertyFeature => f !== null);

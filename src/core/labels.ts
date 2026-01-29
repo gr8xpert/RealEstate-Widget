@@ -1543,10 +1543,219 @@ const RealtySoftLabels: RealtySoftLabelsModule = (function () {
   };
 
   /**
-   * Detect language from browser/document
+   * Map a short language code to full locale format
+   */
+  function mapLanguageCode(code: string): string {
+    if (!code) return 'en_US';
+
+    // Already in full format (e.g., es_ES)
+    if (/^[a-z]{2}_[A-Z]{2}$/.test(code)) {
+      return code;
+    }
+
+    // Convert hyphen format (e.g., en-US -> en_US)
+    if (code.includes('-')) {
+      const converted = code.replace('-', '_');
+      if (/^[a-z]{2}_[A-Z]{2}$/.test(converted)) {
+        return converted;
+      }
+      // Extract short code if full format doesn't match
+      code = code.split('-')[0];
+    }
+
+    // Map short code to full format
+    const shortCode = code.toLowerCase();
+    return languageMap[shortCode] || 'en_US';
+  }
+
+  /**
+   * Check if a language code is valid (exists in our language map)
+   */
+  function isValidLanguageCode(code: string): boolean {
+    if (!code) return false;
+
+    // Check short code
+    const shortCode = code.toLowerCase().split(/[-_]/)[0];
+    return !!languageMap[shortCode];
+  }
+
+  /**
+   * Get GTranslate language from cookie
+   * GTranslate stores language in 'googtrans' cookie as '/en/es' (from/to)
+   */
+  function getGTranslateLanguage(): string | null {
+    try {
+      const cookies = document.cookie.split(';');
+      for (const cookie of cookies) {
+        const [name, value] = cookie.trim().split('=');
+        if (name === 'googtrans' && value) {
+          // Format: /en/es (from/to) - we want the target language
+          const match = value.match(/\/[a-z]{2}\/([a-z]{2})/);
+          if (match && isValidLanguageCode(match[1])) {
+            return match[1];
+          }
+        }
+      }
+    } catch (e) {
+      // Cookie access may fail in some contexts
+    }
+    return null;
+  }
+
+  /**
+   * Detect language from URL subdomain (e.g., es.example.com)
+   */
+  function detectSubdomainLanguage(): string | null {
+    try {
+      const hostname = window.location.hostname;
+      // Match patterns like es.example.com, de.example.com
+      // Exclude www and common non-language subdomains
+      const match = hostname.match(/^([a-z]{2})\./);
+      if (match && match[1] !== 'ww' && isValidLanguageCode(match[1])) {
+        return match[1];
+      }
+    } catch (e) {
+      // Hostname access may fail
+    }
+    return null;
+  }
+
+  /**
+   * Detect language from URL path (e.g., /es/, /de/)
+   */
+  function detectUrlLanguage(): string | null {
+    try {
+      // Match patterns like /es/, /de/, /fr/ at the start of the path
+      const match = window.location.pathname.match(/^\/([a-z]{2})(?:\/|$)/);
+      if (match && isValidLanguageCode(match[1])) {
+        return match[1];
+      }
+    } catch (e) {
+      // Pathname access may fail
+    }
+    return null;
+  }
+
+  /**
+   * Detect language from translation plugins and platforms
+   * Supports: Polylang, WPML, Weglot, GTranslate, Webflow, URL patterns
+   */
+  function detectPlatformLanguage(): string | null {
+    // === WordPress Plugins ===
+
+    // Check Polylang (WordPress)
+    if (typeof window.pll_current_language === 'string' && window.pll_current_language) {
+      console.log('[RealtySoft Labels] Detected Polylang language:', window.pll_current_language);
+      return window.pll_current_language;
+    }
+
+    // Check WPML (WordPress)
+    if (typeof window.icl_current_language === 'string' && window.icl_current_language) {
+      console.log('[RealtySoft Labels] Detected WPML language:', window.icl_current_language);
+      return window.icl_current_language;
+    }
+
+    // Check Weglot (WordPress + standalone)
+    if (typeof window.Weglot?.getCurrentLang === 'function') {
+      try {
+        const weglotLang = window.Weglot.getCurrentLang();
+        if (weglotLang) {
+          console.log('[RealtySoft Labels] Detected Weglot language:', weglotLang);
+          return weglotLang;
+        }
+      } catch (e) {
+        // Weglot API may throw
+      }
+    }
+
+    // Check GTranslate (via cookie)
+    const gtranslateLang = getGTranslateLanguage();
+    if (gtranslateLang) {
+      console.log('[RealtySoft Labels] Detected GTranslate language:', gtranslateLang);
+      return gtranslateLang;
+    }
+
+    // === Non-WordPress Platforms ===
+
+    // Check Webflow locale
+    if (typeof window.Webflow?.env === 'function') {
+      try {
+        const locale = window.Webflow.env('locale');
+        if (locale) {
+          console.log('[RealtySoft Labels] Detected Webflow locale:', locale);
+          return locale;
+        }
+      } catch (e) {
+        // Webflow API may throw
+      }
+    }
+
+    // === Universal Detection (URL-based) ===
+
+    // Check URL subdomain (es.site.com)
+    const subdomainLang = detectSubdomainLanguage();
+    if (subdomainLang) {
+      console.log('[RealtySoft Labels] Detected subdomain language:', subdomainLang);
+      return subdomainLang;
+    }
+
+    // Check URL path pattern (/es/, /de/)
+    const urlLang = detectUrlLanguage();
+    if (urlLang) {
+      console.log('[RealtySoft Labels] Detected URL path language:', urlLang);
+      return urlLang;
+    }
+
+    // Check ?lang= query parameter
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const langParam = params.get('lang');
+      if (langParam && isValidLanguageCode(langParam)) {
+        console.log('[RealtySoft Labels] Detected query param language:', langParam);
+        return langParam;
+      }
+    } catch (e) {
+      // URLSearchParams may fail in older browsers
+    }
+
+    return null;
+  }
+
+  /**
+   * Detect language from browser/document with platform detection
    */
   function detectLanguage(): string {
-    // Priority 1: Browser language
+    // Priority 1: Explicit config override (handled in controller, but check here too)
+    if (typeof window !== 'undefined' && window.RealtySoftConfig?.language) {
+      return mapLanguageCode(window.RealtySoftConfig.language);
+    }
+
+    // Priority 2: User stored preference
+    try {
+      const stored = localStorage.getItem('rs_language');
+      if (stored && isValidLanguageCode(stored)) {
+        return stored;
+      }
+    } catch (e) {
+      // localStorage may be unavailable
+    }
+
+    // Priority 3: Platform/Plugin detection (WordPress plugins, Webflow, URL patterns)
+    const platformLang = detectPlatformLanguage();
+    if (platformLang) {
+      return mapLanguageCode(platformLang);
+    }
+
+    // Priority 4: HTML lang attribute
+    const htmlLang = document.documentElement.lang;
+    if (htmlLang) {
+      const shortLang = htmlLang.split('-')[0].toLowerCase();
+      if (languageMap[shortLang]) {
+        return languageMap[shortLang];
+      }
+    }
+
+    // Priority 5: Browser language
     let lang: string | undefined =
       navigator.language || (navigator as Navigator & { userLanguage?: string }).userLanguage;
 
@@ -1565,16 +1774,7 @@ const RealtySoftLabels: RealtySoftLabelsModule = (function () {
       }
     }
 
-    // Priority 2: HTML lang attribute
-    const htmlLang = document.documentElement.lang;
-    if (htmlLang) {
-      const shortLang = htmlLang.split('-')[0].toLowerCase();
-      if (languageMap[shortLang]) {
-        return languageMap[shortLang];
-      }
-    }
-
-    // Priority 3: Default
+    // Priority 6: Default
     return 'en_US';
   }
 
@@ -1777,6 +1977,7 @@ const RealtySoftLabels: RealtySoftLabelsModule = (function () {
     getLanguage,
     setLanguage,
     detectLanguage,
+    mapLanguage: mapLanguageCode,
     formatPrice,
     formatNumber,
     formatArea,

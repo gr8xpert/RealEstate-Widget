@@ -2,7 +2,7 @@
 
 A modular "Lego blocks" real estate property search widget system built with TypeScript and Vite.
 
-**Current Version:** 3.1.0 | **Last Updated:** January 29, 2026
+**Current Version:** 3.3.0 | **Last Updated:** January 29, 2026
 
 ---
 
@@ -397,6 +397,28 @@ The loader automatically loads both CSS and JS with hourly cache busting.
 
 ---
 
+## Platform Support
+
+The widget works across multiple website platforms with smart content detection:
+
+| Platform | Status | Notes |
+|----------|--------|-------|
+| **WordPress** | ✅ Full Support | All themes, page builders (Elementor, Divi, etc.) |
+| **Wix** | ✅ Full Support | Embed via HTML element |
+| **Webflow** | ✅ Full Support | Embed via custom code |
+| **Squarespace** | ✅ Full Support | Embed via code injection |
+| **Custom HTML** | ✅ Full Support | Standard HTML5 sites |
+
+**Duplicate Prevention:** When page builders copy content to auto-generated header/footer, the widget automatically detects and renders only in the main content area.
+
+**Global Utility Components:** These components work anywhere (header, menu, footer, sidebar):
+- `rs_wishlist_counter` - Wishlist count badge
+- `rs_wishlist_button` - Add to wishlist button
+- `rs_language_selector` - Language dropdown
+- `rs_share_buttons` - Social share buttons
+
+---
+
 ## Development Status
 
 | Phase | Status |
@@ -419,7 +441,17 @@ The loader automatically loads both CSS and JS with hourly cache busting.
 | Enhanced i18n Testing (16 languages) | Complete |
 | Lazy Loading (IntersectionObserver) | Complete |
 
-### Recent Updates (v3.1.0) - January 29, 2026
+### Recent Updates (v3.3.0) - January 29, 2026
+- **Widget Duplicate Prevention:** Fixed issue where widget appeared multiple times when page builders copy content to header/footer
+- **Multi-Platform Support:** Added detection for Wix, Webflow, and Squarespace (in addition to WordPress)
+- **Smart Content Detection:** Widget now prioritizes main content area over header/footer zones
+- **Dynamic Language Switching:** Property content (title, description, features) now updates when user switches language
+
+### Previous Updates (v3.2.0)
+- **Dynamic Language Content:** Fixed property data not translating on language switch (CRM uses `ln` param)
+- **Cache Management:** Added language-aware cache keys and clearing on language switch
+
+### Previous Updates (v3.1.0)
 - **Labels Optimization:** New `labelsMode` config - 'static' (no API call), 'hybrid', or 'api'
 - **Video Embed:** YouTube/Vimeo videos embedded directly on detail page (keeps users on site)
 - **Virtual Tour Embed:** Virtual tours embedded as iframes instead of external links

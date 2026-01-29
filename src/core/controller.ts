@@ -1715,7 +1715,138 @@ const RealtySoft = (function () {
   };
 
   /**
+   * Check if an element is inside a header or footer zone
+   * Supports: WordPress, Wix, Webflow, Squarespace, and standard HTML
+   */
+  function isInHeaderFooter(el: HTMLElement): boolean {
+    let current: HTMLElement | null = el;
+    while (current && current !== document.body) {
+      const tag = current.tagName.toLowerCase();
+      const id = current.id?.toLowerCase() || '';
+      const className = typeof current.className === 'string' ? current.className.toLowerCase() : '';
+
+      // Check semantic elements
+      if (tag === 'header' || tag === 'footer') {
+        return true;
+      }
+
+      // Check common header/footer class/id patterns
+      if (
+        // Standard/WordPress patterns
+        id.includes('header') ||
+        id.includes('footer') ||
+        id.includes('masthead') ||
+        className.includes('header') ||
+        className.includes('footer') ||
+        className.includes('masthead') ||
+        // Wix patterns
+        id === 'site_header' ||
+        id === 'site_footer' ||
+        id.includes('wixui-header') ||
+        id.includes('wixui-footer') ||
+        // Webflow patterns
+        className.includes('w-nav') ||
+        className.includes('navbar') ||
+        className.includes('footer-wrapper') ||
+        className.includes('footer-section') ||
+        // Squarespace patterns
+        id === 'sqs-header' ||
+        id === 'sqs-footer' ||
+        className.includes('header-inner') ||
+        className.includes('footer-inner')
+      ) {
+        return true;
+      }
+
+      current = current.parentElement;
+    }
+    return false;
+  }
+
+  /**
+   * Check if an element is inside a main content zone
+   * Supports: WordPress, Wix, Webflow, Squarespace, and standard HTML
+   */
+  function isInMainContent(el: HTMLElement): boolean {
+    let current: HTMLElement | null = el;
+    while (current && current !== document.body) {
+      const tag = current.tagName.toLowerCase();
+      const id = current.id?.toLowerCase() || '';
+      const className = typeof current.className === 'string' ? current.className.toLowerCase() : '';
+
+      // Check semantic elements
+      if (tag === 'main' || tag === 'article') {
+        return true;
+      }
+
+      // Check common content class/id patterns
+      if (
+        // Standard/WordPress patterns
+        id === 'content' ||
+        id === 'main' ||
+        id === 'primary' ||
+        id.includes('main-content') ||
+        id.includes('page-content') ||
+        id.includes('site-content') ||
+        className.includes('entry-content') ||
+        className.includes('page-content') ||
+        className.includes('site-content') ||
+        className.includes('main-content') ||
+        className.includes('post-content') ||
+        // Wix patterns
+        id === 'pages_container' ||
+        id === 'site_pages' ||
+        id.includes('masterpage') ||
+        id.includes('pagescontent') ||
+        // Webflow patterns
+        className.includes('page-wrapper') ||
+        className.includes('main-wrapper') ||
+        className.includes('w-container') ||
+        className.includes('body-content') ||
+        // Squarespace patterns
+        id === 'page' ||
+        id === 'sections' ||
+        id === 'collection' ||
+        className.includes('content-wrapper') ||
+        className.includes('page-section') ||
+        className.includes('sqs-block-content')
+      ) {
+        return true;
+      }
+
+      current = current.parentElement;
+    }
+    return false;
+  }
+
+  /**
+   * Find the best element to render into (prefer main content over header/footer)
+   */
+  function findBestElement(elements: NodeListOf<HTMLElement>): HTMLElement | null {
+    if (elements.length === 0) return null;
+    if (elements.length === 1) return elements[0];
+
+    // Priority 1: Element in main content area (not in header/footer)
+    for (const el of elements) {
+      if (isInMainContent(el) && !isInHeaderFooter(el)) {
+        return el;
+      }
+    }
+
+    // Priority 2: Element NOT in header/footer
+    for (const el of elements) {
+      if (!isInHeaderFooter(el)) {
+        return el;
+      }
+    }
+
+    // Fallback: first element (shouldn't happen but safety)
+    return elements[0];
+  }
+
+  /**
    * Render templates - finds template markers and injects full HTML
+   * Prefers elements in main content area over header/footer duplicates
    */
   function renderTemplates(): void {
     console.log('[RealtySoft] renderTemplates() - scanning for template elements...');
@@ -1725,8 +1856,23 @@ const RealtySoft = (function () {
         `[RealtySoft] Looking for .${templateClass}: found ${elements.length} element(s)`
       );
 
+      if (elements.length === 0) continue;
+
+      // Find the best element (prefer main content over header/footer)
+      const bestElement = findBestElement(elements);
+
       elements.forEach((el) => {
-        if (el.dataset.rsTemplateRendered) return;
+        // Skip if already rendered
+        if (el.dataset.rsTemplateRendered) {
+          return;
+        }
+
+        // Mark non-best elements as duplicates
+        if (el !== bestElement) {
+          console.log(`[RealtySoft] Skipping duplicate ${templateClass} element (header/footer)`);
+          el.dataset.rsTemplateDuplicate = 'true';
+          return;
+        }
 
         if (templateClass.includes('search')) {
           if (!el.id) el.id = 'rs_search';
@@ -1968,6 +2114,58 @@ const RealtySoft = (function () {
   }
 
   /**
+   * Initialize platform/plugin language sync listeners.
+   * Handles translation plugins that change language without page reload.
+   */
+  function initPlatformLanguageSync(): void {
+    // Weglot: Listen for language changes (no page reload)
+    if (typeof window.Weglot?.on === 'function') {
+      window.Weglot.on('languageChanged', (newLang: string) => {
+        console.log('[RealtySoft] Weglot language changed:', newLang);
+        const mappedLang = RealtySoftLabels.mapLanguage(newLang);
+        const currentLang = RealtySoftState.get<string>('config.language');
+        if (mappedLang !== currentLang) {
+          setLanguage(mappedLang);
+        }
+      });
+      console.log('[RealtySoft] Weglot language sync initialized');
+    }
+
+    // MutationObserver: Watch for HTML lang attribute changes
+    // This covers most translation plugins (Polylang, WPML, TranslatePress, etc.)
+    const observer = new MutationObserver((mutations) => {
+      for (const mutation of mutations) {
+        if (mutation.attributeName === 'lang') {
+          const newLang = document.documentElement.lang;
+          if (newLang) {
+            const currentLang = RealtySoftState.get<string>('config.language');
+            const mappedLang = RealtySoftLabels.mapLanguage(newLang);
+            if (mappedLang !== currentLang) {
+              console.log('[RealtySoft] HTML lang attribute changed:', newLang, '-> mapped:', mappedLang);
+              setLanguage(mappedLang);
+            }
+          }
+          break;
+        }
+      }
+    });
+
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
+    console.log('[RealtySoft] HTML lang attribute sync initialized');
+
+    // URL popstate: Watch for browser back/forward navigation (URL-based language switchers)
+    window.addEventListener('popstate', () => {
+      // Re-detect language from URL after navigation
+      const detectedLang = RealtySoftLabels.detectLanguage();
+      const currentLang = RealtySoftState.get<string>('config.language');
+      if (detectedLang !== currentLang) {
+        console.log('[RealtySoft] URL navigation detected language change:', detectedLang);
+        setLanguage(detectedLang);
+      }
+    });
+  }
+
+  /**
    * Initialize the widget
    */
   async function init(): Promise<boolean> {
@@ -2167,6 +2365,9 @@ const RealtySoft = (function () {
         // Initialize SPA router for client-side navigation
         RealtySoftRouter.init();
 
+        // Initialize platform/plugin language sync (Weglot, HTML lang observer, etc.)
+        initPlatformLanguageSync();
+
         // Trigger initial search if listing is present
         if (widgetMode === 'combined' || widgetMode === 'results-only') {
           search();
@@ -2196,27 +2397,133 @@ const RealtySoft = (function () {
   }
 
   /**
+   * Get all valid widget containers on the page
+   */
+  function getWidgetContainers(): HTMLElement[] {
+    const containerSelectors = [
+      // Main widget containers
+      '#rs_search',
+      '#rs_listing',
+      '#rs_wishlist',
+      '.property-detail-container',
+      // Search templates
+      '.rs-search-template-01',
+      '.rs-search-template-02',
+      '.rs-search-template-03',
+      '.rs-search-template-04',
+      '.rs-search-template-05',
+      '.rs-search-template-06',
+      // Listing templates
+      '.rs-listing-template-01',
+      '.rs-listing-template-02',
+      '.rs-listing-template-03',
+      '.rs-listing-template-04',
+      '.rs-listing-template-05',
+      '.rs-listing-template-06',
+      '.rs-listing-template-07',
+      '.rs-listing-template-08',
+      '.rs-listing-template-09',
+      '.rs-listing-template-10',
+      '.rs-listing-template-11',
+      '.rs-listing-template-12',
+      // Standalone listings
+      '[data-rs-standalone]',
+    ];
+
+    const containers: HTMLElement[] = [];
+    const seen = new Set<HTMLElement>();
+
+    for (const selector of containerSelectors) {
+      document.querySelectorAll<HTMLElement>(selector).forEach((el) => {
+        // Skip elements marked as duplicates by renderTemplates()
+        if (el.dataset.rsTemplateDuplicate) return;
+
+        // Avoid duplicates (an element might match multiple selectors)
+        if (!seen.has(el)) {
+          seen.add(el);
+          containers.push(el);
+        }
+      });
+    }
+
+    return containers;
+  }
+
+  /**
+   * Global utility components that can be placed ANYWHERE on the page
+   * (including header, footer, sidebar, etc.)
+   * These are NOT affected by the duplicate prevention logic
+   */
+  const GLOBAL_UTILITY_COMPONENTS = [
+    'rs_wishlist_counter',
+    'rs_wishlist_button',
+    'rs_language_selector',
+    'rs_share_buttons',
+  ];
+
+  /**
    * Initialize all components in DOM
+   * - Container-scoped components: Only within valid widget containers
+   * - Global utility components: Anywhere on the page
    */
   function initializeComponents(): void {
-    const componentSelectors = Object.keys(components)
-      .map((name) => `.${name}`)
-      .join(', ');
+    const allComponentNames = Object.keys(components);
+    if (allComponentNames.length === 0) return;
 
-    if (!componentSelectors) return;
+    // Separate global utility components from container-scoped components
+    const globalComponents = allComponentNames.filter(name => GLOBAL_UTILITY_COMPONENTS.includes(name));
+    const containerComponents = allComponentNames.filter(name => !GLOBAL_UTILITY_COMPONENTS.includes(name));
 
-    document.querySelectorAll<RSHTMLElement>(componentSelectors).forEach((element) => {
-      for (const [name, Component] of Object.entries(components)) {
-        if (element.classList.contains(name)) {
-          const variation = element.dataset.rsVariation || '1';
-          console.log(`[RealtySoft] Initializing ${name} with variation: ${variation}`);
-          const instance = new Component(element, { variation });
-          componentInstances.push(instance);
-          element._rsComponent = instance;
-          break;
+    // Phase 1: Initialize GLOBAL utility components anywhere on the page
+    if (globalComponents.length > 0) {
+      const globalSelectors = globalComponents.map(name => `.${name}`).join(', ');
+      document.querySelectorAll<RSHTMLElement>(globalSelectors).forEach((element) => {
+        // Skip if already initialized
+        if (element._rsComponent) return;
+
+        for (const name of globalComponents) {
+          if (element.classList.contains(name) && components[name]) {
+            const variation = element.dataset.rsVariation || '1';
+            console.log(`[RealtySoft] Initializing global ${name} with variation: ${variation}`);
+            const instance = new components[name](element, { variation });
+            componentInstances.push(instance);
+            element._rsComponent = instance;
+            break;
+          }
         }
+      });
+    }
+
+    // Phase 2: Initialize CONTAINER-SCOPED components only within valid containers
+    if (containerComponents.length > 0) {
+      const containerSelectors = containerComponents.map(name => `.${name}`).join(', ');
+      const containers = getWidgetContainers();
+
+      if (containers.length === 0) {
+        console.log('[RealtySoft] No widget containers found on page');
+        return;
       }
-    });
+
+      console.log('[RealtySoft] Found', containers.length, 'widget container(s)');
+
+      for (const container of containers) {
+        container.querySelectorAll<RSHTMLElement>(containerSelectors).forEach((element) => {
+          // Skip if already initialized
+          if (element._rsComponent) return;
+
+          for (const name of containerComponents) {
+            if (element.classList.contains(name) && components[name]) {
+              const variation = element.dataset.rsVariation || '1';
+              console.log(`[RealtySoft] Initializing ${name} with variation: ${variation}`);
+              const instance = new components[name](element, { variation });
+              componentInstances.push(instance);
+              element._rsComponent = instance;
+              break;
+            }
+          }
+        });
+      }
+    }
   }
 
   /**

@@ -1,6 +1,6 @@
 # RealtySoft Widget v3 - Development Status
 
-> **Version:** 3.2.0 | **Last Updated:** January 29, 2026
+> **Version:** 3.3.0 | **Last Updated:** January 29, 2026
 
 ---
 
@@ -31,6 +31,7 @@
 | Phase 11: Enhanced i18n Testing | Complete | 100% |
 | Phase 12: Labels Optimization & Detail UX | Complete | 100% |
 | Phase 13: Dynamic Language Content Switching | Complete | 100% |
+| Phase 14: Widget Duplicate Prevention & Multi-Platform | Complete | 100% |
 
 ---
 
@@ -479,6 +480,70 @@ All languages supported: English (en_US), Spanish (es_ES), German (de_DE), Frenc
 
 ---
 
+### Phase 14: Widget Duplicate Prevention & Multi-Platform Support (v3.3.0)
+
+Fixed critical issue where the widget would render multiple times (e.g., 3 times) when page builders automatically copy content to auto-generated header/footer sections.
+
+#### Problem
+
+When a WordPress page has the widget shortcode but no dedicated header/footer template, some page builders (Elementor, Divi, etc.) auto-generate header/footer by copying the main content. This caused the widget to appear 3 times (header, content, footer).
+
+#### Root Cause
+
+The JavaScript `initializeComponents()` and `renderTemplates()` functions used `document.querySelectorAll()` to find ALL elements with widget class names across the entire DOM, without checking if they're inside a designated content area.
+
+#### Solution: Container-Scoped Initialization with Smart Detection
+
+| File | Change |
+|------|--------|
+| `src/core/controller.ts` | Added `getWidgetContainers()` to find valid widget containers |
+| `src/core/controller.ts` | Added `isInHeaderFooter()` to detect header/footer zones |
+| `src/core/controller.ts` | Added `isInMainContent()` to detect main content zones |
+| `src/core/controller.ts` | Added `findBestElement()` to prioritize main content over header/footer |
+| `src/core/controller.ts` | Modified `renderTemplates()` to only render into the best element per template type |
+| `src/core/controller.ts` | Modified `initializeComponents()` to scope component discovery to valid containers |
+| `src/core/router.ts` | Updated `_detectListingContainers()` to skip duplicate elements |
+| `src/components/search/ai-search-toggle.ts` | Updated to skip duplicate containers |
+
+#### Multi-Platform Support
+
+The detection system now supports multiple website platforms:
+
+| Platform | Header/Footer Detection | Main Content Detection |
+|----------|------------------------|------------------------|
+| **WordPress** | `.header`, `.footer`, `#masthead` | `.entry-content`, `.page-content`, `#content` |
+| **Wix** | `#SITE_HEADER`, `#SITE_FOOTER`, `wixui-*` | `#PAGES_CONTAINER`, `#SITE_PAGES`, `#masterPage` |
+| **Webflow** | `.w-nav`, `.navbar`, `.footer-wrapper` | `.page-wrapper`, `.main-wrapper`, `.w-container` |
+| **Squarespace** | `#sqs-header`, `#sqs-footer`, `.header-inner` | `#page`, `#sections`, `.content-wrapper`, `.page-section` |
+| **Standard HTML** | `<header>`, `<footer>` | `<main>`, `<article>` |
+
+#### How It Works
+
+1. **Template Rendering**: `renderTemplates()` finds all matching template elements, then uses `findBestElement()` to pick the one in the main content area (not header/footer)
+2. **Duplicate Marking**: Non-selected elements get marked with `data-rs-template-duplicate="true"`
+3. **Component Initialization**: `getWidgetContainers()` returns only valid containers (excluding duplicates)
+4. **Scoped Initialization**: Container-scoped components are only initialized within valid containers
+5. **Global Utility Components**: Utility components can be placed anywhere (header, footer, menu, sidebar)
+
+#### Priority Order
+
+1. Element in main content area AND not in header/footer (highest priority)
+2. Element not in header/footer
+3. First element found (fallback)
+
+#### Global Utility Components
+
+These components can be placed ANYWHERE on the page (including header/footer/menu) and are NOT affected by duplicate prevention:
+
+| Component | Description |
+|-----------|-------------|
+| `rs_wishlist_counter` | Wishlist count badge (for menus) |
+| `rs_wishlist_button` | Add to wishlist button |
+| `rs_language_selector` | Language dropdown |
+| `rs_share_buttons` | Social share buttons |
+
+---
+
 ### PHP Backend
 
 | File | Status | Description |
@@ -781,6 +846,8 @@ The loader script:
 | 43 | Property content not translating on language switch | Fixed: CRM uses `ln` param (not `lang`), added cache clearing, refetch on switch |
 | 44 | Property types/features not translating | Added cache key with language, reset loaded flags on switch |
 | 45 | Features popup going behind map | Added `isolation: isolate` to map container, reset leaflet z-index |
+| 46 | Widget appearing 3 times (header, content, footer) | Added container-scoped initialization with main content priority detection |
+| 47 | Widget rendering in header instead of main content | Added `findBestElement()` with `isInMainContent()` and `isInHeaderFooter()` detection |
 
 ---
 
