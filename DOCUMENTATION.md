@@ -393,6 +393,55 @@ Add `data-rs-*` attributes to lock or preset filters. Locked filters cannot be c
 <div class="rs_property_carousel" data-rs-template="6"></div>
 ```
 
+**Filter Attributes:**
+
+The carousel works independently from page filters and can be configured with these attributes:
+
+| Attribute | Description | Example |
+|-----------|-------------|---------|
+| `data-rs-limit` | Number of properties to display | `"6"`, `"10"` |
+| `data-rs-own` | Show only own properties | `"true"` |
+| `data-rs-own-first` | Show own properties first, then others | `"true"` |
+| `data-rs-featured` | Show only featured properties | `"true"` |
+| `data-rs-location` | Filter by location ID | `"505"` |
+| `data-rs-listing-type` | Filter by listing type | `"resale"`, `"long_rental"` |
+| `data-rs-property-type` | Filter by property type ID | `"76"` |
+| `data-rs-min-price` | Minimum price filter | `"100000"` |
+| `data-rs-max-price` | Maximum price filter | `"500000"` |
+| `data-rs-min-beds` | Minimum bedrooms filter | `"2"` |
+| `data-rs-autoplay` | Enable auto-rotation | `"true"` |
+| `data-rs-interval` | Auto-rotation interval (ms) | `"5000"` |
+
+**Example - Own Properties Carousel:**
+
+```html
+<div class="rs_property_carousel"
+     data-rs-own="true"
+     data-rs-limit="6"
+     data-rs-autoplay="true">
+</div>
+```
+
+**Example - Featured Properties:**
+
+```html
+<div class="rs_property_carousel"
+     data-rs-featured="true"
+     data-rs-limit="8">
+</div>
+```
+
+**Example - Own Properties First (mixed listing):**
+
+Shows your own properties first, followed by other properties. Useful for prioritizing your inventory while still showing variety.
+
+```html
+<div class="rs_property_carousel"
+     data-rs-own-first="true"
+     data-rs-limit="10">
+</div>
+```
+
 **Available Templates:**
 
 | Template | Class | Description |
@@ -867,6 +916,54 @@ Displays search results in grid or list format.
 - Wishlist button on each card
 - Lazy loading images
 - Max 5 images per card for performance
+
+**Standalone Grid (Independent from Search Filters):**
+
+Add `data-rs-standalone` to create a grid that fetches its own data independently:
+
+```html
+<div class="rs_property_grid"
+     data-rs-standalone
+     data-rs-own="true"
+     data-rs-limit="6">
+</div>
+```
+
+| Attribute | Description | Example |
+|-----------|-------------|---------|
+| `data-rs-standalone` | Makes grid independent from page filters | (no value needed) |
+| `data-rs-limit` | Number of properties to display | `"6"`, `"12"` |
+| `data-rs-own` | Show only own properties | `"true"` |
+| `data-rs-own-first` | Show own properties first, then others | `"true"` |
+| `data-rs-featured` | Show only featured properties | `"true"` |
+| `data-rs-location` | Filter by location ID | `"505"` |
+| `data-rs-listing-type` | Filter by listing type | `"resale"`, `"long_rental"` |
+| `data-rs-property-type` | Filter by property type ID | `"76"` |
+
+**Example - Homepage Own Properties:**
+
+```html
+<div class="rs_property_grid"
+     data-rs-standalone
+     data-rs-own="true"
+     data-rs-featured="true"
+     data-rs-limit="6"
+     data-rs-columns="3">
+</div>
+```
+
+**Example - Own Properties First (mixed listing):**
+
+Shows your own properties first, followed by other properties. Useful for prioritizing your inventory while still showing variety.
+
+```html
+<div id="rs_listing"
+     data-rs-standalone
+     data-rs-own-first="true"
+     data-rs-limit="12">
+    <div class="rs_property_grid"></div>
+</div>
+```
 
 **Custom Card Template:**
 

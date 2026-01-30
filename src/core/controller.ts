@@ -469,6 +469,7 @@ const RealtySoft = (function () {
     const params = new URLSearchParams();
 
     if (filters.location) params.set('location', String(filters.location));
+    if (filters.locationName) params.set('locationName', encodeURIComponent(filters.locationName));
     if (filters.sublocation) params.set('sublocation', String(filters.sublocation));
     if (filters.propertyType) params.set('type', String(filters.propertyType));
     if (filters.listingType) params.set('listing', filters.listingType);
@@ -499,6 +500,9 @@ const RealtySoft = (function () {
     if (urlParams.has('location')) {
       const val = parseInt(urlParams.get('location') || '', 10);
       if (!isNaN(val)) filters.location = val;
+    }
+    if (urlParams.has('locationName')) {
+      filters.locationName = decodeURIComponent(urlParams.get('locationName') || '');
     }
     if (urlParams.has('sublocation')) {
       const val = parseInt(urlParams.get('sublocation') || '', 10);
@@ -2080,7 +2084,10 @@ const RealtySoft = (function () {
    */
   function showLoadingSkeletons(): void {
     const searchContainer = document.getElementById('rs_search');
-    const listingContainer = document.getElementById('rs_listing');
+    const listingContainer = document.getElementById('rs_listing') ||
+                             document.querySelector('.rs_property_grid') ||
+                             document.querySelector('[class*="rs-listing-template-"]');
+    const wishlistContainer = document.querySelector('.rs_wishlist_list');
 
     if (searchContainer && !searchContainer.querySelector('.rs-search-skeleton')) {
       const searchSkeleton = document.createElement('div');
@@ -2109,6 +2116,7 @@ const RealtySoft = (function () {
       searchContainer.insertBefore(searchSkeleton, searchContainer.firstChild);
     }
 
+    // Show listing skeleton for property grid
     if (listingContainer && !listingContainer.querySelector('.rs-listing-skeleton')) {
       const listingSkeleton = document.createElement('div');
       listingSkeleton.className = 'rs-listing-skeleton';
@@ -2131,22 +2139,46 @@ const RealtySoft = (function () {
       }
       listingContainer.insertBefore(listingSkeleton, listingContainer.firstChild);
     }
+
+    // Show wishlist skeleton
+    if (wishlistContainer && !wishlistContainer.querySelector('.rs-listing-skeleton')) {
+      const wishlistSkeleton = document.createElement('div');
+      wishlistSkeleton.className = 'rs-listing-skeleton rs-wishlist-skeleton';
+      for (let i = 0; i < 4; i++) {
+        wishlistSkeleton.innerHTML += `
+          <div class="rs-listing-skeleton__card">
+            <div class="rs-listing-skeleton__image"></div>
+            <div class="rs-listing-skeleton__content">
+              <div class="rs-listing-skeleton__price"></div>
+              <div class="rs-listing-skeleton__title"></div>
+              <div class="rs-listing-skeleton__location"></div>
+              <div class="rs-listing-skeleton__specs">
+                <div class="rs-listing-skeleton__spec"></div>
+                <div class="rs-listing-skeleton__spec"></div>
+                <div class="rs-listing-skeleton__spec"></div>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+      wishlistContainer.insertBefore(wishlistSkeleton, wishlistContainer.firstChild);
+    }
   }
 
   /**
    * Hide skeleton loading placeholders
    */
   function hideLoadingSkeletons(): void {
-    const searchSkeleton = document.querySelector('.rs-search-skeleton');
-    const listingSkeleton = document.querySelector('.rs-listing-skeleton');
+    // Remove all skeleton elements
+    document.querySelectorAll('.rs-search-skeleton, .rs-listing-skeleton, .rs-wishlist-skeleton').forEach(el => el.remove());
 
-    if (searchSkeleton) searchSkeleton.remove();
-    if (listingSkeleton) listingSkeleton.remove();
-
+    // Mark containers as loaded
     const searchContainer = document.getElementById('rs_search');
     const listingContainer = document.getElementById('rs_listing');
+    const wishlistContainer = document.querySelector('.rs_wishlist_list');
     if (searchContainer) searchContainer.classList.add('rs-loaded');
     if (listingContainer) listingContainer.classList.add('rs-loaded');
+    if (wishlistContainer) wishlistContainer.classList.add('rs-loaded');
   }
 
   /**
@@ -2302,12 +2334,22 @@ const RealtySoft = (function () {
         }
 
         if (!isDetailPage) {
-          // Listing pages: always fetch locations and property types
+          // Listing pages: fetch property types (blocking) and allLabels
           apiPromises.push(
-            RealtySoftAPI.getLocations().catch(() => ({ data: [] })),
             RealtySoftAPI.getPropertyTypes().catch(() => ({ data: [] })),
             allLabelsPromise,
           );
+
+          // Fire getLocations() in background (non-blocking) - 3.87s optimization
+          RealtySoftAPI.getLocations()
+            .then(result => {
+              console.log('[RealtySoft] Background locations loaded:', result.data?.length || 0, 'items');
+              RealtySoftState.set('data.locations', result.data || []);
+            })
+            .catch((err) => {
+              console.error('[RealtySoft] Background locations fetch failed:', err);
+              RealtySoftState.set('data.locations', []);
+            });
         }
 
         // Static and hybrid modes: initialize labels from static defaults FIRST (instant)
@@ -2361,12 +2403,11 @@ const RealtySoft = (function () {
             RealtySoftState.set('data.labels', RealtySoftLabels.getAll());
           }
 
-          // Extract locations/propertyTypes from results
+          // Extract propertyTypes from results (locations now loaded in background)
           // Result indices shift based on whether labels was in apiPromises
           const resultOffset = labelsMode === 'api' ? 1 : 0;
-          const locations = isDetailPage ? { data: [] as any[] } : results[resultOffset];
-          const propertyTypes = isDetailPage ? { data: [] as any[] } : results[resultOffset + 1];
-          const allLabelsData = isDetailPage ? null : results[resultOffset + 2];
+          const propertyTypes = isDetailPage ? { data: [] as any[] } : results[resultOffset];
+          const allLabelsData = isDetailPage ? null : results[resultOffset + 1];
 
           // Extract available languages from the unfiltered labels response
           if (allLabelsData) {
@@ -2383,7 +2424,8 @@ const RealtySoft = (function () {
             });
           }
 
-          RealtySoftState.set('data.locations', locations?.data || []);
+          // Note: data.locations is populated by background fetch (non-blocking)
+          // Default state already has empty array, so no need to set here
           RealtySoftState.set('data.propertyTypes', propertyTypes?.data || []);
           RealtySoftState.set('data.features', []);
           RealtySoftState.set('data.featuresLoaded', false);
@@ -2464,6 +2506,7 @@ const RealtySoft = (function () {
       '#rs_search',
       '#rs_listing',
       '#rs_wishlist',
+      '.rs_wishlist_list',
       '.property-detail-container',
       // Search templates
       '.rs-search-template-01',
@@ -2711,8 +2754,25 @@ const RealtySoft = (function () {
         params.page = 1;
         params.order = container.dataset.rsOrder || 'create_date_desc';
 
+        // Filter options
+        const featuredOnly = container.dataset.rsFeatured === 'true';
+        const ownOnly = container.dataset.rsOwn === 'true';
+        const ownFirst = container.dataset.rsOwnFirst === 'true';
+
+        if (featuredOnly) params.featured = '1';
+        if (ownOnly) params.is_own = '1';
+
         const results = await RealtySoftAPI.searchProperties(params as SearchParams);
-        const properties = results.data || [];
+        let properties = results.data || [];
+
+        // Sort own properties first if ownFirst is enabled
+        if (ownFirst && properties.length > 0) {
+          properties = properties.sort((a: Property, b: Property) => {
+            const aOwn = a.is_own ? 1 : 0;
+            const bOwn = b.is_own ? 1 : 0;
+            return bOwn - aOwn; // Own properties first
+          });
+        }
 
         // Find grid component inside this container and inject data
         const gridEl = container.querySelector('.rs_property_grid') as RSHTMLElement | null;

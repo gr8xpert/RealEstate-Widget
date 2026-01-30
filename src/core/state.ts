@@ -69,7 +69,7 @@ const RealtySoftState: RealtySoftStateModule = (function () {
     ui: {
       view: 'grid',
       sort: 'create_date_desc',
-      loading: false,
+      loading: true, // Start with loading true so components show loader on init
       error: null,
     },
 

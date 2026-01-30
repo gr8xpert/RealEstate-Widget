@@ -94,6 +94,9 @@ class RSPropertyGrid extends RSBaseComponent {
       this.loading = loading;
       this.updateLoadingState();
     });
+    // Initialize loading state immediately from current state
+    this.loading = RealtySoftState.get<boolean>('ui.loading') ?? true;
+    this.updateLoadingState();
 
     // Subscribe to language changes - ensure re-render with translated content
     // Note: Properties will be refetched by controller's setLanguage(), this ensures
@@ -946,18 +949,7 @@ class RSPropertyGrid extends RSBaseComponent {
           return;
         }
       }
-
-      // Sync with RealtySoftState for backwards compatibility
-      try {
-        const id = property.id;
-        if (RealtySoftState.isInWishlist(id)) {
-          RealtySoftState.removeFromWishlist(id);
-        } else {
-          RealtySoftState.addToWishlist(id);
-        }
-      } catch (stateErr) {
-        console.warn('[PropertyGrid] State sync error (non-critical):', stateErr);
-      }
+      // Note: WishlistManager.add/remove already syncs with RealtySoftState via notifyChange()
     } catch (err) {
       console.error('[PropertyGrid] Wishlist toggle error:', err);
     }

@@ -4,6 +4,7 @@ import { resolve } from 'path';
 export default defineConfig(({ mode }) => {
   const isESBuild = mode === 'es';
   const isSWBuild = mode === 'sw';
+  const isDev = mode === 'development';
 
   if (isSWBuild) {
     return {
@@ -52,9 +53,9 @@ export default defineConfig(({ mode }) => {
               },
             },
           },
-          sourcemap: true,
+          sourcemap: isDev,
           minify: 'esbuild',
-          cssCodeSplit: false,
+          cssCodeSplit: true,
         }
       : {
           // IIFE monolithic build (default) — backward compatible
@@ -73,10 +74,17 @@ export default defineConfig(({ mode }) => {
               name: 'RealtySoft',
               preserveModules: false,
               banner: '/*! RealtySoft Widget v3.0.0 */\n',
+              assetFileNames: (assetInfo) => {
+                // Rename CSS to style.css to match loader expectations
+                if (assetInfo.name && assetInfo.name.endsWith('.css')) {
+                  return 'style.css';
+                }
+                return assetInfo.name || 'assets/[name]-[hash][extname]';
+              },
             },
           },
           outDir: 'dist',
-          sourcemap: true,
+          sourcemap: isDev,
           minify: 'esbuild',
           cssCodeSplit: false,
         },

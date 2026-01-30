@@ -2228,7 +2228,7 @@ a[class*=" rs-"]:focus-visible {
 }
 
 .rs-detail-gallery__lightbox-nav {
-    position: absolute;
+    position: fixed;
     top: 50%;
     transform: translateY(-50%);
     width: 48px;
@@ -2241,10 +2241,11 @@ a[class*=" rs-"]:focus-visible {
     border-radius: var(--rs-border-radius-full);
     color: white;
     cursor: pointer;
+    z-index: 10001;
 }
 
-.rs-detail-gallery__lightbox-nav--prev { left: -60px; }
-.rs-detail-gallery__lightbox-nav--next { right: -60px; }
+.rs-detail-gallery__lightbox-nav--prev { left: 20px; }
+.rs-detail-gallery__lightbox-nav--next { right: 20px; }
 
 /* Features Component - Supports two modes: button (popup) and inline */
 .rs-detail-features {

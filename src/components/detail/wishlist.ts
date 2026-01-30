@@ -114,8 +114,7 @@ class RSDetailWishlist extends RSBaseComponent {
         if (wmAvailable) {
           WishlistManager!.remove(refNo);
         }
-        // Also sync with RealtySoftState for backwards compatibility
-        try { RealtySoftState.removeFromWishlist(p.id); } catch (_) { /* state sync non-critical */ }
+        // Note: WishlistManager.remove already syncs with RealtySoftState via notifyChange()
         try { RealtySoftAnalytics.trackWishlistRemove(p.id); } catch (_) { /* analytics non-critical */ }
 
         if (typeof RealtySoftToast !== 'undefined' && RealtySoftToast) {
@@ -145,8 +144,7 @@ class RSDetailWishlist extends RSBaseComponent {
             is_featured: p.is_featured || false
           });
         }
-        // Also sync with RealtySoftState for backwards compatibility
-        try { RealtySoftState.addToWishlist(p.id); } catch (_) { /* state sync non-critical */ }
+        // Note: WishlistManager.add already syncs with RealtySoftState via notifyChange()
         try { RealtySoftAnalytics.trackWishlistAdd(p.id); } catch (_) { /* analytics non-critical */ }
 
         if (typeof RealtySoftToast !== 'undefined' && RealtySoftToast) {

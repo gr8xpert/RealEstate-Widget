@@ -5,10 +5,10 @@
   "main": "src/core/controller.js",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build && node -e \"require('fs').copyFileSync('src/realtysoft-loader.js', 'dist/realtysoft-loader.js')\"",
     "build:es": "vite build --mode es",
     "build:sw": "vite build --mode sw",
-    "build:all": "vite build && vite build --mode es && vite build --mode sw",
+    "build:all": "vite build && vite build --mode es && vite build --mode sw && node -e \"require('fs').copyFileSync('src/realtysoft-loader.js', 'dist/realtysoft-loader.js')\"",
     "build:legacy": "node build.js",
     "preview": "vite preview",
     "test": "vitest run",

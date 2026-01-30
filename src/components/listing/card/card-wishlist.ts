@@ -128,17 +128,7 @@ class RSCardWishlist extends RSBaseComponent {
           return;
         }
       }
-
-      // Sync with RealtySoftState for backwards compatibility
-      try {
-        if (RealtySoftState.isInWishlist(this.property.id)) {
-          RealtySoftState.removeFromWishlist(this.property.id);
-        } else {
-          RealtySoftState.addToWishlist(this.property.id);
-        }
-      } catch (stateErr) {
-        console.warn('[CardWishlist] State sync error (non-critical):', stateErr);
-      }
+      // Note: WishlistManager.add/remove already syncs with RealtySoftState via notifyChange()
     } catch (err) {
       console.error('[CardWishlist] Wishlist toggle error:', err);
     }

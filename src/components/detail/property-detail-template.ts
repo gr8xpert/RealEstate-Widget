@@ -388,9 +388,9 @@ class RSPropertyDetailTemplate extends RSBaseComponent {
 
         <div class="rs-template__sidebar">
           ${this.renderAgentCard(p)}
+          ${this.renderFeatures(p)}
           ${this.renderSidebarPdf(p)}
           <div class="rs-template__inquiry-form" id="rs-template-inquiry"></div>
-          ${this.renderFeatures(p)}
           <div class="rs-template__sidebar-share" id="rs-template-share"></div>
         </div>
       </div>

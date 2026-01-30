@@ -51,6 +51,7 @@ class RSPropertyCarousel extends RSBaseComponent {
   private limit: number = 10;
   private featured: boolean = false;
   private own: boolean = false;
+  private ownFirst: boolean = false;
   private location: string | null = null;
   private listingType: string | null = null;
   private propertyType: string | null = null;
@@ -91,6 +92,7 @@ class RSPropertyCarousel extends RSBaseComponent {
     // Filter options - carousel works INDEPENDENTLY from page filters
     this.featured = this.element.dataset.rsFeatured === 'true';
     this.own = this.element.dataset.rsOwn === 'true';
+    this.ownFirst = this.element.dataset.rsOwnFirst === 'true';
     this.location = this.element.dataset.rsLocation || null;
     this.listingType = this.element.dataset.rsListingType || null;
     this.propertyType = this.element.dataset.rsPropertyType || null;
@@ -405,6 +407,17 @@ class RSPropertyCarousel extends RSBaseComponent {
 
       if (result && result.data && result.data.length > 0) {
         this.properties = result.data;
+
+        // Sort own properties first if ownFirst is enabled
+        if (this.ownFirst) {
+          this.properties.sort((a, b) => {
+            const aOwn = a.is_own ? 1 : 0;
+            const bOwn = b.is_own ? 1 : 0;
+            return bOwn - aOwn; // Own properties first
+          });
+          console.log('[RSPropertyCarousel] Sorted with own properties first');
+        }
+
         console.log('[RSPropertyCarousel] Loaded', this.properties.length, 'properties');
 
         // For template 2 and 3, start at index 2 to show cards on both sides
