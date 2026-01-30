@@ -1,0 +1,36 @@
+2026-01-26 16:09:03 | === REQUEST RECEIVED (v3) === method=POST data=valid
+2026-01-26 16:09:03 | RECIPIENT MAIL: to=shahzaeb@live.com, from=noreply@realtysoft.ai, reply-to=noreply@realtysoft.ai, properties=3
+2026-01-26 16:09:03 | RECIPIENT MAIL RESULT: TRUE
+2026-01-26 16:09:03 | SENDER CHECK: emailFrom=noreply@realtysoft.ai, valid=yes, sameAsTo=no
+2026-01-26 16:09:03 | SENDER MAIL: to=noreply@realtysoft.ai, subject=Your Shared Wishlist (3 properties)
+2026-01-26 16:09:03 | SENDER MAIL RESULT: TRUE
+2026-01-26 16:17:46 | === REQUEST RECEIVED (v3) === method=POST data=valid
+2026-01-26 16:17:46 | RECIPIENT MAIL: to=shahzaeb@live.com, from=noreply@realtysoft.ai, reply-to=noreply@realtysoft.ai, properties=4
+2026-01-26 16:17:46 | RECIPIENT MAIL RESULT: TRUE
+2026-01-26 16:17:46 | SENDER CHECK: emailFrom=noreply@realtysoft.ai, valid=yes, sameAsTo=no
+2026-01-26 16:17:46 | SENDER MAIL: to=noreply@realtysoft.ai, subject=Your Shared Wishlist (4 properties)
+2026-01-26 16:17:46 | SENDER MAIL RESULT: TRUE
+2026-01-26 16:23:48 | === REQUEST RECEIVED (v3) === method=POST data=valid
+2026-01-26 16:23:48 | RECIPIENT MAIL: to=shahzaeb@live.com, from=noreply@realtysoft.ai, reply-to=noreply@realtysoft.ai, properties=4
+2026-01-26 16:23:49 | RECIPIENT MAIL RESULT: TRUE
+2026-01-26 16:23:49 | SENDER CHECK: emailFrom=noreply@realtysoft.ai, valid=yes, sameAsTo=no
+2026-01-26 16:23:49 | SENDER MAIL: to=noreply@realtysoft.ai, subject=Your Shared Wishlist (4 properties)
+2026-01-26 16:23:49 | SENDER MAIL RESULT: TRUE
+2026-01-26 16:23:49 | OWNER MAIL: to=webmaster@realtysoft.eu, subject=Wishlist Shared by Client (4 properties)
+2026-01-26 16:23:49 | OWNER MAIL RESULT: TRUE
+2026-01-27 01:17:15 | === REQUEST RECEIVED (v3) === method=POST data=valid
+2026-01-27 01:17:15 | RECIPIENT MAIL: to=shahzaeb@live.com, from=noreply@realtysoft.ai, reply-to=noreply@realtysoft.ai, properties=5
+2026-01-27 01:17:15 | RECIPIENT MAIL RESULT: TRUE
+2026-01-27 01:17:15 | SENDER CHECK: emailFrom=noreply@realtysoft.ai, valid=yes, sameAsTo=no
+2026-01-27 01:17:15 | SENDER MAIL: to=noreply@realtysoft.ai, subject=Your Shared Wishlist (5 properties)
+2026-01-27 01:17:15 | SENDER MAIL RESULT: TRUE
+2026-01-27 01:17:15 | OWNER MAIL: to=webmaster@realtysoft.eu, subject=Wishlist Shared by Client (5 properties)
+2026-01-27 01:17:15 | OWNER MAIL RESULT: TRUE
+2026-01-27 01:17:58 | === REQUEST RECEIVED (v3) === method=POST data=valid
+2026-01-27 01:17:58 | RECIPIENT MAIL: to=shahzaeb@live.com, from=noreply@realtysoft.ai, reply-to=webmaster@realtysoft.eu, properties=5
+2026-01-27 01:17:58 | RECIPIENT MAIL RESULT: TRUE
+2026-01-27 01:17:58 | SENDER CHECK: emailFrom=webmaster@realtysoft.eu, valid=yes, sameAsTo=no
+2026-01-27 01:17:58 | SENDER MAIL: to=webmaster@realtysoft.eu, subject=Your Shared Wishlist (5 properties)
+2026-01-27 01:17:58 | SENDER MAIL RESULT: TRUE
+2026-01-27 01:17:58 | OWNER MAIL: to=webmaster@realtysoft.eu, subject=Wishlist Shared by Client (5 properties)
+2026-01-27 01:17:58 | OWNER MAIL RESULT: TRUE
