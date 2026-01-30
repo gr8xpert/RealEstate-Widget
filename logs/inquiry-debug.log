@@ -1,0 +1,12 @@
+2026-01-26 16:17:09 | === REQUEST RECEIVED (v3) === method=POST data=valid
+2026-01-26 16:17:09 | OWNER MAIL: to=webmaster@realtysoft.eu, from=noreply@realtysoft.ai, reply-to=shahzaeb@live.com, subject=Property Inquiry: Detached Villa for sale in Marbella, Marbella (Ref: R5289004)
+2026-01-26 16:17:09 | OWNER MAIL RESULT: TRUE
+2026-01-26 16:17:09 | CONFIRM CHECK: sendConfirmation=true, ownerSuccess=1, clientEmail=shahzaeb@live.com
+2026-01-26 16:17:09 | CONFIRM MAIL: to=shahzaeb@live.com, subject=Your Inquiry: Detached Villa for sale in Marbella, Marbella (Ref: R5289004)
+2026-01-26 16:17:09 | CONFIRM MAIL RESULT: TRUE
+2026-01-27 01:18:56 | === REQUEST RECEIVED (v3) === method=POST data=valid
+2026-01-27 01:18:56 | OWNER MAIL: to=webmaster@realtysoft.eu, from=noreply@realtysoft.ai, reply-to=shahzaeb@live.com, subject=Property Inquiry: Detached Villa for sale in Marbella, Marbella (Ref: R5289004)
+2026-01-27 01:18:56 | OWNER MAIL RESULT: TRUE
+2026-01-27 01:18:56 | CONFIRM CHECK: sendConfirmation=true, ownerSuccess=1, clientEmail=shahzaeb@live.com
+2026-01-27 01:18:56 | CONFIRM MAIL: to=shahzaeb@live.com, subject=Your Inquiry: Detached Villa for sale in Marbella, Marbella (Ref: R5289004)
+2026-01-27 01:18:56 | CONFIRM MAIL RESULT: TRUE
