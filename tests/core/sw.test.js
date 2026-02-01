@@ -47,7 +47,7 @@ describe('Service Worker', () => {
 
     it('should identify API proxy URLs', () => {
       expect(isAPIProxy(new URL('https://realtysoft.ai/php/api-proxy.php'))).toBe(true);
-      expect(isAPIProxy(new URL('https://realtysoft.ai/propertymanager/php/api-proxy.php?_endpoint=v1/property'))).toBe(true);
+      expect(isAPIProxy(new URL('https://smartpropertywidget.com/spw/php/api-proxy.php?_endpoint=v1/property'))).toBe(true);
     });
 
     it('should not match non-API URLs', () => {

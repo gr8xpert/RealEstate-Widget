@@ -9,7 +9,7 @@
 **RealtySoft Widget v3** is a modular "Lego blocks" real estate property search widget system built with TypeScript and Vite. It connects to the Inmolink CRM API through a PHP proxy and provides search, listing, and property detail functionality.
 
 **Project Location:** `C:\Users\shahzaib\RealtysoftV3`
-**Server Deployment:** `https://realtysoft.ai/propertymanager/`
+**Server Deployment:** `https://smartpropertywidget.com/spw/`
 
 ---
 
@@ -816,9 +816,9 @@ npm run lint:fix               # Auto-fix issues
 
 ## Deployment
 
-Upload to `realtysoft.ai/propertymanager/`:
+Upload to `smartpropertywidget.com/spw/`:
 ```
-realtysoft.ai/propertymanager/
+smartpropertywidget.com/spw/
 ├── analytics/
 │   ├── index.php
 │   ├── admin.php
@@ -848,7 +848,7 @@ realtysoft.ai/propertymanager/
 
 **Option A: Auto-Updating Loader (Recommended for production)**
 ```html
-<script src="https://realtysoft.ai/propertymanager/dist/realtysoft-loader.min.js"></script>
+<script src="https://smartpropertywidget.com/spw/dist/realtysoft-loader.min.js"></script>
 ```
 
 The loader script:
@@ -859,8 +859,8 @@ The loader script:
 
 **Option B: Direct Include (for development/testing)**
 ```html
-<link rel="stylesheet" href="https://realtysoft.ai/propertymanager/dist/realtysoft.min.css?v=3.0.0">
-<script src="https://realtysoft.ai/propertymanager/dist/realtysoft.min.js?v=3.0.0"></script>
+<link rel="stylesheet" href="https://smartpropertywidget.com/spw/dist/realtysoft.min.css?v=3.0.0">
+<script src="https://smartpropertywidget.com/spw/dist/realtysoft.min.js?v=3.0.0"></script>
 ```
 
 > **Note:** Direct include requires manual version parameter updates when deploying updates.

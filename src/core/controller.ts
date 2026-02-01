@@ -123,7 +123,7 @@ const RealtySoft = (function () {
     const style = document.createElement('style');
     style.id = 'rs-early-hide';
     style.textContent =
-      'body:not(.rs-property-ready) > *:not(script):not(style):not(link) {' +
+      'body:not(.rs-property-ready) > *:not(script):not(style):not(link):not(header):not(footer):not(.elementor-location-header):not(.elementor-location-footer):not([data-elementor-type="header"]):not([data-elementor-type="footer"]) {' +
       '  visibility: hidden !important;' +
       '}' +
       'body:not(.rs-property-ready)::after {' +
@@ -3018,38 +3018,43 @@ const RealtySoft = (function () {
     const bodyText = (document.body.innerText || '').toLowerCase();
     const title = (document.title || '').toLowerCase();
 
+    // Title patterns - must be specific to avoid false positives
     const titlePatterns = [
       '404',
       'not found',
       'page not found',
-      'error',
       'pagina no encontrada',
       'seite nicht gefunden',
       'page introuvable',
       'pagina non trovata',
     ];
 
+    // Only match if title starts with or is primarily a 404 message
+    // Avoid matching titles like "Property R-1404 | Site Name"
     for (const pattern of titlePatterns) {
-      if (title.includes(pattern)) {
+      // Check if pattern is at the start or the title is very short (likely a 404 page)
+      if (title.startsWith(pattern) || (title.includes(pattern) && title.length < 30)) {
         return true;
       }
     }
 
+    // Use specific phrases that indicate a 404 page, avoid generic patterns
+    // that could match property content (e.g., "404" in property ref "R-1404")
     const bodyPatterns = [
-      '404',
-      'not found',
+      'error 404',
+      '404 error',
+      '404 not found',
       'page not found',
       "page doesn't exist",
       'page does not exist',
-      "couldn't find",
-      'could not find',
+      "this page couldn't be found",
+      'this page could not be found',
       'no longer exists',
       'has been removed',
       'has been deleted',
-      'oops!',
-      "sorry, we couldn't",
       'pagina no encontrada',
-      'no se encuentra',
+      'seite nicht gefunden',
+      'page introuvable',
     ];
 
     for (const pattern of bodyPatterns) {
@@ -3063,14 +3068,16 @@ const RealtySoft = (function () {
       return true;
     }
 
+    // Only match explicit 404 page classes, avoid wildcards that cause false positives
+    // (e.g., property ref "R-1404" would match [class*="404"])
     const errorSelectors = [
       '.error-404',
       '#error-404',
       '.page-404',
       '.not-found',
       '.error-page',
-      '[class*="404"]',
-      '[id*="404"]',
+      'body.error404',      // WordPress default 404 body class
+      'body.page-template-404',
     ];
 
     for (const selector of errorSelectors) {
@@ -3136,13 +3143,61 @@ const RealtySoft = (function () {
     }
 
     if (is404) {
-      console.log('[RealtySoft] Clearing 404 content...');
-      mainContent.innerHTML = '';
+      console.log('[RealtySoft] Detected 404 page...');
+
+      // NEVER clear body.innerHTML - it destroys header/footer
+      // Only clear content of narrower containers
+      if (!usedFallback) {
+        console.log('[RealtySoft] Clearing 404 content container...');
+        mainContent.innerHTML = '';
+      } else {
+        // For body or broad containers, hide children instead of clearing
+        console.log('[RealtySoft] Hiding 404 content (preserving header/footer)...');
+        const hideStyle = document.createElement('style');
+        hideStyle.id = 'rs-404-hide';
+        hideStyle.textContent = '.rs-404-hidden { display: none !important; }';
+        document.head.appendChild(hideStyle);
+
+        Array.from(mainContent.children).forEach((child) => {
+          const el = child as HTMLElement;
+          const tag = el.tagName.toLowerCase();
+          if (
+            tag === 'nav' || tag === 'header' || tag === 'footer' ||
+            tag === 'aside' || tag === 'script' || tag === 'style' ||
+            tag === 'link' || tag === 'noscript' ||
+            el.classList.contains('elementor-location-header') ||
+            el.classList.contains('elementor-location-footer') ||
+            el.getAttribute('data-elementor-type') === 'header' ||
+            el.getAttribute('data-elementor-type') === 'footer' ||
+            el.getAttribute('role') === 'navigation' ||
+            el.getAttribute('role') === 'banner' ||
+            el.getAttribute('role') === 'contentinfo'
+          ) {
+            return;
+          }
+          el.classList.add('rs-404-hidden');
+        });
+      }
 
       const wrapper = document.createElement('div');
       wrapper.className = 'rs-auto-injected-wrapper';
       wrapper.style.cssText = 'max-width: 1400px; margin: 0 auto; padding: 20px;';
-      mainContent.appendChild(wrapper);
+
+      // Insert after header when using body as container
+      if (usedFallback && mainContent === document.body) {
+        const header = document.querySelector(
+          'header, .elementor-location-header, [data-elementor-type="header"], [role="banner"]'
+        );
+        if (header && header.nextSibling) {
+          header.parentNode!.insertBefore(wrapper, header.nextSibling);
+        } else if (header) {
+          header.parentNode!.appendChild(wrapper);
+        } else {
+          mainContent.insertBefore(wrapper, mainContent.firstChild);
+        }
+      } else {
+        mainContent.appendChild(wrapper);
+      }
       mainContent = wrapper;
 
       const globalConfig = (window.RealtySoftConfig || {}) as ControllerConfig;
@@ -3185,6 +3240,7 @@ const RealtySoft = (function () {
           const el = child as HTMLElement;
           const tag = el.tagName.toLowerCase();
           // Keep structural elements (nav, header, footer, sidebar, scripts, styles)
+          // Also preserve Elementor Theme Builder header/footer locations
           if (
             tag === 'nav' || tag === 'header' || tag === 'footer' ||
             tag === 'aside' || tag === 'script' || tag === 'style' ||
@@ -3192,7 +3248,11 @@ const RealtySoft = (function () {
             el.id === 'rs-early-hide' ||
             el.getAttribute('role') === 'navigation' ||
             el.getAttribute('role') === 'banner' ||
-            el.getAttribute('role') === 'contentinfo'
+            el.getAttribute('role') === 'contentinfo' ||
+            el.classList.contains('elementor-location-header') ||
+            el.classList.contains('elementor-location-footer') ||
+            el.getAttribute('data-elementor-type') === 'header' ||
+            el.getAttribute('data-elementor-type') === 'footer'
           ) {
             return;
           }
@@ -3220,7 +3280,24 @@ const RealtySoft = (function () {
       </style>
     `;
 
-    mainContent.appendChild(detailContainer);
+    // Insert the container in the right position
+    // When using body as fallback, insert after header (not at end)
+    if (usedFallback && mainContent === document.body) {
+      // Find header element to insert after
+      const header = document.querySelector(
+        'header, .elementor-location-header, [data-elementor-type="header"], [role="banner"]'
+      );
+      if (header && header.nextSibling) {
+        header.parentNode!.insertBefore(detailContainer, header.nextSibling);
+      } else if (header) {
+        header.parentNode!.appendChild(detailContainer);
+      } else {
+        // No header found, prepend to body so content appears first
+        mainContent.insertBefore(detailContainer, mainContent.firstChild);
+      }
+    } else {
+      mainContent.appendChild(detailContainer);
+    }
 
     console.log('[RealtySoft] Auto-injected rs_detail container successfully');
 
@@ -3274,6 +3351,15 @@ const RealtySoft = (function () {
         existingDetail.id = 'property-detail-container';
         existingDetail.dataset.propertyRef = propertyRef;
         // Remove early-hide + loading overlay now that the container is ready
+        document.body.classList.add('rs-property-ready');
+        const earlyHide = document.getElementById('rs-early-hide');
+        if (earlyHide) earlyHide.remove();
+        const overlay = document.getElementById('rs-loading-overlay');
+        if (overlay) overlay.remove();
+      } else if (existingTemplate) {
+        // USE existing property-detail-container — just set ref and reveal
+        console.log('[RealtySoft] Found existing .property-detail-container — using it');
+        (existingTemplate as HTMLElement).dataset.propertyRef = propertyRef;
         document.body.classList.add('rs-property-ready');
         const earlyHide = document.getElementById('rs-early-hide');
         if (earlyHide) earlyHide.remove();

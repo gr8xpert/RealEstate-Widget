@@ -46,7 +46,7 @@ $shareUrl = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : 
 // If no target URL provided, try to construct one
 if (empty($targetUrl) && !empty($ref)) {
     // Default to realtysoft.ai property page
-    $targetUrl = "https://realtysoft.ai/propertymanager/property/property-$ref";
+    $targetUrl = "https://smartpropertywidget.com/spw/property/property-$ref";
 }
 ?>
 <!DOCTYPE html>

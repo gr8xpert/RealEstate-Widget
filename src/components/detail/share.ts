@@ -155,7 +155,7 @@ class RSDetailShare extends RSBaseComponent {
     params.set('price', RealtySoftLabels.formatPrice(p.price));
     params.set('location', p.location || '');
     params.set('url', window.location.href);
-    return `https://realtysoft.ai/propertymanager/share.php?${params.toString()}`;
+    return `https://smartpropertywidget.com/spw/share.php?${params.toString()}`;
   }
 
   /**

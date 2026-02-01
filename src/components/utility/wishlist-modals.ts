@@ -382,7 +382,7 @@ class RSWishlistModals extends RSBaseComponent {
       return;
     }
 
-    const phpBase = RealtySoftState.get<string>('config.phpBase') || 'https://realtysoft.ai/propertymanager/php';
+    const phpBase = RealtySoftState.get<string>('config.phpBase') || 'https://smartpropertywidget.com/spw/php';
     const emailEndpoint = RealtySoftState.get<string>('config.wishlistEmailEndpoint') ||
                           `${phpBase}/send-wishlist-email.php`;
 

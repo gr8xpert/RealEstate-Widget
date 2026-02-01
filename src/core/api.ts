@@ -197,6 +197,7 @@ interface RawProperty {
   updated_at?: string;
   date_modified?: string;
   last_updated?: string;
+  similar_property_ids?: number[];
 }
 
 interface RawImage {
@@ -358,8 +359,8 @@ const RealtySoftAPI: RealtySoftAPIModule = (function () {
   const pendingRequests = new Map<string, Promise<unknown>>();
 
   let config: APIConfig = {
-    proxyUrl: 'https://realtysoft.ai/propertymanager/php/api-proxy.php',
-    inquiryEndpoint: 'https://realtysoft.ai/propertymanager/php/send-inquiry.php',
+    proxyUrl: 'https://smartpropertywidget.com/spw/php/api-proxy.php',
+    inquiryEndpoint: 'https://smartpropertywidget.com/spw/php/send-inquiry.php',
     apiKey: null,
     apiUrl: null,
     language: 'en_US',
@@ -988,6 +989,7 @@ const RealtySoftAPI: RealtySoftAPIModule = (function () {
       views: property.views || property.view_type || '',
       created_at: property.created_at || property.date_added || property.listed_date || '',
       updated_at: property.updated_at || property.date_modified || property.last_updated || '',
+      similar_property_ids: Array.isArray(property.similar_property_ids) ? property.similar_property_ids : [],
       _original: property as unknown as Record<string, unknown>,
     };
   }
@@ -1209,7 +1211,7 @@ const RealtySoftAPI: RealtySoftAPIModule = (function () {
     data: InquiryData
   ): Promise<{ success: boolean; message?: string }> {
     const url =
-      config.inquiryEndpoint || 'https://realtysoft.ai/propertymanager/php/send-inquiry.php';
+      config.inquiryEndpoint || 'https://smartpropertywidget.com/spw/php/send-inquiry.php';
     const response = await fetch(url, {
       method: 'POST',
       headers: {

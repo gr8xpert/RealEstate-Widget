@@ -95,7 +95,7 @@ const RealtySoftAnalytics: RealtySoftAnalyticsModule = (function () {
     } catch (e) {
       console.error('[RealtySoft] Analytics detectEndpoint error:', e);
     }
-    return 'https://realtysoft.ai/propertymanager/php/analytics-track.php';
+    return 'https://smartpropertywidget.com/spw/php/analytics-track.php';
   }
 
   let eventQueue: AnalyticsEvent[] = [];

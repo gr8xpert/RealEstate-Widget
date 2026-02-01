@@ -11,7 +11,7 @@
  *   86400000    = 1 day     (production)
  *
  * Usage:
- * <script src="https://realtysoft.ai/propertymanager/dist/realtysoft-loader.js"></script>
+ * <script src="https://smartpropertywidget.com/spw/dist/realtysoft-loader.js"></script>
  *
  * With config (place BEFORE loader script):
  * <script>
@@ -23,7 +23,7 @@
  *     propertyPageSlug: 'property'
  * };
  * </script>
- * <script src="https://realtysoft.ai/propertymanager/dist/realtysoft-loader.js"></script>
+ * <script src="https://smartpropertywidget.com/spw/dist/realtysoft-loader.js"></script>
  */
 (function() {
     'use strict';

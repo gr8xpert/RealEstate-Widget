@@ -22,7 +22,7 @@ declare const RealtySoftState: RealtySoftStateModule;
 declare const RealtySoftAPI: RealtySoftAPIModule;
 
 // Base URL for PHP endpoints
-const PHP_BASE_URL = 'https://realtysoft.ai/propertymanager/php';
+const PHP_BASE_URL = 'https://smartpropertywidget.com/spw/php';
 
 // AI Search filter response from backend
 interface AISearchFilters {

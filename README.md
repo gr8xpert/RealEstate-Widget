@@ -23,7 +23,7 @@ A modular "Lego blocks" real estate property search widget system built with Typ
 **Option A: Auto-Updating Loader (Recommended for production)**
 
 ```html
-<script src="https://realtysoft.ai/propertymanager/dist/realtysoft-loader.min.js"></script>
+<script src="https://smartpropertywidget.com/spw/dist/realtysoft-loader.min.js"></script>
 ```
 
 The loader automatically handles cache busting - clients always get the latest version without manual updates.
@@ -31,8 +31,8 @@ The loader automatically handles cache busting - clients always get the latest v
 **Option B: Direct Include (for development/testing)**
 
 ```html
-<link rel="stylesheet" href="https://realtysoft.ai/propertymanager/dist/realtysoft.min.css?v=3.0.0">
-<script src="https://realtysoft.ai/propertymanager/dist/realtysoft.min.js?v=3.0.0"></script>
+<link rel="stylesheet" href="https://smartpropertywidget.com/spw/dist/realtysoft.min.css?v=3.0.0">
+<script src="https://smartpropertywidget.com/spw/dist/realtysoft.min.js?v=3.0.0"></script>
 ```
 
 ### 2. Add Configuration (Optional)
@@ -389,7 +389,7 @@ Edit `config/clients.php`:
 
 ```html
 <!-- Single line - auto-updates, no version management needed -->
-<script src="https://realtysoft.ai/propertymanager/dist/realtysoft-loader.min.js"></script>
+<script src="https://smartpropertywidget.com/spw/dist/realtysoft-loader.min.js"></script>
 ```
 
 The loader automatically loads both CSS and JS with hourly cache busting.

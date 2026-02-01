@@ -14,7 +14,7 @@ describe('RealtySoftAPI', () => {
   beforeEach(() => {
     API = RealtySoftAPI;
     API.init({
-      proxyUrl: 'https://realtysoft.ai/propertymanager/php/api-proxy.php',
+      proxyUrl: 'https://smartpropertywidget.com/spw/php/api-proxy.php',
       apiKey: 'test-api-key',
       language: 'en_US',
     });
@@ -424,7 +424,7 @@ describe('RealtySoftAPI', () => {
     it('should respect custom TTL for locations', async () => {
       // Re-init with very short TTL (1ms)
       API.init({
-        proxyUrl: 'https://realtysoft.ai/propertymanager/php/api-proxy.php',
+        proxyUrl: 'https://smartpropertywidget.com/spw/php/api-proxy.php',
         apiKey: 'test-api-key',
         language: 'en_US',
         cache: { locations: 1 }, // 1ms TTL
@@ -454,7 +454,7 @@ describe('RealtySoftAPI', () => {
 
     it('should respect custom TTL for property types', async () => {
       API.init({
-        proxyUrl: 'https://realtysoft.ai/propertymanager/php/api-proxy.php',
+        proxyUrl: 'https://smartpropertywidget.com/spw/php/api-proxy.php',
         apiKey: 'test-api-key',
         language: 'en_US',
         cache: { propertyTypes: 1 },
@@ -482,7 +482,7 @@ describe('RealtySoftAPI', () => {
 
     it('should disable all caching when disabled flag is true', async () => {
       API.init({
-        proxyUrl: 'https://realtysoft.ai/propertymanager/php/api-proxy.php',
+        proxyUrl: 'https://smartpropertywidget.com/spw/php/api-proxy.php',
         apiKey: 'test-api-key',
         language: 'en_US',
         cache: { disabled: true },
@@ -504,7 +504,7 @@ describe('RealtySoftAPI', () => {
 
     it('should not write to cache when disabled', async () => {
       API.init({
-        proxyUrl: 'https://realtysoft.ai/propertymanager/php/api-proxy.php',
+        proxyUrl: 'https://smartpropertywidget.com/spw/php/api-proxy.php',
         apiKey: 'test-api-key',
         language: 'en_US',
         cache: { disabled: true },
@@ -524,7 +524,7 @@ describe('RealtySoftAPI', () => {
 
     it('should use configurable TTL for property cache', async () => {
       API.init({
-        proxyUrl: 'https://realtysoft.ai/propertymanager/php/api-proxy.php',
+        proxyUrl: 'https://smartpropertywidget.com/spw/php/api-proxy.php',
         apiKey: 'test-api-key',
         language: 'en_US',
         cache: { property: 1 }, // 1ms TTL
@@ -572,7 +572,7 @@ describe('RealtySoftAPI', () => {
     it('should promote L2 hits to L1', async () => {
       // Re-init with fresh memory cache
       API.init({
-        proxyUrl: 'https://realtysoft.ai/propertymanager/php/api-proxy.php',
+        proxyUrl: 'https://smartpropertywidget.com/spw/php/api-proxy.php',
         apiKey: 'test-api-key',
         language: 'en_US',
         cache: { maxCacheEntries: 50 },
@@ -626,7 +626,7 @@ describe('RealtySoftAPI', () => {
 
     it('should respect maxCacheEntries configuration', () => {
       API.init({
-        proxyUrl: 'https://realtysoft.ai/propertymanager/php/api-proxy.php',
+        proxyUrl: 'https://smartpropertywidget.com/spw/php/api-proxy.php',
         apiKey: 'test-api-key',
         language: 'en_US',
         cache: { maxCacheEntries: 5 },

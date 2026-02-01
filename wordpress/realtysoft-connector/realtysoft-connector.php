@@ -13,7 +13,7 @@ if (!defined('ABSPATH')) exit;
 
 class RealtySoft_Connector {
     private $default_slug = 'property';
-    private $loader_url = 'https://realtysoft.ai/propertymanager/dist/realtysoft-loader.js';
+    private $loader_url = 'https://smartpropertywidget.com/spw/dist/realtysoft-loader.js';
     private $cached_property_data = [];
 
     public function __construct() {
@@ -210,7 +210,7 @@ class RealtySoft_Connector {
 
                 // 2. Hide WordPress page placeholder content while JS loads
                 echo '<style id="rs-ssr-page-hide">' . "\n";
-                echo '.property-detail-container ~ *:not(script):not(style):not(link) { display: none !important; }' . "\n";
+                echo '.property-detail-container ~ *:not(script):not(style):not(link):not(header):not(footer):not(.elementor-location-header):not(.elementor-location-footer):not([data-elementor-type="header"]):not([data-elementor-type="footer"]) { display: none !important; }' . "\n";
                 echo '.rs-property-ready .rs-ssr-preview { display: none !important; }' . "\n";
                 echo '</style>' . "\n";
 
@@ -238,7 +238,7 @@ class RealtySoft_Connector {
             } else {
                 // ── FALLBACK: No SSR data — original early-hide + spinner ──
                 echo '<style id="rs-early-hide">' . "\n";
-                echo 'body:not(.rs-property-ready) > *:not(script):not(style):not(link):not(#rs-loading-overlay) { visibility: hidden !important; }' . "\n";
+                echo 'body:not(.rs-property-ready) > *:not(script):not(style):not(link):not(#rs-loading-overlay):not(header):not(footer):not(.elementor-location-header):not(.elementor-location-footer):not([data-elementor-type="header"]):not([data-elementor-type="footer"]) { visibility: hidden !important; }' . "\n";
                 echo '#rs-loading-overlay { display: flex; align-items: center; justify-content: center; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: #fff; z-index: 999999; }' . "\n";
                 echo '.rs-property-ready #rs-loading-overlay { display: none !important; }' . "\n";
                 echo '@keyframes rs-early-spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }' . "\n";
@@ -249,7 +249,7 @@ class RealtySoft_Connector {
             // (before the widget JS even loads). The widget consumes these promises
             // instead of making duplicate requests.
             $lang = !empty($config['language']) ? $config['language'] : '';
-            $proxy = 'https://realtysoft.ai/propertymanager/php/api-proxy.php';
+            $proxy = 'https://smartpropertywidget.com/spw/php/api-proxy.php';
             $prop_url = $proxy . '?_endpoint=v1/property&ref_no=' . urlencode($ref);
             $labels_url = $proxy . '?_endpoint=v1/plugin_labels';
             if ($lang) {
@@ -436,7 +436,7 @@ class RealtySoft_Connector {
     private function fetch_property_data_from_api($ref) {
         $config = get_option('realtysoft_widget_config', []);
         $lang = !empty($config['language']) ? $config['language'] : '';
-        $proxy = 'https://realtysoft.ai/propertymanager/php/api-proxy.php';
+        $proxy = 'https://smartpropertywidget.com/spw/php/api-proxy.php';
         $url = $proxy . '?_endpoint=v1/property&ref_no=' . urlencode($ref);
         if ($lang) {
             $url .= '&_lang=' . urlencode($lang);

@@ -86,7 +86,7 @@ RealtySoft Widget v3 is a modular real estate property search widget built with 
 **Option A: Auto-Updating Loader (Recommended)**
 
 ```html
-<script src="https://realtysoft.ai/propertymanager/dist/realtysoft-loader.min.js"></script>
+<script src="https://smartpropertywidget.com/spw/dist/realtysoft-loader.min.js"></script>
 ```
 
 The loader script:
@@ -98,8 +98,8 @@ The loader script:
 **Option B: Direct Include**
 
 ```html
-<link rel="stylesheet" href="https://realtysoft.ai/propertymanager/dist/realtysoft.min.css?v=3.0.0">
-<script src="https://realtysoft.ai/propertymanager/dist/realtysoft.min.js?v=3.0.0"></script>
+<link rel="stylesheet" href="https://smartpropertywidget.com/spw/dist/realtysoft.min.css?v=3.0.0">
+<script src="https://smartpropertywidget.com/spw/dist/realtysoft.min.js?v=3.0.0"></script>
 ```
 
 ### 2. Optional Configuration
@@ -202,7 +202,7 @@ Footer: Advanced Search | Map Search links
      data-rs-listing-type="resale"></div>
 ```
 
-**Preview:** [View Demo](https://realtysoft.ai/propertymanager/src/templates/search/template-01-compact-horizontal.html)
+**Preview:** [View Demo](https://smartpropertywidget.com/spw/src/templates/search/template-01-compact-horizontal.html)
 
 ---
 
@@ -240,7 +240,7 @@ Property cards with location as the main title, property type as subtitle, and p
      data-rs-listing-type="resale"></div>
 ```
 
-**Preview:** [View Demo](https://realtysoft.ai/propertymanager/src/templates/listing/template-01-location-first.html)
+**Preview:** [View Demo](https://smartpropertywidget.com/spw/src/templates/listing/template-01-location-first.html)
 
 ---
 
@@ -282,7 +282,7 @@ Can also be applied to the property grid directly:
 <!DOCTYPE html>
 <html>
 <head>
-    <link rel="stylesheet" href="https://realtysoft.ai/propertymanager/dist/realtysoft.min.css">
+    <link rel="stylesheet" href="https://smartpropertywidget.com/spw/dist/realtysoft.min.css">
 </head>
 <body>
     <!-- Search Form -->
@@ -291,7 +291,7 @@ Can also be applied to the property grid directly:
     <!-- Property Listings -->
     <div class="rs-listing-template-01"></div>
 
-    <script src="https://realtysoft.ai/propertymanager/dist/realtysoft.min.js"></script>
+    <script src="https://smartpropertywidget.com/spw/dist/realtysoft.min.js"></script>
 </body>
 </html>
 ```
@@ -644,7 +644,7 @@ console.log(mode); // 'combined', 'search-only', or 'results-only'
 <html>
 <head>
     <title>Find Your Dream Property</title>
-    <link rel="stylesheet" href="https://realtysoft.ai/propertymanager/dist/realtysoft.min.css">
+    <link rel="stylesheet" href="https://smartpropertywidget.com/spw/dist/realtysoft.min.css">
 </head>
 <body>
     <h1>Search Properties</h1>
@@ -657,7 +657,7 @@ console.log(mode); // 'combined', 'search-only', or 'results-only'
         resultsPage: '/properties'
     };
     </script>
-    <script src="https://realtysoft.ai/propertymanager/dist/realtysoft.min.js"></script>
+    <script src="https://smartpropertywidget.com/spw/dist/realtysoft.min.js"></script>
 </body>
 </html>
 ```
@@ -668,7 +668,7 @@ console.log(mode); // 'combined', 'search-only', or 'results-only'
 <html>
 <head>
     <title>Property Listings</title>
-    <link rel="stylesheet" href="https://realtysoft.ai/propertymanager/dist/realtysoft.min.css">
+    <link rel="stylesheet" href="https://smartpropertywidget.com/spw/dist/realtysoft.min.css">
 </head>
 <body>
     <h1>Property Listings</h1>
@@ -677,7 +677,7 @@ console.log(mode); // 'combined', 'search-only', or 'results-only'
     <div class="rs-search-template-01"></div>
     <div class="rs-listing-template-01"></div>
 
-    <script src="https://realtysoft.ai/propertymanager/dist/realtysoft.min.js"></script>
+    <script src="https://smartpropertywidget.com/spw/dist/realtysoft.min.js"></script>
 </body>
 </html>
 ```
@@ -1828,9 +1828,9 @@ Users can email their wishlist to anyone.
 **Configuration:**
 ```javascript
 window.RealtySoftConfig = {
-    phpBase: 'https://realtysoft.ai/propertymanager/php',
+    phpBase: 'https://smartpropertywidget.com/spw/php',
     // or
-    wishlistEmailEndpoint: 'https://realtysoft.ai/propertymanager/php/send-wishlist-email.php'
+    wishlistEmailEndpoint: 'https://smartpropertywidget.com/spw/php/send-wishlist-email.php'
 };
 ```
 
@@ -2674,7 +2674,7 @@ var version = Math.floor(Date.now() / 86400000);
 Give clients this single line:
 
 ```html
-<script src="https://realtysoft.ai/propertymanager/dist/realtysoft-loader.min.js"></script>
+<script src="https://smartpropertywidget.com/spw/dist/realtysoft-loader.min.js"></script>
 ```
 
 That's it! No CSS link needed, no version numbers to manage.
@@ -2689,7 +2689,7 @@ window.RealtySoftConfig = {
     language: 'es_ES'
 };
 </script>
-<script src="https://realtysoft.ai/propertymanager/dist/realtysoft-loader.min.js"></script>
+<script src="https://smartpropertywidget.com/spw/dist/realtysoft-loader.min.js"></script>
 ```
 
 ### Loader Events
@@ -2843,7 +2843,7 @@ window.RealtySoftConfig = {
   propertyPageSlug: 'property'
 };
 </script>
-<script src="https://realtysoft.ai/propertymanager/dist/realtysoft-loader.js"></script>
+<script src="https://smartpropertywidget.com/spw/dist/realtysoft-loader.js"></script>
 ```
 
 ### Wix Setup
@@ -2865,7 +2865,7 @@ window.RealtySoftConfig = {
   useQueryParamUrls: true  // Required for Wix
 };
 </script>
-<script src="https://realtysoft.ai/propertymanager/dist/realtysoft-loader.js"></script>
+<script src="https://smartpropertywidget.com/spw/dist/realtysoft-loader.js"></script>
 ```
 
 #### 3. How URLs Work
@@ -2895,7 +2895,7 @@ window.RealtySoftConfig = {
   useQueryParamUrls: true  // Required for Squarespace
 };
 </script>
-<script src="https://realtysoft.ai/propertymanager/dist/realtysoft-loader.js"></script>
+<script src="https://smartpropertywidget.com/spw/dist/realtysoft-loader.js"></script>
 ```
 
 ### Static HTML / Custom Hosting

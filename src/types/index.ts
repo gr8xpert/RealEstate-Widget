@@ -240,6 +240,7 @@ export interface Property {
   views: string;
   created_at: string;
   updated_at: string;
+  similar_property_ids: number[];
   _original?: Record<string, unknown>;
 }
 

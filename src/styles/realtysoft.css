@@ -14472,6 +14472,10 @@ a[class*=" rs-"]:focus-visible {
     overflow: hidden;
 }
 
+.rs-property-carousel__items img {
+    height: 100%;
+}
+
 /* Loader */
 .rs-property-carousel__loader {
     position: absolute;
@@ -14665,7 +14669,7 @@ a[class*=" rs-"]:focus-visible {
 
 .rs-property-carousel__card-image {
     width: 100%;
-    height: 100%;
+    height: 100% !important;
     object-fit: cover;
     transition: transform 0.5s ease;
 }
@@ -14914,7 +14918,7 @@ a[class*=" rs-"]:focus-visible {
     top: 0;
     left: 0;
     width: 100%;
-    height: 100%;
+    height: 100% !important;
     object-fit: cover;
 }
 
@@ -15164,7 +15168,7 @@ a[class*=" rs-"]:focus-visible {
 
 .rs-property-carousel--v3 .rs-property-carousel__card-image {
     width: 100%;
-    height: 100%;
+    height: 100% !important;
     object-fit: cover;
 }
 
@@ -15433,7 +15437,7 @@ a[class*=" rs-"]:focus-visible {
 
 .rs-property-carousel--v4 .rs-property-carousel__card-image {
     width: 100%;
-    height: 100%;
+    height: 100% !important;
     object-fit: cover;
     transition: transform 0.5s ease;
 }
@@ -15733,7 +15737,7 @@ a[class*=" rs-"]:focus-visible {
 
 .rs-property-carousel--v5 .rs-property-carousel__card-image {
     width: 100%;
-    height: 100%;
+    height: 100% !important;
     object-fit: cover;
     transition: transform 0.5s ease;
 }
@@ -16045,7 +16049,7 @@ a[class*=" rs-"]:focus-visible {
 
 .rs-property-carousel--v6 .rs-property-carousel__card-image {
     width: 100%;
-    height: 100%;
+    height: 100% !important;
     object-fit: cover;
     transition: transform 0.4s ease;
 }

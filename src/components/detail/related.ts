@@ -41,6 +41,13 @@ class RSDetailRelated extends RSBaseComponent {
       return;
     }
 
+    // Check if similar_property_ids exists and has values - if not, hide entire section
+    const similarIds = this.property.similar_property_ids || [];
+    if (similarIds.length === 0) {
+      this.element.style.display = 'none';
+      return;
+    }
+
     this.relatedProperties = [];
     this.limit = parseInt(this.element.dataset.limit || '6') || 6;
 
@@ -93,10 +100,12 @@ class RSDetailRelated extends RSBaseComponent {
 
   private async loadRelated(): Promise<void> {
     try {
-      const result = await RealtySoftAPI.getRelatedProperties(this.property!.id, this.limit);
-      // Ensure we only show up to the limit (API might return more)
-      const allProperties = (result.data || []) as Property[];
-      this.relatedProperties = allProperties.slice(0, this.limit);
+      // similar_property_ids already validated in init() - fetch those properties
+      const similarIds = this.property!.similar_property_ids || [];
+      const idsToFetch = similarIds.slice(0, this.limit);
+      const result = await RealtySoftAPI.getWishlistProperties(idsToFetch);
+
+      this.relatedProperties = (result.data || []) as Property[];
 
       if (this.relatedProperties.length === 0) {
         this.element.style.display = 'none';
