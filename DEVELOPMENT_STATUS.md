@@ -1,6 +1,6 @@
 # RealtySoft Widget v3 - Development Status
 
-> **Version:** 3.4.0 | **Last Updated:** January 29, 2026
+> **Version:** 3.6.0 | **Last Updated:** February 2, 2026
 
 ---
 
@@ -33,6 +33,7 @@
 | Phase 13: Dynamic Language Content Switching | Complete | 100% |
 | Phase 14: Widget Duplicate Prevention & Multi-Platform | Complete | 100% |
 | Phase 15: Map Search Feature | Complete | 100% |
+| Phase 16: Mortgage Calculator & Documentation | Complete | 100% |
 
 ---
 
@@ -618,6 +619,80 @@ Fixed issue where detail page map showed pinpoint marker instead of municipality
 |-------|-------|-----|
 | Pin instead of polygon | Nominatim query used neighborhood name (no polygon data) | Query municipality first |
 | Point geometry rendered as marker | `L.geoJSON()` renders Point as default marker | Check geometry type, use circleMarker for non-polygons |
+
+---
+
+### Phase 16: Mortgage Calculator & Documentation (v3.6.0)
+
+Added mortgage calculator feature, comprehensive documentation, and page builder compatibility fixes.
+
+#### Features Implemented
+
+| Feature | Description |
+|---------|-------------|
+| **Mortgage Calculator** | Popup modal for calculating monthly mortgage payments |
+| **Designer Guide** | Comprehensive HTML documentation for designers |
+| **FAQ Page** | User-friendly FAQ with Elementor-compatible template |
+| **Page Builder Fixes** | Aggressive CSS for SVG icon visibility in Elementor/Divi/WPBakery |
+| **Email Deliverability** | Fixed SPF/DKIM by using smartpropertywidget.com as sender domain |
+| **Console Cleanup** | Logger utility with debug mode for production-ready output |
+| **Analytics Link** | WordPress admin page now includes analytics link with auto-detected domain |
+
+#### Mortgage Calculator Features
+
+- Pre-fills property price from current property
+- Down payment input (amount or percentage, auto-synced)
+- Interest rate configuration (default 3.5%)
+- Loan term selection (1-40 years, default 25)
+- Shows monthly payment, loan amount, total interest, total payment
+- Responsive design (slides up from bottom on mobile)
+- Keyboard accessible (ESC to close)
+- Multi-language support (English, Spanish)
+
+#### Files Created/Modified
+
+| File | Change |
+|------|--------|
+| `src/components/detail/mortgage-calculator.ts` | **NEW** - Mortgage calculator component |
+| `docs/designer-guide.html` | **NEW** - Comprehensive designer documentation |
+| `docs/faq.html` | **NEW** - User FAQ page |
+| `docs/faq-elementor-template.json` | **NEW** - Elementor-compatible FAQ template |
+| `src/core/labels.ts` | Added mortgage calculator labels (EN, ES) |
+| `src/styles/realtysoft.css` | Added mortgage styles, page builder SVG fixes |
+| `src/components/detail/detail.ts` | Import and register mortgage calculator |
+| `src/components/detail/property-detail-template.ts` | Auto-add mortgage calculator to template |
+| `php/send-inquiry.php` | Changed From address, added debug logging |
+| `php/send-wishlist-email.php` | Changed From address for email deliverability |
+| `wordpress/realtysoft-connector/realtysoft-connector.php` | Added analytics link to admin page |
+
+#### Configuration Options
+
+```javascript
+window.RealtySoftConfig = {
+  enableMortgageCalculator: true  // Enable/disable mortgage calculator (default: false)
+};
+```
+
+#### Usage
+
+```html
+<!-- Manual placement -->
+<div class="rs_mortgage_calculator"></div>
+
+<!-- Auto-included in property-detail-container when enabled -->
+<div class="property-detail-container"></div>
+```
+
+#### Page Builder CSS Fixes
+
+Fixed SVG icon visibility for:
+- Wishlist heart icons (empty gray, filled red)
+- Carousel navigation arrows
+- Bed/bath/plot spec icons (center aligned)
+- Features button (prominent blue gradient)
+- PDF button (prominent red gradient)
+- Share buttons
+- All detail page icons
 
 ---
 

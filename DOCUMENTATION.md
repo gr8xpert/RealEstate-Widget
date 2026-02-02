@@ -1,6 +1,6 @@
 # RealtySoft Widget v3 - Complete Documentation
 
-> Version 3.4.0 | Last Updated: January 29, 2026
+> Version 3.6.0 | Last Updated: February 2, 2026
 
 ---
 
@@ -1373,7 +1373,37 @@ The main wrapper that loads property data and populates child elements.
 | `rs_detail_inquiry_form` | Contact form | |
 | `rs_detail_wishlist` | Wishlist button | |
 | `rs_detail_share` | Share buttons | |
+| `rs_mortgage_calculator` | Mortgage calculator | Requires `enableMortgageCalculator: true` |
 | `rs_detail_related` | Similar properties | `data-limit="6"` |
+
+### Mortgage Calculator
+
+The mortgage calculator component displays a button that opens a popup modal for calculating monthly mortgage payments.
+
+**Enable in Config:**
+```javascript
+window.RealtySoftConfig = {
+  enableMortgageCalculator: true
+};
+```
+
+**Add to Page:**
+```html
+<div class="rs_mortgage_calculator"></div>
+```
+
+**Features:**
+- Pre-fills property price from current property
+- Down payment input (amount or percentage, auto-synced)
+- Interest rate configuration (default 3.5%)
+- Loan term selection (1-40 years, default 25)
+- Shows monthly payment, loan amount, total interest, total payment
+- Responsive design (slides up from bottom on mobile)
+- Keyboard accessible (ESC to close)
+- Multi-language support
+
+**Auto-included in Template:**
+When using `<div class="property-detail-container"></div>`, the mortgage calculator button is automatically added below the social share section (if enabled in config).
 
 **Map Variations:**
 

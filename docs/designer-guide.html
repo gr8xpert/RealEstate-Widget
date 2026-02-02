@@ -2797,9 +2797,55 @@ window.RealtySoftConfig = {
                             <td>Back button</td>
                             <td></td>
                         </tr>
+                        <tr>
+                            <td><code class="inline-code">rs_mortgage_calculator</code></td>
+                            <td>Mortgage calculator button</td>
+                            <td>Requires <code class="inline-code">enableMortgageCalculator: true</code></td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
+
+            <h4>Mortgage Calculator</h4>
+            <p>The mortgage calculator displays a button that opens a popup modal for calculating monthly mortgage payments. Property price is pre-filled automatically.</p>
+
+            <div class="callout" style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-left-color: #f59e0b;">
+                <h4 style="margin-top: 0; color: #92400e;">Enable in Configuration</h4>
+                <p style="margin-bottom: 0; color: #78350f;">Add <code class="inline-code">enableMortgageCalculator: true</code> to your RealtySoftConfig to activate this feature.</p>
+            </div>
+
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">JavaScript</span>
+                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code>window.RealtySoftConfig = {
+  // ... other settings
+  enableMortgageCalculator: true
+};</code></pre>
+            </div>
+
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">HTML</span>
+                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code>&lt;!-- Place anywhere on detail page --&gt;
+&lt;div class="rs_mortgage_calculator"&gt;&lt;/div&gt;</code></pre>
+            </div>
+
+            <p><strong>Features:</strong></p>
+            <ul>
+                <li>Pre-fills property price from current property</li>
+                <li>Down payment input (amount or percentage, auto-synced)</li>
+                <li>Interest rate configuration (default 3.5%)</li>
+                <li>Loan term selection (1-40 years, default 25)</li>
+                <li>Shows monthly payment, loan amount, total interest, total payment</li>
+                <li>Responsive design (slides up from bottom on mobile)</li>
+                <li>Keyboard accessible (ESC to close)</li>
+            </ul>
+
+            <p><strong>Auto-included:</strong> When using <code class="inline-code">&lt;div class="property-detail-container"&gt;&lt;/div&gt;</code>, the mortgage calculator is automatically added below the social share section (if enabled in config).</p>
 
             <h4>Map Variations</h4>
             <div class="code-block">
