@@ -420,7 +420,8 @@ class RSWishlistModals extends RSBaseComponent {
             companyName: branding.companyName || '',
             logoUrl: branding.logoUrl || '',
             websiteUrl: branding.websiteUrl || window.location.origin,
-            primaryColor: branding.primaryColor || '#667eea'
+            primaryColor: branding.primaryColor || '#667eea',
+            emailHeaderColor: branding.emailHeaderColor || branding.primaryColor || '#667eea'
           }
         })
       });

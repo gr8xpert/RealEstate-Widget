@@ -1,6 +1,6 @@
 # RealtySoft Widget v3 - Complete Documentation
 
-> Version 3.6.0 | Last Updated: February 2, 2026
+> Version 3.7.0 | Last Updated: February 2, 2026
 
 ---
 
@@ -537,6 +537,15 @@ window.RealtySoftConfig = {
     perPage: 12,                    // Items per page for grid/list view (default: 12)
     mapPerPage: 50,                 // Items per page for map view (default: 50)
 
+    // Branding for emails and PDF exports
+    branding: {
+        companyName: 'Your Company',        // Shown in email headers and PDF
+        logoUrl: 'https://example.com/logo.png', // Logo for emails and PDF
+        websiteUrl: 'https://example.com',  // Website URL in email footer
+        primaryColor: '#0066cc',            // Brand color for PDF
+        emailHeaderColor: '#333333'         // Email header background color
+    },
+
     // Locked filters (visitor cannot change these)
     lockedFilters: {
         location_id: '123',         // Lock to specific location
@@ -544,6 +553,29 @@ window.RealtySoftConfig = {
         property_type: ['76', '77'] // Lock to specific types
     }
 };
+```
+
+### Branding Configuration
+
+The `branding` object customizes the appearance of emails (inquiry confirmations, wishlist sharing) and PDF exports:
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `companyName` | string | Company name shown in email headers and PDF title |
+| `logoUrl` | string | URL to logo image (recommended: 200x60px, PNG with transparency) |
+| `websiteUrl` | string | Website URL displayed in email footers |
+| `primaryColor` | string | Hex color code for PDF branding (buttons, accent lines) |
+| `emailHeaderColor` | string | Hex color for email header background. Use a contrasting color if your logo is light. Falls back to `primaryColor` if not set. |
+
+**Example with different colors for PDF and email:**
+```javascript
+branding: {
+    companyName: 'Luxury Homes',
+    logoUrl: 'https://example.com/white-logo.png',  // Light/white logo
+    websiteUrl: 'https://luxuryhomes.com',
+    primaryColor: '#C49B39',      // Gold - used in PDF accents
+    emailHeaderColor: '#1a1a1a'   // Dark background for light logo in emails
+}
 ```
 
 ### Data Attribute Configuration

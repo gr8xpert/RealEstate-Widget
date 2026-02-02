@@ -1387,6 +1387,61 @@ window.RealtySoftConfig = {
     }
 };</code></pre>
             </div>
+
+            <h3>Branding (Emails & PDF)</h3>
+            <p>Customize the appearance of inquiry emails, wishlist emails, and PDF exports:</p>
+
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">JavaScript</span>
+                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code>window.RealtySoftConfig = {
+    branding: {
+        companyName: 'Your Company Name',
+        logoUrl: 'https://yoursite.com/logo.png',
+        websiteUrl: 'https://yoursite.com',
+        primaryColor: '#0066cc',      // Used in PDF exports
+        emailHeaderColor: '#333333'   // Email header background
+    }
+};</code></pre>
+            </div>
+
+            <div class="info-card" style="background: linear-gradient(135deg, #fef3c7, #fde68a); border-left: 4px solid #f59e0b; margin: 20px 0;">
+                <h4 style="margin-top: 0; color: #92400e;">Tip: Email Header Color</h4>
+                <p style="margin-bottom: 0; color: #78350f;">If your logo is light/white, use a dark <code class="inline-code">emailHeaderColor</code> (e.g., <code class="inline-code">#1a1a1a</code>) so the logo is visible. If your logo is dark, you can use your brand color or leave it as the default.</p>
+            </div>
+
+            <table class="component-table" style="margin-top: 20px;">
+                <thead>
+                    <tr>
+                        <th>Property</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><code>companyName</code></td>
+                        <td>Your company name shown in email headers and PDF title</td>
+                    </tr>
+                    <tr>
+                        <td><code>logoUrl</code></td>
+                        <td>URL to your logo (recommended: 200x60px, PNG with transparency)</td>
+                    </tr>
+                    <tr>
+                        <td><code>websiteUrl</code></td>
+                        <td>Website URL displayed in email footers</td>
+                    </tr>
+                    <tr>
+                        <td><code>primaryColor</code></td>
+                        <td>Hex color for PDF branding (buttons, accent lines, header)</td>
+                    </tr>
+                    <tr>
+                        <td><code>emailHeaderColor</code></td>
+                        <td>Hex color for email header background (falls back to primaryColor)</td>
+                    </tr>
+                </tbody>
+            </table>
         </section>
 
         <!-- WordPress Integration -->
@@ -3370,6 +3425,42 @@ window.RealtySoftConfig = {
                             <td>{}</td>
                             <td>Filters locked via config</td>
                         </tr>
+                        <tr>
+                            <td><code class="inline-code">branding</code></td>
+                            <td>object</td>
+                            <td>{}</td>
+                            <td>Email and PDF branding options</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">branding.companyName</code></td>
+                            <td>string</td>
+                            <td>""</td>
+                            <td>Company name in emails/PDF</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">branding.logoUrl</code></td>
+                            <td>string</td>
+                            <td>""</td>
+                            <td>Logo URL for emails/PDF</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">branding.websiteUrl</code></td>
+                            <td>string</td>
+                            <td>""</td>
+                            <td>Website URL in email footer</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">branding.primaryColor</code></td>
+                            <td>string</td>
+                            <td>"#667eea"</td>
+                            <td>Brand color for PDF</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">branding.emailHeaderColor</code></td>
+                            <td>string</td>
+                            <td>(primaryColor)</td>
+                            <td>Email header background color</td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
@@ -3413,6 +3504,15 @@ window.RealtySoftConfig = {
     // Global filter locks
     lockedFilters: {
         listing_type: 'resale'
+    },
+
+    // Branding for emails and PDF
+    branding: {
+        companyName: 'My Real Estate',
+        logoUrl: 'https://myrealestate.com/logo.png',
+        websiteUrl: 'https://myrealestate.com',
+        primaryColor: '#0066cc',
+        emailHeaderColor: '#1a1a1a'
     }
 };
 &lt;/script&gt;</code></pre>

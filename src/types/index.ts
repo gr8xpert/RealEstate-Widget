@@ -102,10 +102,11 @@ export type LabelOverrides = Record<string, string> | Record<string, Record<stri
 
 // Branding configuration for emails and PDF
 export interface BrandingConfig {
-  companyName?: string;      // Company/website name shown in email headers
-  logoUrl?: string;          // URL to logo image (recommended: 200x60px)
-  websiteUrl?: string;       // Website URL shown in email footer
-  primaryColor?: string;     // Primary brand color (hex, e.g., '#0066cc')
+  companyName?: string;       // Company/website name shown in email headers
+  logoUrl?: string;           // URL to logo image (recommended: 200x60px)
+  websiteUrl?: string;        // Website URL shown in email footer
+  primaryColor?: string;      // Primary brand color (hex, e.g., '#0066cc') - used in PDF
+  emailHeaderColor?: string;  // Email header background color (hex) - falls back to primaryColor
 }
 
 export interface WidgetConfig {

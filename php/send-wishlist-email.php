@@ -65,6 +65,9 @@ $companyName = htmlspecialchars($branding['companyName'] ?? '');
 $logoUrl = filter_var($branding['logoUrl'] ?? '', FILTER_SANITIZE_URL);
 $websiteUrl = filter_var($branding['websiteUrl'] ?? '', FILTER_SANITIZE_URL);
 $primaryColor = preg_match('/^#[0-9A-Fa-f]{6}$/', $branding['primaryColor'] ?? '') ? $branding['primaryColor'] : '#667eea';
+// Email header color - falls back to primaryColor if not set
+$emailHeaderColor = preg_match('/^#[0-9A-Fa-f]{6}$/', $branding['emailHeaderColor'] ?? '') ? $branding['emailHeaderColor'] : $primaryColor;
+wishlistLog("BRANDING: primaryColor=$primaryColor, emailHeaderColor=$emailHeaderColor, received=" . ($branding['emailHeaderColor'] ?? 'not set'));
 
 // Validate required fields
 if (empty($emailTo)) {
@@ -89,58 +92,56 @@ if (!filter_var($emailTo, FILTER_VALIDATE_EMAIL)) {
     exit;
 }
 
-// Build HTML email (same structure as send-inquiry.php)
-// Use branding color for gradient
-$gradientStart = $primaryColor;
-$gradientEnd = adjustBrightness($primaryColor, -30);
-
+// Build HTML email with table-based layout for Outlook/Gmail compatibility
+// Using only inline styles and bgcolor attributes - no CSS classes
 $emailHtml = '
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
-    <style>
-        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-        .header { background: linear-gradient(135deg, ' . $gradientStart . ' 0%, ' . $gradientEnd . ' 100%); color: white; padding: 20px; border-radius: 8px 8px 0 0; }
-        .content { background: #f9f9f9; padding: 20px; border: 1px solid #ddd; }
-        .property-card { background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid ' . $primaryColor . '; }
-        .property-title { margin: 0 0 10px; color: #333; }
-        .property-price { color: #059669; font-size: 20px; font-weight: bold; margin: 0 0 10px; }
-        .property-details { color: #666; font-size: 14px; margin: 5px 0; }
-        .property-ref { color: #999; font-size: 12px; }
-        .property-note { background: #fff9e6; padding: 10px; margin-top: 10px; border-left: 3px solid #f39c12; font-size: 14px; }
-        .message-box { background: #f0f9ff; padding: 15px; border-left: 4px solid #3498db; border-radius: 4px; margin-bottom: 20px; }
-        .view-btn { display: inline-block; background: ' . $primaryColor . '; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-size: 14px; margin-top: 10px; }
-        .footer { background: #f0f0f0; padding: 15px; text-align: center; font-size: 12px; color: #777; border-radius: 0 0 8px 8px; }
-        a { color: ' . $primaryColor . '; }
-        .branding-logo { max-width: 180px; max-height: 60px; margin-bottom: 10px; }
-        .branding-name { font-size: 14px; opacity: 0.9; margin-bottom: 5px; }
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!--[if mso]>
+    <style type="text/css">
+        table { border-collapse: collapse; }
+        td { padding: 0; }
     </style>
+    <![endif]-->
 </head>
-<body>
-    <div class="container">
-        <div class="header">
-            ' . ($logoUrl ? '<img src="' . $logoUrl . '" alt="' . $companyName . '" class="branding-logo"><br>' : '') . '
-            ' . ($companyName ? '<div class="branding-name">' . $companyName . '</div>' : '') . '
-            <h2 style="margin:0;">Property Wishlist Shared With You</h2>
-            <p style="margin:10px 0 0;opacity:0.9;">Someone shared their favorite properties</p>
-        </div>
-        <div class="content">';
+<body style="margin:0;padding:0;font-family:Arial,sans-serif;line-height:1.6;color:#333333;background-color:#f4f4f4;">
+    <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background-color:#f4f4f4;">
+        <tr>
+            <td align="center" style="padding:20px;">
+                <table role="presentation" cellpadding="0" cellspacing="0" width="600" style="max-width:600px;background-color:#ffffff;">
+                    <!-- Header -->
+                    <tr>
+                        <td bgcolor="' . $emailHeaderColor . '" style="background-color:' . $emailHeaderColor . ';padding:30px 20px;text-align:center;">
+                            ' . ($logoUrl ? '<img src="' . $logoUrl . '" alt="' . $companyName . '" style="max-width:180px;max-height:60px;margin-bottom:15px;display:block;margin-left:auto;margin-right:auto;">' : '') . '
+                            ' . ($companyName ? '<p style="margin:0 0 5px;font-size:14px;color:#ffffff;">' . $companyName . '</p>' : '') . '
+                            <h2 style="margin:0;color:#ffffff;font-size:24px;font-family:Arial,sans-serif;">Property Wishlist Shared With You</h2>
+                            <p style="margin:10px 0 0;color:#ffffff;font-size:14px;">Someone shared their favorite properties</p>
+                        </td>
+                    </tr>
+                    <!-- Content -->
+                    <tr>
+                        <td bgcolor="#f9f9f9" style="background-color:#f9f9f9;padding:20px;">';
 
 // Add personal message if provided
 if ($message) {
     $emailHtml .= '
-            <div class="message-box">
-                <strong>Personal Message:</strong><br>
-                ' . nl2br($message) . '
-            </div>';
+                            <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:20px;">
+                                <tr>
+                                    <td style="background-color:#fff9e6;padding:15px;border-left:4px solid #f39c12;font-family:Arial,sans-serif;">
+                                        <strong style="color:#333;">Personal Message:</strong><br>
+                                        <span style="color:#555;">' . nl2br($message) . '</span>
+                                    </td>
+                                </tr>
+                            </table>';
 }
 
 $emailHtml .= '
-            <h3>' . count($properties) . ' Properties Shared</h3>';
+                            <h3 style="margin:0 0 15px;font-size:18px;color:#333;font-family:Arial,sans-serif;">' . count($properties) . ' Properties Shared</h3>';
 
-// Add each property
+// Add each property using table layout
 foreach ($properties as $property) {
     $name = htmlspecialchars($property['name'] ?? $property['title'] ?? 'Property');
     $price = number_format($property['list_price'] ?? $property['price'] ?? 0);
@@ -154,42 +155,67 @@ foreach ($properties as $property) {
     $propertyUrl = isset($property['propertyUrl']) ? htmlspecialchars($property['propertyUrl']) : '';
 
     $emailHtml .= '
-            <div class="property-card">';
+                            <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:15px;border:1px solid #e0e0e0;">
+                                <tr>
+                                    <td bgcolor="#ffffff" style="background-color:#ffffff;padding:15px;border-left:4px solid ' . $primaryColor . ';">';
 
     // Title with link if URL available
     if ($propertyUrl) {
-        $emailHtml .= '<h4 class="property-title"><a href="' . $propertyUrl . '" style="color:#333;text-decoration:none;">' . $name . '</a></h4>';
+        $emailHtml .= '
+                                        <h4 style="margin:0 0 8px;font-size:16px;font-family:Arial,sans-serif;"><a href="' . $propertyUrl . '" style="color:#333333;text-decoration:none;">' . $name . '</a></h4>';
     } else {
-        $emailHtml .= '<h4 class="property-title">' . $name . '</h4>';
+        $emailHtml .= '
+                                        <h4 style="margin:0 0 8px;font-size:16px;color:#333333;font-family:Arial,sans-serif;">' . $name . '</h4>';
     }
 
     $emailHtml .= '
-                <p class="property-price">€' . $price . '</p>
-                <p class="property-details">📍 ' . $location . ' | 🏠 ' . $type . '</p>
-                <p class="property-details">🛏️ ' . $beds . ' beds | 🚿 ' . $baths . ' baths | 📐 ' . $size . 'm²</p>
-                <p class="property-ref">Ref: ' . $ref . '</p>';
+                                        <p style="margin:0 0 8px;font-size:18px;color:' . $primaryColor . ';font-weight:bold;font-family:Arial,sans-serif;">&euro;' . $price . '</p>
+                                        <p style="margin:0 0 5px;font-size:13px;color:#666666;font-family:Arial,sans-serif;">&#128205; ' . $location . ' | &#127968; ' . $type . '</p>
+                                        <p style="margin:0 0 5px;font-size:13px;color:#666666;font-family:Arial,sans-serif;">&#128716; ' . $beds . ' beds | &#128703; ' . $baths . ' baths | &#128208; ' . $size . 'm&sup2;</p>
+                                        <p style="margin:0 0 8px;font-size:11px;color:#999999;font-family:Arial,sans-serif;">Ref: ' . $ref . '</p>';
 
     if ($note) {
         $emailHtml .= '
-                <div class="property-note"><strong>📝 Note:</strong> ' . $note . '</div>';
+                                        <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin:10px 0;">
+                                            <tr>
+                                                <td style="background-color:#f0f8ff;padding:10px;border-left:3px solid #3498db;font-size:13px;color:#555;font-family:Arial,sans-serif;">
+                                                    <strong>&#128221; Note:</strong> ' . $note . '
+                                                </td>
+                                            </tr>
+                                        </table>';
     }
 
     if ($propertyUrl) {
         $emailHtml .= '
-                <a href="' . $propertyUrl . '" class="view-btn">View Property</a>';
+                                        <table role="presentation" cellpadding="0" cellspacing="0" style="margin-top:10px;">
+                                            <tr>
+                                                <td bgcolor="' . $primaryColor . '" style="background-color:' . $primaryColor . ';border-radius:5px;">
+                                                    <a href="' . $propertyUrl . '" style="display:inline-block;padding:10px 20px;color:#ffffff;text-decoration:none;font-size:14px;font-family:Arial,sans-serif;">View Property</a>
+                                                </td>
+                                            </tr>
+                                        </table>';
     }
 
     $emailHtml .= '
-            </div>';
+                                    </td>
+                                </tr>
+                            </table>';
 }
 
 $emailHtml .= '
-        </div>
-        <div class="footer">
-            ' . ($companyName ? 'This wishlist was shared via ' . $companyName : 'This wishlist was shared via RealtySoft Property Widget') . '<br>
-            ' . ($websiteUrl ? '<a href="' . $websiteUrl . '">' . preg_replace('/^https?:\/\//', '', $websiteUrl) . '</a>' : '<a href="https://realtysoft.ai">realtysoft.ai</a>') . '
-        </div>
-    </div>
+                        </td>
+                    </tr>
+                    <!-- Footer -->
+                    <tr>
+                        <td bgcolor="#f0f0f0" style="background-color:#f0f0f0;padding:20px;text-align:center;font-size:12px;color:#777777;font-family:Arial,sans-serif;">
+                            ' . ($companyName ? 'This wishlist was shared via ' . $companyName : 'This wishlist was shared via RealtySoft Property Widget') . '<br>
+                            ' . ($websiteUrl ? '<a href="' . $websiteUrl . '" style="color:' . $primaryColor . ';">' . preg_replace('/^https?:\/\//', '', $websiteUrl) . '</a>' : '<a href="https://realtysoft.ai" style="color:' . $primaryColor . ';">realtysoft.ai</a>') . '
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
 </body>
 </html>';
 

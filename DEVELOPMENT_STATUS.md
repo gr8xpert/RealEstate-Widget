@@ -1,6 +1,6 @@
 # RealtySoft Widget v3 - Development Status
 
-> **Version:** 3.6.0 | **Last Updated:** February 2, 2026
+> **Version:** 3.7.0 | **Last Updated:** February 2, 2026
 
 ---
 
@@ -34,10 +34,50 @@
 | Phase 14: Widget Duplicate Prevention & Multi-Platform | Complete | 100% |
 | Phase 15: Map Search Feature | Complete | 100% |
 | Phase 16: Mortgage Calculator & Documentation | Complete | 100% |
+| Phase 17: Email & PDF Branding | Complete | 100% |
 
 ---
 
 ## What Has Been Done (Completed)
+
+### Phase 17: Email & PDF Branding (v3.7.0)
+
+Added comprehensive branding support for emails and PDF exports.
+
+#### Features Implemented
+
+| Feature | Description |
+|---------|-------------|
+| **Email Branding** | Company logo, name, and colors in inquiry and wishlist emails |
+| **PDF Branding** | Logo and company name on wishlist PDF exports |
+| **Email Header Color** | Separate `emailHeaderColor` option for email backgrounds |
+| **Outlook/Gmail Compatibility** | Table-based email layout with `bgcolor` for reliable rendering |
+| **Spec Icon Hiding** | Empty specs (0 beds, 0 baths, etc.) hidden on listing cards |
+| **Toast Fix** | Fixed toast notifications on property detail wishlist actions |
+
+#### Branding Configuration
+
+```javascript
+window.RealtySoftConfig = {
+    branding: {
+        companyName: 'Your Company',
+        logoUrl: 'https://example.com/logo.png',
+        websiteUrl: 'https://example.com',
+        primaryColor: '#0066cc',      // Used in PDF
+        emailHeaderColor: '#333333'   // Email header background
+    }
+};
+```
+
+#### Email Compatibility Fixes
+
+- Converted all email templates to table-based layout
+- Added `bgcolor` attribute alongside CSS `background-color` for Outlook
+- Removed CSS gradients (stripped by email clients)
+- Added MSO conditional comments for Outlook-specific fixes
+- All styles inline (no CSS classes or `<style>` blocks)
+
+---
 
 ### Phase 8: TypeScript + Vite Migration (v3.0.0)
 
