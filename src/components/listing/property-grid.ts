@@ -704,13 +704,24 @@ class RSPropertyGrid extends RSBaseComponent {
       locationEl.textContent = String(property.location || '');
     }
 
+    // Helper to hide spec container (parent element with icon) when value is empty
+    const hideSpecContainer = (el: HTMLElement): void => {
+      // Find parent spec container (e.g., __spec-item, __spec)
+      const parent = el.closest('[class*="__spec-item"], [class*="__spec"]:not([class*="__specs"])') as HTMLElement | null;
+      if (parent && parent !== el) {
+        parent.style.display = 'none';
+      } else {
+        el.style.display = 'none';
+      }
+    };
+
     // Handle beds
     const bedsEl = card.querySelector('.rs_card_beds') as HTMLElement | null;
     if (bedsEl) {
       if (property.beds && property.beds > 0) {
         bedsEl.textContent = `${property.beds} ${property.beds === 1 ? this.label('card_bed') : this.label('card_beds')}`;
       } else {
-        bedsEl.style.display = 'none';
+        hideSpecContainer(bedsEl);
       }
     }
 
@@ -720,7 +731,7 @@ class RSPropertyGrid extends RSBaseComponent {
       if (property.baths && property.baths > 0) {
         bathsEl.textContent = `${property.baths} ${property.baths === 1 ? this.label('card_bath') : this.label('card_baths')}`;
       } else {
-        bathsEl.style.display = 'none';
+        hideSpecContainer(bathsEl);
       }
     }
 
@@ -730,7 +741,7 @@ class RSPropertyGrid extends RSBaseComponent {
       if (property.built_area && property.built_area > 0) {
         builtEl.textContent = `${property.built_area} ${this.label('card_built')}`;
       } else {
-        builtEl.style.display = 'none';
+        hideSpecContainer(builtEl);
       }
     }
 
@@ -740,7 +751,7 @@ class RSPropertyGrid extends RSBaseComponent {
       if (property.plot_size && property.plot_size > 0) {
         plotEl.textContent = `${property.plot_size} ${this.label('card_plot')}`;
       } else {
-        plotEl.style.display = 'none';
+        hideSpecContainer(plotEl);
       }
     }
 
