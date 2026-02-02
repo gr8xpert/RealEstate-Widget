@@ -16961,6 +16961,17 @@ a[class*=" rs-"]:focus-visible {
     opacity: 1 !important;
 }
 
+/* ========== HIDE EMPTY SPEC CONTAINERS ========== */
+/* Used by JS to hide spec items (beds/baths/area/plot) when value is empty */
+/* Must use !important to override other display: inline-flex !important rules */
+.rs-spec-hidden,
+[class*="rs-template-card"] .rs-spec-hidden,
+[class*="rs-listing-template"] .rs-spec-hidden,
+.rs-card .rs-spec-hidden {
+    display: none !important;
+    visibility: hidden !important;
+}
+
 /* ========== PREVENT PAGE BUILDERS FROM HIDING SVG ========== */
 [class*="rs-"] svg:empty {
     min-width: 1em !important;

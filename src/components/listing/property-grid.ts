@@ -705,6 +705,7 @@ class RSPropertyGrid extends RSBaseComponent {
     }
 
     // Helper to hide spec container (parent element with icon) when value is empty
+    // Uses a CSS class with !important to override page builder styles
     const hideSpecContainer = (el: HTMLElement): void => {
       // Check parent element - if it's a spec container (has icon), hide the parent
       const parent = el.parentElement;
@@ -714,12 +715,12 @@ class RSPropertyGrid extends RSBaseComponent {
         const isSpecContainer = parentClass.includes('__spec-item') ||
           (parentClass.includes('__spec') && !parentClass.includes('__specs'));
         if (isSpecContainer) {
-          parent.style.display = 'none';
+          parent.classList.add('rs-spec-hidden');
           return;
         }
       }
       // Fallback: hide the element itself
-      el.style.display = 'none';
+      el.classList.add('rs-spec-hidden');
     };
 
     // Handle beds
