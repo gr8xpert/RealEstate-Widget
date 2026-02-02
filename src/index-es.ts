@@ -93,7 +93,9 @@ async function loadRequiredChunks(): Promise<void> {
 
   if (chunks.length > 0) {
     await Promise.all(chunks);
-    console.log('[RealtySoft] ES: Loaded', chunks.length, 'component chunk(s)');
+    if ((window as any).RealtySoftConfig?.debug) {
+      console.log('[RealtySoft] ES: Loaded', chunks.length, 'component chunk(s)');
+    }
   }
 }
 
@@ -117,4 +119,7 @@ export {
   loadRequiredChunks,
 };
 
-console.log('[RealtySoft] Widget v3.0.0 loaded (ES module build)');
+// Version info (only in debug mode)
+if ((window as any).RealtySoftConfig?.debug) {
+  console.log('[RealtySoft] Widget v3.0.0 loaded (ES module build)');
+}

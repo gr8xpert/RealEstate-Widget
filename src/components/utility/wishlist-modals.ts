@@ -408,7 +408,7 @@ class RSWishlistModals extends RSBaseComponent {
         },
         body: JSON.stringify({
           emailTo,
-          emailFrom: emailFrom || 'noreply@realtysoft.ai',
+          emailFrom: emailFrom || 'noreply@smartpropertywidget.com',
           message,
           wishlist: propertiesWithUrls,
           siteUrl: window.location.origin,

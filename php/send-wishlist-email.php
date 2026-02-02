@@ -40,7 +40,7 @@ if (!$data) {
 
 // Get form fields
 $emailTo = $data['emailTo'] ?? '';
-$emailFrom = $data['emailFrom'] ?? 'noreply@realtysoft.ai';
+$emailFrom = $data['emailFrom'] ?? 'noreply@smartpropertywidget.com';
 $message = $data['message'] ?? '';
 $properties = $data['wishlist'] ?? [];
 $ownerEmail = $data['ownerEmail'] ?? '';
@@ -58,7 +58,7 @@ if (empty($properties)) {
 
 // Sanitize inputs
 $emailTo = filter_var(trim($emailTo), FILTER_SANITIZE_EMAIL);
-$emailFrom = filter_var(trim($emailFrom), FILTER_SANITIZE_EMAIL) ?: 'noreply@realtysoft.ai';
+$emailFrom = filter_var(trim($emailFrom), FILTER_SANITIZE_EMAIL) ?: 'noreply@smartpropertywidget.com';
 $ownerEmail = $ownerEmail ? filter_var(trim($ownerEmail), FILTER_SANITIZE_EMAIL) : '';
 $message = htmlspecialchars(trim($message));
 
@@ -167,14 +167,14 @@ $emailHtml .= '
 // Email headers - use server domain for From to pass SPF/DKIM
 $headers = "MIME-Version: 1.0\r\n";
 $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
-$headers .= "From: RealtySoft <noreply@realtysoft.ai>\r\n";
+$headers .= "From: Smart Property Widget <noreply@smartpropertywidget.com>\r\n";
 $headers .= "Reply-To: $emailFrom\r\n";
 
 // Email subject
 $subject = "Property Wishlist Shared With You (" . count($properties) . " properties)";
 
 // Send email to recipient
-wishlistLog("RECIPIENT MAIL: to=$emailTo, from=noreply@realtysoft.ai, reply-to=$emailFrom, properties=" . count($properties));
+wishlistLog("RECIPIENT MAIL: to=$emailTo, from=noreply@smartpropertywidget.com, reply-to=$emailFrom, properties=" . count($properties));
 $success = mail($emailTo, $subject, $emailHtml, $headers);
 wishlistLog("RECIPIENT MAIL RESULT: " . ($success ? 'TRUE' : 'FALSE'));
 if (!$success) {
@@ -189,8 +189,8 @@ if ($success && !empty($emailFrom) && filter_var($emailFrom, FILTER_VALIDATE_EMA
 
     $senderHeaders = "MIME-Version: 1.0\r\n";
     $senderHeaders .= "Content-Type: text/html; charset=UTF-8\r\n";
-    $senderHeaders .= "From: RealtySoft <noreply@realtysoft.ai>\r\n";
-    $senderHeaders .= "Reply-To: noreply@realtysoft.ai\r\n";
+    $senderHeaders .= "From: Smart Property Widget <noreply@smartpropertywidget.com>\r\n";
+    $senderHeaders .= "Reply-To: noreply@smartpropertywidget.com\r\n";
 
     // Replace header text for the sender copy
     $senderHtml = str_replace(
@@ -214,7 +214,7 @@ if ($success && !empty($ownerEmail) && filter_var($ownerEmail, FILTER_VALIDATE_E
 
     $ownerHeaders = "MIME-Version: 1.0\r\n";
     $ownerHeaders .= "Content-Type: text/html; charset=UTF-8\r\n";
-    $ownerHeaders .= "From: RealtySoft <noreply@realtysoft.ai>\r\n";
+    $ownerHeaders .= "From: Smart Property Widget <noreply@smartpropertywidget.com>\r\n";
     $ownerHeaders .= "Reply-To: $emailFrom\r\n";
 
     // Replace header text for the owner copy

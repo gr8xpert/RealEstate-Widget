@@ -13,6 +13,13 @@ import type {
 
 declare const RealtySoftState: RealtySoftStateModule;
 declare const RealtySoftLabels: RealtySoftLabelsModule;
+declare const RealtySoftLogger: { debug: (msg: string, ...args: unknown[]) => void } | undefined;
+
+const Logger = {
+  debug: (msg: string, ...args: unknown[]) => {
+    if (typeof RealtySoftLogger !== 'undefined') RealtySoftLogger.debug(msg, ...args);
+  }
+};
 
 interface RouterState {
   rsView: 'detail' | 'listing';
@@ -59,7 +66,7 @@ const RealtySoftRouter = (function () {
     // Determine if routing is possible on this page
     _enabled = _detectListingContainers().length > 0;
 
-    console.log('[RealtySoftRouter] Initialized, enabled:', _enabled);
+    Logger.debug('[RealtySoftRouter] Initialized, enabled:', _enabled);
   }
 
   /**
@@ -156,7 +163,7 @@ const RealtySoftRouter = (function () {
       detail: { view: 'detail', ref, property }
     }));
 
-    console.log('[RealtySoftRouter] Navigated to detail:', ref);
+    Logger.debug('[RealtySoftRouter] Navigated to detail:', ref);
   }
 
   /**
@@ -200,7 +207,7 @@ const RealtySoftRouter = (function () {
     // The title was set by the listing page originally; we can't recover it,
     // so leave it as-is or let the page logic handle it.
 
-    console.log('[RealtySoftRouter] Navigated back to listing');
+    Logger.debug('[RealtySoftRouter] Navigated back to listing');
   }
 
   /**

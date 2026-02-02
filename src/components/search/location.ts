@@ -19,6 +19,13 @@ import type {
 // Declare globals
 declare const RealtySoft: RealtySoftModule;
 declare const RealtySoftState: RealtySoftStateModule;
+declare const RealtySoftLogger: { debug: (msg: string, ...args: unknown[]) => void } | undefined;
+
+const Logger = {
+  debug: (msg: string, ...args: unknown[]) => {
+    if (typeof RealtySoftLogger !== 'undefined') RealtySoftLogger.debug(msg, ...args);
+  }
+};
 
 interface ExtendedLocation extends Location {
   type?: string;
@@ -35,7 +42,7 @@ function hasProperties(loc: ExtendedLocation): boolean {
   const count = loc.property_count;
   // Debug logging
   if (count === 0) {
-    console.log(`[RealtySoft] Filtering out location with 0 properties: ${loc.name} (id: ${loc.id})`);
+    Logger.debug(`[RealtySoft] Filtering out location with 0 properties: ${loc.name} (id: ${loc.id})`);
   }
   // If property_count doesn't exist, show the location (backwards compatibility)
   if (count === undefined || count === null) return true;
@@ -126,9 +133,9 @@ class RSLocation extends RSBaseComponent {
     // Debug: Log location data on init
     const zeroCount = this.locations.filter(l => l.property_count === 0);
     const undefinedCount = this.locations.filter(l => l.property_count === undefined || l.property_count === null);
-    console.log(`[RealtySoft] Location init: ${this.locations.length} locations, ${zeroCount.length} with count=0, ${undefinedCount.length} with count=undefined`);
+    Logger.debug(`[RealtySoft] Location init: ${this.locations.length} locations, ${zeroCount.length} with count=0, ${undefinedCount.length} with count=undefined`);
     if (zeroCount.length > 0) {
-      console.log(`[RealtySoft] Zero-count: ${zeroCount.slice(0, 15).map(l => `${l.name}(id:${l.id})`).join(', ')}`);
+      Logger.debug(`[RealtySoft] Zero-count: ${zeroCount.slice(0, 15).map(l => `${l.name}(id:${l.id})`).join(', ')}`);
     }
     this.selectedLocations = new Set();
     this.selectedLocation = this.getFilter<number | null>('location');
@@ -188,9 +195,9 @@ class RSLocation extends RSBaseComponent {
       // Debug: Log locations with property_count = 0 or undefined
       const zeroCountLocs = locations.filter(l => l.property_count === 0);
       const undefinedCountLocs = locations.filter(l => l.property_count === undefined || l.property_count === null);
-      console.log(`[RealtySoft] Location data: ${locations.length} total, ${zeroCountLocs.length} with count=0, ${undefinedCountLocs.length} with count=undefined`);
+      Logger.debug(`[RealtySoft] Location data: ${locations.length} total, ${zeroCountLocs.length} with count=0, ${undefinedCountLocs.length} with count=undefined`);
       if (zeroCountLocs.length > 0) {
-        console.log(`[RealtySoft] Zero-count locations: ${zeroCountLocs.slice(0, 10).map(l => `${l.name}(id:${l.id},type:${l.type})`).join(', ')}${zeroCountLocs.length > 10 ? '...' : ''}`);
+        Logger.debug(`[RealtySoft] Zero-count locations: ${zeroCountLocs.slice(0, 10).map(l => `${l.name}(id:${l.id},type:${l.type})`).join(', ')}${zeroCountLocs.length > 10 ? '...' : ''}`);
       }
 
       // If we have a location ID but no name, look it up now that we have data
@@ -238,10 +245,10 @@ class RSLocation extends RSBaseComponent {
     }
 
     const filteredOut = allParents.filter(p => !filtered.includes(p));
-    console.log(`[RealtySoft] Location parents: ${allParents.length} total, ${filtered.length} after filtering, ${filteredOut.length} filtered out`);
+    Logger.debug(`[RealtySoft] Location parents: ${allParents.length} total, ${filtered.length} after filtering, ${filteredOut.length} filtered out`);
 
     if (filteredOut.length > 0) {
-      console.log(`[RealtySoft] Filtered out parents: ${filteredOut.map(p => `${p.name}(id:${p.id},count:${p.property_count})`).join(', ')}`);
+      Logger.debug(`[RealtySoft] Filtered out parents: ${filteredOut.map(p => `${p.name}(id:${p.id},count:${p.property_count})`).join(', ')}`);
     }
 
     return filtered.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
@@ -267,7 +274,7 @@ class RSLocation extends RSBaseComponent {
       return hasProps && !isDuplicateName;
     });
 
-    console.log(`[RealtySoft] Child locations for parent ${parentId}: ${allChildren.length} total, ${filtered.length} after filtering`);
+    Logger.debug(`[RealtySoft] Child locations for parent ${parentId}: ${allChildren.length} total, ${filtered.length} after filtering`);
 
     return filtered.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
   }
@@ -319,24 +326,24 @@ class RSLocation extends RSBaseComponent {
   }
 
   render(): void {
-    console.log(`[RealtySoft] Location render() - variation: ${this.variation}`);
+    Logger.debug(`[RealtySoft] Location render() - variation: ${this.variation}`);
     this.element.classList.add('rs-location', `rs-location--v${this.variation}`);
 
     switch (this.variation) {
       case '2':
-        console.log('[RealtySoft] Location: rendering Two Dropdowns');
+        Logger.debug('[RealtySoft] Location: rendering Two Dropdowns');
         this.renderTwoDropdowns();
         break;
       case '3':
-        console.log('[RealtySoft] Location: rendering Hierarchical MultiSelect');
+        Logger.debug('[RealtySoft] Location: rendering Hierarchical MultiSelect');
         this.renderHierarchicalMultiSelect();
         break;
       case '4':
-        console.log('[RealtySoft] Location: rendering Traditional Dropdown');
+        Logger.debug('[RealtySoft] Location: rendering Traditional Dropdown');
         this.renderTraditionalDropdown();
         break;
       default:
-        console.log('[RealtySoft] Location: rendering Typeahead');
+        Logger.debug('[RealtySoft] Location: rendering Typeahead');
         this.renderTypeahead();
     }
   }

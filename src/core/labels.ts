@@ -8,6 +8,19 @@ import type { RealtySoftLabelsModule, LabelOverrides } from '../types/index';
 // Language code mapping type
 type LanguageMap = Record<string, string>;
 
+// Logger utility (set by controller)
+declare const RealtySoftLogger: {
+  debug: (message: string, ...args: unknown[]) => void;
+  warn: (message: string, ...args: unknown[]) => void;
+  error: (message: string, ...args: unknown[]) => void;
+} | undefined;
+
+const Logger = {
+  debug: (msg: string, ...args: unknown[]) => {
+    if (typeof RealtySoftLogger !== 'undefined') RealtySoftLogger.debug(msg, ...args);
+  }
+};
+
 const RealtySoftLabels: RealtySoftLabelsModule = (function () {
   'use strict';
 
@@ -147,6 +160,21 @@ const RealtySoftLabels: RealtySoftLabelsModule = (function () {
     detail_loading_map: 'Loading map...',
     detail_price: 'Price',
     detail_price_on_request: 'Price on Request',
+
+    // Mortgage Calculator
+    mortgage_calculator: 'Mortgage Calculator',
+    mortgage_property_price: 'Property Price',
+    mortgage_down_payment: 'Down Payment',
+    mortgage_interest_rate: 'Interest Rate',
+    mortgage_loan_term: 'Loan Term',
+    mortgage_calculate: 'Calculate',
+    mortgage_results: 'Monthly Payment',
+    mortgage_loan_amount: 'Loan Amount',
+    mortgage_total_interest: 'Total Interest',
+    mortgage_total_payment: 'Total Payment',
+    mortgage_disclaimer: 'This is an estimate only. Actual payments may vary based on taxes, insurance, and other factors.',
+    years: 'years',
+    month: 'month',
 
     // Wishlist
     sort_by: 'Sort By',
@@ -404,6 +432,21 @@ const RealtySoftLabels: RealtySoftLabelsModule = (function () {
       detail_price_on_request: 'Precio bajo demanda',
       detail_view_larger_map: 'Ver mapa más grande',
       detail_get_directions: 'Cómo llegar',
+
+      // Mortgage Calculator
+      mortgage_calculator: 'Calculadora de Hipoteca',
+      mortgage_property_price: 'Precio de la Propiedad',
+      mortgage_down_payment: 'Entrada',
+      mortgage_interest_rate: 'Tipo de Interés',
+      mortgage_loan_term: 'Plazo del Préstamo',
+      mortgage_calculate: 'Calcular',
+      mortgage_results: 'Cuota Mensual',
+      mortgage_loan_amount: 'Importe del Préstamo',
+      mortgage_total_interest: 'Total Intereses',
+      mortgage_total_payment: 'Total a Pagar',
+      mortgage_disclaimer: 'Esta es solo una estimación. Los pagos reales pueden variar según impuestos, seguros y otros factores.',
+      years: 'años',
+      month: 'mes',
 
       // Wishlist
       wishlist_add: 'Añadir a favoritos',
@@ -1727,13 +1770,13 @@ const RealtySoftLabels: RealtySoftLabelsModule = (function () {
 
     // Check Polylang (WordPress)
     if (typeof window.pll_current_language === 'string' && window.pll_current_language) {
-      console.log('[RealtySoft Labels] Detected Polylang language:', window.pll_current_language);
+      Logger.debug('[RealtySoft Labels] Detected Polylang language:', window.pll_current_language);
       return window.pll_current_language;
     }
 
     // Check WPML (WordPress)
     if (typeof window.icl_current_language === 'string' && window.icl_current_language) {
-      console.log('[RealtySoft Labels] Detected WPML language:', window.icl_current_language);
+      Logger.debug('[RealtySoft Labels] Detected WPML language:', window.icl_current_language);
       return window.icl_current_language;
     }
 
@@ -1742,7 +1785,7 @@ const RealtySoftLabels: RealtySoftLabelsModule = (function () {
       try {
         const weglotLang = window.Weglot.getCurrentLang();
         if (weglotLang) {
-          console.log('[RealtySoft Labels] Detected Weglot language:', weglotLang);
+          Logger.debug('[RealtySoft Labels] Detected Weglot language:', weglotLang);
           return weglotLang;
         }
       } catch (e) {
@@ -1753,7 +1796,7 @@ const RealtySoftLabels: RealtySoftLabelsModule = (function () {
     // Check GTranslate (via cookie)
     const gtranslateLang = getGTranslateLanguage();
     if (gtranslateLang) {
-      console.log('[RealtySoft Labels] Detected GTranslate language:', gtranslateLang);
+      Logger.debug('[RealtySoft Labels] Detected GTranslate language:', gtranslateLang);
       return gtranslateLang;
     }
 
@@ -1764,7 +1807,7 @@ const RealtySoftLabels: RealtySoftLabelsModule = (function () {
       try {
         const locale = window.Webflow.env('locale');
         if (locale) {
-          console.log('[RealtySoft Labels] Detected Webflow locale:', locale);
+          Logger.debug('[RealtySoft Labels] Detected Webflow locale:', locale);
           return locale;
         }
       } catch (e) {
@@ -1777,14 +1820,14 @@ const RealtySoftLabels: RealtySoftLabelsModule = (function () {
     // Check URL subdomain (es.site.com)
     const subdomainLang = detectSubdomainLanguage();
     if (subdomainLang) {
-      console.log('[RealtySoft Labels] Detected subdomain language:', subdomainLang);
+      Logger.debug('[RealtySoft Labels] Detected subdomain language:', subdomainLang);
       return subdomainLang;
     }
 
     // Check URL path pattern (/es/, /de/)
     const urlLang = detectUrlLanguage();
     if (urlLang) {
-      console.log('[RealtySoft Labels] Detected URL path language:', urlLang);
+      Logger.debug('[RealtySoft Labels] Detected URL path language:', urlLang);
       return urlLang;
     }
 
@@ -1793,7 +1836,7 @@ const RealtySoftLabels: RealtySoftLabelsModule = (function () {
       const params = new URLSearchParams(window.location.search);
       const langParam = params.get('lang');
       if (langParam && isValidLanguageCode(langParam)) {
-        console.log('[RealtySoft Labels] Detected query param language:', langParam);
+        Logger.debug('[RealtySoft Labels] Detected query param language:', langParam);
         return langParam;
       }
     } catch (e) {
@@ -1876,7 +1919,7 @@ const RealtySoftLabels: RealtySoftLabelsModule = (function () {
     currentLanguage = language;
     const langDefaults = languageDefaults[language] || {};
     labels = { ...defaults, ...langDefaults };
-    console.log('[RealtySoft Labels] Initialized static labels for:', language, '- Total labels:', Object.keys(labels).length);
+    Logger.debug('[RealtySoft Labels] Initialized static labels for:', language, '- Total labels:', Object.keys(labels).length);
   }
 
   /**
@@ -1901,7 +1944,7 @@ const RealtySoftLabels: RealtySoftLabelsModule = (function () {
       // Language defaults take priority over API labels to ensure translations work
       labels = { ...defaults, ...apiLabels, ...langDefaults };
     } else {
-      console.log('[RealtySoft Labels] No API labels, using defaults +', langDefaultCount, 'language defaults');
+      Logger.debug('[RealtySoft Labels] No API labels, using defaults +', langDefaultCount, 'language defaults');
       labels = { ...defaults, ...langDefaults };
     }
   }
@@ -1947,12 +1990,12 @@ const RealtySoftLabels: RealtySoftLabelsModule = (function () {
         appliedCount += Object.keys(langOverrides).length;
       }
 
-      console.log('[RealtySoft Labels] Applied', appliedCount, 'per-language overrides for:', lang);
+      Logger.debug('[RealtySoft Labels] Applied', appliedCount, 'per-language overrides for:', lang);
     } else {
       // Legacy flat format - apply directly
       const flatOverrides = overrides as Record<string, string>;
       const overrideCount = Object.keys(flatOverrides).length;
-      console.log('[RealtySoft Labels] Applying', overrideCount, 'client label overrides');
+      Logger.debug('[RealtySoft Labels] Applying', overrideCount, 'client label overrides');
       labels = { ...labels, ...flatOverrides };
     }
   }
@@ -1961,7 +2004,7 @@ const RealtySoftLabels: RealtySoftLabelsModule = (function () {
    * Reload labels for a new language
    */
   async function reloadForLanguage(newLanguage: string): Promise<void> {
-    console.log('[RealtySoft Labels] Reloading labels for language:', newLanguage);
+    Logger.debug('[RealtySoft Labels] Reloading labels for language:', newLanguage);
     currentLanguage = newLanguage;
 
     // Reset to defaults + language-specific defaults

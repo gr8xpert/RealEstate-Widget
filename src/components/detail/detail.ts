@@ -27,6 +27,7 @@ import { RSDetailEnergy } from './energy';
 import { RSDetailResources } from './resources';
 import { RSDetailPdfButton } from './pdf-button';
 import { RSDetailVideoEmbed } from './video-embed';
+import { RSMortgageCalculator } from './mortgage-calculator';
 
 // Declare globals
 declare const RealtySoft: RealtySoftModule;
@@ -331,6 +332,7 @@ class RSDetail extends RSBaseComponent {
       ['.rs_detail_resources', RSDetailResources],
       ['.rs_detail_pdf', RSDetailPdfButton],
       ['.rs_detail_video_embed', RSDetailVideoEmbed],
+      ['.rs_mortgage_calculator', RSMortgageCalculator],
     ];
 
     for (const [selector, ComponentClass] of componentMappings) {

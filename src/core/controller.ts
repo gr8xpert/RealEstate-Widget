@@ -142,8 +142,41 @@ const RealtySoft = (function () {
     }, 5000);
   })();
 
-  // Version check
-  console.log('[RealtySoft] Version 3.0.0 - TypeScript Build');
+  // ── Logger Utility ──────────────────────────────────────────────
+  // Centralized logging that respects debug config
+  const Logger = {
+    _isDebug: (): boolean => {
+      const config = (window as any).RealtySoftConfig || {};
+      return config.debug === true;
+    },
+
+    // Info level - only in debug mode
+    info: (message: string, ...args: unknown[]): void => {
+      if (Logger._isDebug()) {
+        console.log(message, ...args);
+      }
+    },
+
+    // Debug level - only in debug mode
+    debug: (message: string, ...args: unknown[]): void => {
+      if (Logger._isDebug()) {
+        console.log(message, ...args);
+      }
+    },
+
+    // Warnings - always show
+    warn: (message: string, ...args: unknown[]): void => {
+      console.warn(`[RealtySoft] ${message}`, ...args);
+    },
+
+    // Errors - always show
+    error: (message: string, ...args: unknown[]): void => {
+      console.error(`[RealtySoft] ${message}`, ...args);
+    }
+  };
+
+  // Expose logger globally for other modules
+  (window as any).RealtySoftLogger = Logger;
 
   // Component registry
   const components: Record<string, ComponentConstructor> = {};
@@ -294,7 +327,7 @@ const RealtySoft = (function () {
       }
     }
 
-    console.log('[RealtySoft] Transformed', Object.keys(result).length, 'API labels for language:', language);
+    Logger.debug('[RealtySoft] Transformed', Object.keys(result).length, 'API labels for language:', language);
     return result;
   }
 
@@ -561,7 +594,7 @@ const RealtySoft = (function () {
     }
 
     if (Object.keys(filters).length > 0) {
-      console.log('[RealtySoft] Applying URL filters:', filters);
+      Logger.debug('[RealtySoft] Applying URL filters:', filters);
       for (const [key, value] of Object.entries(filters)) {
         RealtySoftState.set(`filters.${key}`, value);
       }
@@ -1904,10 +1937,10 @@ const RealtySoft = (function () {
    * Prefers elements in main content area over header/footer duplicates
    */
   function renderTemplates(): void {
-    console.log('[RealtySoft] renderTemplates() - scanning for template elements...');
+    Logger.debug('[RealtySoft] renderTemplates() - scanning for template elements...');
     for (const [templateClass, templateHTML] of Object.entries(TEMPLATES)) {
       const elements = document.querySelectorAll<HTMLElement>(`.${templateClass}`);
-      console.log(
+      Logger.debug(
         `[RealtySoft] Looking for .${templateClass}: found ${elements.length} element(s)`
       );
 
@@ -1924,7 +1957,7 @@ const RealtySoft = (function () {
 
         // Mark non-best elements as duplicates
         if (el !== bestElement) {
-          console.log(`[RealtySoft] Skipping duplicate ${templateClass} element (header/footer)`);
+          Logger.debug(`[RealtySoft] Skipping duplicate ${templateClass} element (header/footer)`);
           el.dataset.rsTemplateDuplicate = 'true';
           return;
         }
@@ -1959,7 +1992,7 @@ const RealtySoft = (function () {
           initTemplate03Tabs(el);
         }
 
-        console.log(`[RealtySoft] Auto-rendered template: ${templateClass}`);
+        Logger.debug(`[RealtySoft] Auto-rendered template: ${templateClass}`);
       });
     }
   }
@@ -2063,7 +2096,7 @@ const RealtySoft = (function () {
         const listingType = this.dataset.listingType;
         if (listingType) {
           RealtySoftState.set('filters.listingType', listingType);
-          console.log(`[RealtySoft] Template 03: Tab switched to "${listingType}"`);
+          Logger.debug(`[RealtySoft] Template 03: Tab switched to "${listingType}"`);
         }
       });
     });
@@ -2073,7 +2106,7 @@ const RealtySoft = (function () {
     );
     if (activeTab && activeTab.dataset.listingType) {
       RealtySoftState.set('filters.listingType', activeTab.dataset.listingType);
-      console.log(
+      Logger.debug(
         `[RealtySoft] Template 03: Initial listing type set to "${activeTab.dataset.listingType}"`
       );
     }
@@ -2189,7 +2222,7 @@ const RealtySoft = (function () {
     navigator.serviceWorker
       .register(swUrl)
       .then((registration) => {
-        console.log('[RealtySoft] Service worker registered:', registration.scope);
+        Logger.debug('[RealtySoft] Service worker registered:', registration.scope);
       })
       .catch((error) => {
         console.warn('[RealtySoft] Service worker registration failed:', error);
@@ -2204,14 +2237,14 @@ const RealtySoft = (function () {
     // Weglot: Listen for language changes (no page reload)
     if (typeof window.Weglot?.on === 'function') {
       window.Weglot.on('languageChanged', (newLang: string) => {
-        console.log('[RealtySoft] Weglot language changed:', newLang);
+        Logger.debug('[RealtySoft] Weglot language changed:', newLang);
         const mappedLang = RealtySoftLabels.mapLanguage(newLang);
         const currentLang = RealtySoftState.get<string>('config.language');
         if (mappedLang !== currentLang) {
           setLanguage(mappedLang);
         }
       });
-      console.log('[RealtySoft] Weglot language sync initialized');
+      Logger.debug('[RealtySoft] Weglot language sync initialized');
     }
 
     // MutationObserver: Watch for HTML lang attribute changes
@@ -2224,7 +2257,7 @@ const RealtySoft = (function () {
             const currentLang = RealtySoftState.get<string>('config.language');
             const mappedLang = RealtySoftLabels.mapLanguage(newLang);
             if (mappedLang !== currentLang) {
-              console.log('[RealtySoft] HTML lang attribute changed:', newLang, '-> mapped:', mappedLang);
+              Logger.debug('[RealtySoft] HTML lang attribute changed:', newLang, '-> mapped:', mappedLang);
               setLanguage(mappedLang);
             }
           }
@@ -2234,7 +2267,7 @@ const RealtySoft = (function () {
     });
 
     observer.observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
-    console.log('[RealtySoft] HTML lang attribute sync initialized');
+    Logger.debug('[RealtySoft] HTML lang attribute sync initialized');
 
     // URL popstate: Watch for browser back/forward navigation (URL-based language switchers)
     window.addEventListener('popstate', () => {
@@ -2242,7 +2275,7 @@ const RealtySoft = (function () {
       const detectedLang = RealtySoftLabels.detectLanguage();
       const currentLang = RealtySoftState.get<string>('config.language');
       if (detectedLang !== currentLang) {
-        console.log('[RealtySoft] URL navigation detected language change:', detectedLang);
+        Logger.debug('[RealtySoft] URL navigation detected language change:', detectedLang);
         setLanguage(detectedLang);
       }
     });
@@ -2320,7 +2353,7 @@ const RealtySoft = (function () {
 
         // Labels mode: 'static' (default), 'api', or 'hybrid'
         const labelsMode = globalConfig.labelsMode || 'static';
-        console.log('[RealtySoft] Labels mode:', labelsMode);
+        Logger.debug('[RealtySoft] Labels mode:', labelsMode);
 
         // Fire getAllLabels early (runs in parallel regardless - needed for language switcher)
         const allLabelsPromise = RealtySoftAPI.getAllLabels().catch(() => null);
@@ -2343,7 +2376,7 @@ const RealtySoft = (function () {
           // Fire getLocations() in background (non-blocking) - 3.87s optimization
           RealtySoftAPI.getLocations()
             .then(result => {
-              console.log('[RealtySoft] Background locations loaded:', result.data?.length || 0, 'items');
+              Logger.debug('[RealtySoft] Background locations loaded:', result.data?.length || 0, 'items');
               RealtySoftState.set('data.locations', result.data || []);
             })
             .catch((err) => {
@@ -2372,11 +2405,11 @@ const RealtySoft = (function () {
                   RealtySoftLabels.applyOverrides(globalConfig.labelOverrides, language);
                 }
                 RealtySoftState.set('data.labels', RealtySoftLabels.getAll());
-                console.log('[RealtySoft] Hybrid mode: API labels merged in background');
+                Logger.debug('[RealtySoft] Hybrid mode: API labels merged in background');
               }
             })
             .catch(() => {
-              console.log('[RealtySoft] Hybrid mode: API labels fetch failed, using static');
+              Logger.debug('[RealtySoft] Hybrid mode: API labels fetch failed, using static');
             });
         }
 
@@ -2393,7 +2426,7 @@ const RealtySoft = (function () {
             if (Object.keys(apiLabels).length > 0) {
               await RealtySoftLabels.loadFromAPI(apiLabels);
             } else {
-              console.log('[RealtySoft] No labels from API, using defaults');
+              Logger.debug('[RealtySoft] No labels from API, using defaults');
             }
 
             if (globalConfig.labelOverrides) {
@@ -2413,14 +2446,14 @@ const RealtySoft = (function () {
           if (allLabelsData) {
             const availableLanguages = extractAvailableLanguages(allLabelsData);
             RealtySoftState.set('data.availableLanguages', availableLanguages);
-            console.log('[RealtySoft] Available languages from API:', availableLanguages);
+            Logger.debug('[RealtySoft] Available languages from API:', availableLanguages);
           } else if (isDetailPage) {
             // Detail pages: allLabels was deferred — process when it arrives
             RealtySoftState.set('data.availableLanguages', []);
             allLabelsPromise.then((data: unknown) => {
               const availableLanguages = extractAvailableLanguages(data);
               RealtySoftState.set('data.availableLanguages', availableLanguages);
-              console.log('[RealtySoft] Available languages loaded (deferred):', availableLanguages);
+              Logger.debug('[RealtySoft] Available languages loaded (deferred):', availableLanguages);
             });
           }
 
@@ -2433,7 +2466,7 @@ const RealtySoft = (function () {
           renderTemplates();
 
           widgetMode = detectMode();
-          console.log('[RealtySoft] Widget mode:', widgetMode);
+          Logger.debug('[RealtySoft] Widget mode:', widgetMode);
 
           parseURLFilters();
 
@@ -2591,7 +2624,7 @@ const RealtySoft = (function () {
         for (const name of globalComponents) {
           if (element.classList.contains(name) && components[name]) {
             const variation = element.dataset.rsVariation || '1';
-            console.log(`[RealtySoft] Initializing global ${name} with variation: ${variation}`);
+            Logger.debug(`[RealtySoft] Initializing global ${name} with variation: ${variation}`);
             const instance = new components[name](element, { variation });
             componentInstances.push(instance);
             element._rsComponent = instance;
@@ -2607,11 +2640,11 @@ const RealtySoft = (function () {
       const containers = getWidgetContainers();
 
       if (containers.length === 0) {
-        console.log('[RealtySoft] No widget containers found on page');
+        Logger.debug('[RealtySoft] No widget containers found on page');
         return;
       }
 
-      console.log('[RealtySoft] Found', containers.length, 'widget container(s)');
+      Logger.debug('[RealtySoft] Found', containers.length, 'widget container(s)');
 
       for (const container of containers) {
         // Check if the container ITSELF is a component that needs initialization
@@ -2621,7 +2654,7 @@ const RealtySoft = (function () {
           for (const name of containerComponents) {
             if (rsContainer.classList.contains(name) && components[name]) {
               const variation = rsContainer.dataset.rsVariation || '1';
-              console.log(`[RealtySoft] Initializing container-component ${name} with variation: ${variation}`);
+              Logger.debug(`[RealtySoft] Initializing container-component ${name} with variation: ${variation}`);
               const instance = new components[name](rsContainer, { variation });
               componentInstances.push(instance);
               rsContainer._rsComponent = instance;
@@ -2638,7 +2671,7 @@ const RealtySoft = (function () {
           for (const name of containerComponents) {
             if (element.classList.contains(name) && components[name]) {
               const variation = element.dataset.rsVariation || '1';
-              console.log(`[RealtySoft] Initializing ${name} with variation: ${variation}`);
+              Logger.debug(`[RealtySoft] Initializing ${name} with variation: ${variation}`);
               const instance = new components[name](element, { variation });
               componentInstances.push(instance);
               element._rsComponent = instance;
@@ -2671,7 +2704,7 @@ const RealtySoft = (function () {
     if (widgetMode === 'search-only') {
       const filters = RealtySoftState.get('filters') as Partial<FilterState>;
       const searchURL = buildSearchURL(filters);
-      console.log('[RealtySoft] Search-only mode: redirecting to', searchURL);
+      Logger.debug('[RealtySoft] Search-only mode: redirecting to', searchURL);
       window.location.href = searchURL;
       return;
     }
@@ -2783,7 +2816,7 @@ const RealtySoft = (function () {
           }
         }
 
-        console.log('[RealtySoft] Standalone listing loaded:', properties.length, 'properties');
+        Logger.debug('[RealtySoft] Standalone listing loaded:', properties.length, 'properties');
       } catch (error) {
         console.error('[RealtySoft] Standalone listing error:', error);
       }
@@ -2820,7 +2853,7 @@ const RealtySoft = (function () {
     })
       .then((r) => {
         if (!r.ok) console.warn('[RealtySoft] OG cache POST failed:', r.status, r.statusText);
-        else console.log('[RealtySoft] OG cache updated for:', property.ref || property.unique_ref);
+        else Logger.debug('[RealtySoft] OG cache updated for:', property.ref || property.unique_ref);
       })
       .catch((e) => console.warn('[RealtySoft] OG cache POST error:', e));
   }
@@ -2945,12 +2978,12 @@ const RealtySoft = (function () {
    * Update filter
    */
   function setFilter(name: string, value: unknown): void {
-    console.log('[RealtySoft] setFilter called:', name, '=', value);
+    Logger.debug('[RealtySoft] setFilter called:', name, '=', value);
     if (!RealtySoftState.isFilterLocked(name)) {
       RealtySoftState.set(`filters.${name}`, value);
       RealtySoftAnalytics.trackFilterChange(name, value);
     } else {
-      console.log('[RealtySoft] setFilter BLOCKED - filter is locked:', name);
+      Logger.debug('[RealtySoft] setFilter BLOCKED - filter is locked:', name);
     }
   }
 
@@ -3093,11 +3126,11 @@ const RealtySoft = (function () {
    * Auto-inject property detail container and initialize
    */
   function autoInjectPropertyDetail(propertyRef: string): boolean {
-    console.log('[RealtySoft] Auto-detected property URL, ref:', propertyRef);
+    Logger.debug('[RealtySoft] Auto-detected property URL, ref:', propertyRef);
 
     const is404 = isLikely404Page();
     if (is404) {
-      console.log('[RealtySoft] Detected 404/error page, will replace content');
+      Logger.debug('[RealtySoft] Detected 404/error page, will replace content');
     }
 
     // Narrowest WordPress content selectors first
@@ -3121,7 +3154,7 @@ const RealtySoft = (function () {
     for (const selector of containerSelectors) {
       mainContent = document.querySelector<HTMLElement>(selector);
       if (mainContent) {
-        console.log(`[RealtySoft] Found container: ${selector}`);
+        Logger.debug(`[RealtySoft] Found container: ${selector}`);
         break;
       }
     }
@@ -3132,27 +3165,27 @@ const RealtySoft = (function () {
       if (pageHeading && pageHeading.parentElement && pageHeading.parentElement !== document.body) {
         mainContent = pageHeading.parentElement;
         usedFallback = true;
-        console.log(`[RealtySoft] Using heading parent as container: <${mainContent.tagName.toLowerCase()}>`);
+        Logger.debug(`[RealtySoft] Using heading parent as container: <${mainContent.tagName.toLowerCase()}>`);
       }
     }
 
     if (!mainContent) {
       mainContent = document.body;
       usedFallback = true;
-      console.log('[RealtySoft] Using body as container');
+      Logger.debug('[RealtySoft] Using body as container');
     }
 
     if (is404) {
-      console.log('[RealtySoft] Detected 404 page...');
+      Logger.debug('[RealtySoft] Detected 404 page...');
 
       // NEVER clear body.innerHTML - it destroys header/footer
       // Only clear content of narrower containers
       if (!usedFallback) {
-        console.log('[RealtySoft] Clearing 404 content container...');
+        Logger.debug('[RealtySoft] Clearing 404 content container...');
         mainContent.innerHTML = '';
       } else {
         // For body or broad containers, hide children instead of clearing
-        console.log('[RealtySoft] Hiding 404 content (preserving header/footer)...');
+        Logger.debug('[RealtySoft] Hiding 404 content (preserving header/footer)...');
         const hideStyle = document.createElement('style');
         hideStyle.id = 'rs-404-hide';
         hideStyle.textContent = '.rs-404-hidden { display: none !important; }';
@@ -3203,7 +3236,7 @@ const RealtySoft = (function () {
       const globalConfig = (window.RealtySoftConfig || {}) as ControllerConfig;
       const originalTitle = document.title;
       document.title = globalConfig.detailPageTitle || 'Property Details';
-      console.log(
+      Logger.debug(
         `[RealtySoft] Updated page title from "${originalTitle}" to "${document.title}"`
       );
 
@@ -3299,7 +3332,7 @@ const RealtySoft = (function () {
       mainContent.appendChild(detailContainer);
     }
 
-    console.log('[RealtySoft] Auto-injected rs_detail container successfully');
+    Logger.debug('[RealtySoft] Auto-injected rs_detail container successfully');
 
     window._rsAutoInjectedRef = propertyRef;
 
@@ -3345,7 +3378,7 @@ const RealtySoft = (function () {
 
       if (existingDetail && existingDetail.children.length === 0 && !existingTemplate) {
         // Empty rs_detail div — upgrade to self-rendering template
-        console.log('[RealtySoft] Found empty .rs_detail — upgrading to property-detail-container');
+        Logger.debug('[RealtySoft] Found empty .rs_detail — upgrading to property-detail-container');
         existingDetail.classList.remove('rs_detail');
         existingDetail.classList.add('property-detail-container');
         existingDetail.id = 'property-detail-container';
@@ -3358,7 +3391,7 @@ const RealtySoft = (function () {
         if (overlay) overlay.remove();
       } else if (existingTemplate) {
         // USE existing property-detail-container — just set ref and reveal
-        console.log('[RealtySoft] Found existing .property-detail-container — using it');
+        Logger.debug('[RealtySoft] Found existing .property-detail-container — using it');
         (existingTemplate as HTMLElement).dataset.propertyRef = propertyRef;
         document.body.classList.add('rs-property-ready');
         const earlyHide = document.getElementById('rs-early-hide');
@@ -3456,7 +3489,7 @@ const RealtySoft = (function () {
    * Re-render all component instances with current labels
    */
   function reRenderComponents(): void {
-    console.log(
+    Logger.debug(
       '[RealtySoft] Re-rendering',
       componentInstances.length,
       'components with new labels'
@@ -3479,7 +3512,7 @@ const RealtySoft = (function () {
    * Change language and reload labels
    */
   async function setLanguage(newLanguage: string): Promise<void> {
-    console.log('[RealtySoft] Changing language to:', newLanguage);
+    Logger.debug('[RealtySoft] Changing language to:', newLanguage);
 
     const globalConfig = (window.RealtySoftConfig || {}) as ControllerConfig;
     const labelsMode = globalConfig.labelsMode || 'static';
@@ -3519,14 +3552,14 @@ const RealtySoft = (function () {
         // If on listing page with properties, re-run search
         const currentProperties = RealtySoftState.get<Property[]>('results.properties');
         if (currentProperties && currentProperties.length > 0) {
-          console.log('[RealtySoft] Language changed: refetching listing properties...');
+          Logger.debug('[RealtySoft] Language changed: refetching listing properties...');
           await search();
         }
 
         // If on detail page with a property, reload it with forceRefresh
         const currentProperty = RealtySoftState.get<Property>('currentProperty');
         if (currentProperty) {
-          console.log('[RealtySoft] Language changed: reloading detail property...');
+          Logger.debug('[RealtySoft] Language changed: reloading detail property...');
           RealtySoftState.set('ui.loading', true);
           try {
             let result;
@@ -3537,7 +3570,7 @@ const RealtySoft = (function () {
             }
             if (result?.data) {
               RealtySoftState.set('currentProperty', result.data);
-              console.log('[RealtySoft] Property reloaded with new language:', newLanguage);
+              Logger.debug('[RealtySoft] Property reloaded with new language:', newLanguage);
             }
           } finally {
             RealtySoftState.set('ui.loading', false);
@@ -3553,7 +3586,7 @@ const RealtySoft = (function () {
 
     // Static mode: we're done - no API call needed
     if (labelsMode === 'static') {
-      console.log('[RealtySoft] Static mode: language changed to:', newLanguage);
+      Logger.debug('[RealtySoft] Static mode: language changed to:', newLanguage);
       reRenderComponents();
       return;
     }
@@ -3573,7 +3606,7 @@ const RealtySoft = (function () {
             }
             RealtySoftState.set('data.labels', RealtySoftLabels.getAll());
             reRenderComponents();
-            console.log('[RealtySoft] Hybrid mode: API labels merged for:', newLanguage);
+            Logger.debug('[RealtySoft] Hybrid mode: API labels merged for:', newLanguage);
           }
         })
         .catch((error) => {
@@ -3582,7 +3615,7 @@ const RealtySoft = (function () {
 
       // Re-render immediately with static labels
       reRenderComponents();
-      console.log('[RealtySoft] Hybrid mode: language changed to:', newLanguage);
+      Logger.debug('[RealtySoft] Hybrid mode: language changed to:', newLanguage);
       return;
     }
 
@@ -3600,7 +3633,7 @@ const RealtySoft = (function () {
 
       RealtySoftState.set('data.labels', RealtySoftLabels.getAll());
       reRenderComponents();
-      console.log('[RealtySoft] API mode: language changed successfully to:', newLanguage);
+      Logger.debug('[RealtySoft] API mode: language changed successfully to:', newLanguage);
     } catch (error) {
       console.error('[RealtySoft] Error loading labels for language:', newLanguage, error);
       // Still re-render with static labels on error

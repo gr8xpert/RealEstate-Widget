@@ -1,0 +1,753 @@
+{
+  "title": "Smart Property Widget FAQ",
+  "type": "page",
+  "version": "0.4",
+  "page_settings": [],
+  "content": [
+    {
+      "id": "faq-header",
+      "elType": "section",
+      "settings": {
+        "background_background": "gradient",
+        "background_color": "#1e3a8a",
+        "background_color_b": "#3b82f6",
+        "background_gradient_angle": {
+          "unit": "deg",
+          "size": 135
+        },
+        "padding": {
+          "unit": "px",
+          "top": "80",
+          "right": "20",
+          "bottom": "80",
+          "left": "20",
+          "isLinked": false
+        },
+        "padding_mobile": {
+          "unit": "px",
+          "top": "50",
+          "right": "15",
+          "bottom": "50",
+          "left": "15",
+          "isLinked": false
+        }
+      },
+      "elements": [
+        {
+          "id": "header-column",
+          "elType": "column",
+          "settings": {
+            "_column_size": 100
+          },
+          "elements": [
+            {
+              "id": "faq-title",
+              "elType": "widget",
+              "widgetType": "heading",
+              "settings": {
+                "title": "Frequently Asked Questions",
+                "align": "center",
+                "title_color": "#ffffff",
+                "typography_typography": "custom",
+                "typography_font_family": "DM Sans",
+                "typography_font_size": {
+                  "unit": "px",
+                  "size": 48
+                },
+                "typography_font_size_mobile": {
+                  "unit": "px",
+                  "size": 32
+                },
+                "typography_font_weight": "700"
+              }
+            },
+            {
+              "id": "faq-subtitle",
+              "elType": "widget",
+              "widgetType": "text-editor",
+              "settings": {
+                "editor": "<p style=\"text-align: center; color: rgba(255,255,255,0.9); font-size: 18px; max-width: 600px; margin: 15px auto 0;\">Find answers to common questions about Smart Property Widget</p>",
+                "align": "center"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "faq-content",
+      "elType": "section",
+      "settings": {
+        "background_background": "classic",
+        "background_color": "#f8fafc",
+        "padding": {
+          "unit": "px",
+          "top": "60",
+          "right": "20",
+          "bottom": "60",
+          "left": "20",
+          "isLinked": false
+        },
+        "content_width": {
+          "unit": "px",
+          "size": 900
+        }
+      },
+      "elements": [
+        {
+          "id": "content-column",
+          "elType": "column",
+          "settings": {
+            "_column_size": 100
+          },
+          "elements": [
+            {
+              "id": "general-title",
+              "elType": "widget",
+              "widgetType": "heading",
+              "settings": {
+                "title": "General Questions",
+                "header_size": "h2",
+                "title_color": "#1e293b",
+                "typography_typography": "custom",
+                "typography_font_family": "DM Sans",
+                "typography_font_size": {
+                  "unit": "px",
+                  "size": 28
+                },
+                "typography_font_weight": "600",
+                "_margin": {
+                  "unit": "px",
+                  "top": "0",
+                  "right": "0",
+                  "bottom": "25",
+                  "left": "0",
+                  "isLinked": false
+                },
+                "_border_border": "solid",
+                "_border_width": {
+                  "unit": "px",
+                  "top": "0",
+                  "right": "0",
+                  "bottom": "2",
+                  "left": "0",
+                  "isLinked": false
+                },
+                "_border_color": "#2563eb",
+                "_padding": {
+                  "unit": "px",
+                  "top": "0",
+                  "right": "0",
+                  "bottom": "15",
+                  "left": "0",
+                  "isLinked": false
+                }
+              }
+            },
+            {
+              "id": "general-accordion",
+              "elType": "widget",
+              "widgetType": "accordion",
+              "settings": {
+                "tabs": [
+                  {
+                    "tab_title": "What is Smart Property Widget?",
+                    "tab_content": "<p>Smart Property Widget is a powerful property listing solution that allows real estate agencies and property websites to display their property listings beautifully. It provides search filters, property grids, carousels, detailed property pages, and many more features to create a professional property website.</p>",
+                    "_id": "general-1"
+                  },
+                  {
+                    "tab_title": "How do I get started with Smart Property Widget?",
+                    "tab_content": "<p>Getting started is simple:</p><ul><li><strong>WordPress users:</strong> Install and activate the Smart Property Widget plugin from your WordPress admin panel</li><li><strong>Other platforms:</strong> Add a small script to your website and start using the widget components</li></ul><p>Once set up, your properties will automatically sync and display on your website.</p>",
+                    "_id": "general-2"
+                  },
+                  {
+                    "tab_title": "Do I need technical knowledge to use the widget?",
+                    "tab_content": "<p>No technical knowledge is required for basic usage. The widget comes with ready-made templates that you can simply add to your pages. For WordPress users, you can use page builders like Elementor or Divi to drag and drop components. Advanced customization options are available for those who want more control.</p>",
+                    "_id": "general-3"
+                  },
+                  {
+                    "tab_title": "Is my data secure with Smart Property Widget?",
+                    "tab_content": "<p>Yes, your data is secure. All data transfers are encrypted using HTTPS. Your property data is synced from your existing property management system and displayed securely on your website. We do not store sensitive client information and follow industry-standard security practices.</p>",
+                    "_id": "general-4"
+                  }
+                ],
+                "border_width": {
+                  "unit": "px",
+                  "size": 1
+                },
+                "border_color": "#e2e8f0",
+                "title_background": "#ffffff",
+                "title_color": "#1e293b",
+                "title_active_color": "#2563eb",
+                "tab_active_color": "#2563eb",
+                "content_background_color": "#ffffff",
+                "content_color": "#64748b",
+                "icon_color": "#64748b",
+                "icon_active_color": "#2563eb",
+                "typography_typography": "custom",
+                "typography_font_family": "DM Sans",
+                "typography_font_size": {
+                  "unit": "px",
+                  "size": 16
+                },
+                "typography_font_weight": "500",
+                "_margin": {
+                  "unit": "px",
+                  "top": "0",
+                  "right": "0",
+                  "bottom": "50",
+                  "left": "0",
+                  "isLinked": false
+                }
+              }
+            },
+            {
+              "id": "features-title",
+              "elType": "widget",
+              "widgetType": "heading",
+              "settings": {
+                "title": "Features",
+                "header_size": "h2",
+                "title_color": "#1e293b",
+                "typography_typography": "custom",
+                "typography_font_family": "DM Sans",
+                "typography_font_size": {
+                  "unit": "px",
+                  "size": 28
+                },
+                "typography_font_weight": "600",
+                "_margin": {
+                  "unit": "px",
+                  "top": "0",
+                  "right": "0",
+                  "bottom": "25",
+                  "left": "0",
+                  "isLinked": false
+                },
+                "_border_border": "solid",
+                "_border_width": {
+                  "unit": "px",
+                  "top": "0",
+                  "right": "0",
+                  "bottom": "2",
+                  "left": "0",
+                  "isLinked": false
+                },
+                "_border_color": "#2563eb",
+                "_padding": {
+                  "unit": "px",
+                  "top": "0",
+                  "right": "0",
+                  "bottom": "15",
+                  "left": "0",
+                  "isLinked": false
+                }
+              }
+            },
+            {
+              "id": "features-accordion",
+              "elType": "widget",
+              "widgetType": "accordion",
+              "settings": {
+                "tabs": [
+                  {
+                    "tab_title": "What search filters are available?",
+                    "tab_content": "<p>Smart Property Widget offers comprehensive search filters including:</p><ul><li><strong>Location:</strong> Search by area, city, or region</li><li><strong>Property Type:</strong> Villa, apartment, townhouse, penthouse, etc.</li><li><strong>Listing Type:</strong> For sale, long-term rental, short-term rental</li><li><strong>Price Range:</strong> Minimum and maximum price</li><li><strong>Bedrooms & Bathrooms:</strong> Filter by number of rooms</li><li><strong>Size:</strong> Built area and plot size</li><li><strong>Features:</strong> Pool, garden, garage, sea views, etc.</li><li><strong>Reference Number:</strong> Direct property lookup</li></ul>",
+                    "_id": "features-1"
+                  },
+                  {
+                    "tab_title": "Can visitors save their favorite properties?",
+                    "tab_content": "<p>Yes! The widget includes a wishlist feature that allows visitors to save properties they're interested in. Saved properties are stored in the browser, so visitors can return later to view their favorites. You can also add a wishlist page to your website where visitors can see all their saved properties at once.</p>",
+                    "_id": "features-2"
+                  },
+                  {
+                    "tab_title": "Does the widget support multiple languages?",
+                    "tab_content": "<p>Yes, Smart Property Widget supports 16 languages including English, Spanish, German, French, Dutch, Portuguese, Italian, Russian, Swedish, Danish, Norwegian, Finnish, Polish, Czech, Romanian, and Arabic. The widget automatically detects the visitor's language or you can set a specific language for your website.</p>",
+                    "_id": "features-3"
+                  },
+                  {
+                    "tab_title": "Can I display properties on a map?",
+                    "tab_content": "<p>Yes, the widget includes an interactive map view feature. Visitors can browse properties on a map, see property markers with price tags, and click on markers to view property details. The map integrates with Google Maps to show property locations accurately.</p>",
+                    "_id": "features-4"
+                  },
+                  {
+                    "tab_title": "Are there different display layouts available?",
+                    "tab_content": "<p>Yes, the widget offers multiple display options:</p><ul><li><strong>Grid View:</strong> Display properties in a responsive grid (1-4 columns)</li><li><strong>List View:</strong> Show properties in a detailed list format</li><li><strong>Carousel:</strong> Sliding property showcase for featured listings</li><li><strong>Map View:</strong> Interactive map with property markers</li></ul><p>There are also 12 different card templates to choose from, each with a unique design style.</p>",
+                    "_id": "features-5"
+                  },
+                  {
+                    "tab_title": "Can I show video tours and virtual tours?",
+                    "tab_content": "<p>Yes! If your properties have video tours (YouTube, Vimeo) or virtual tours (Matterport, etc.), these will automatically display on the property detail page. Visitors can watch videos and explore virtual tours directly on your website without leaving the page.</p>",
+                    "_id": "features-6"
+                  },
+                  {
+                    "tab_title": "Is there an inquiry/contact form for properties?",
+                    "tab_content": "<p>Yes, each property detail page includes an inquiry form. When visitors submit an inquiry, it is sent directly to your email address. You can customize the thank you message shown after submission or redirect visitors to a custom thank you page.</p>",
+                    "_id": "features-7"
+                  }
+                ],
+                "border_width": {
+                  "unit": "px",
+                  "size": 1
+                },
+                "border_color": "#e2e8f0",
+                "title_background": "#ffffff",
+                "title_color": "#1e293b",
+                "title_active_color": "#2563eb",
+                "tab_active_color": "#2563eb",
+                "content_background_color": "#ffffff",
+                "content_color": "#64748b",
+                "icon_color": "#64748b",
+                "icon_active_color": "#2563eb",
+                "typography_typography": "custom",
+                "typography_font_family": "DM Sans",
+                "typography_font_size": {
+                  "unit": "px",
+                  "size": 16
+                },
+                "typography_font_weight": "500",
+                "_margin": {
+                  "unit": "px",
+                  "top": "0",
+                  "right": "0",
+                  "bottom": "50",
+                  "left": "0",
+                  "isLinked": false
+                }
+              }
+            },
+            {
+              "id": "compatibility-title",
+              "elType": "widget",
+              "widgetType": "heading",
+              "settings": {
+                "title": "Compatibility",
+                "header_size": "h2",
+                "title_color": "#1e293b",
+                "typography_typography": "custom",
+                "typography_font_family": "DM Sans",
+                "typography_font_size": {
+                  "unit": "px",
+                  "size": 28
+                },
+                "typography_font_weight": "600",
+                "_margin": {
+                  "unit": "px",
+                  "top": "0",
+                  "right": "0",
+                  "bottom": "25",
+                  "left": "0",
+                  "isLinked": false
+                },
+                "_border_border": "solid",
+                "_border_width": {
+                  "unit": "px",
+                  "top": "0",
+                  "right": "0",
+                  "bottom": "2",
+                  "left": "0",
+                  "isLinked": false
+                },
+                "_border_color": "#2563eb",
+                "_padding": {
+                  "unit": "px",
+                  "top": "0",
+                  "right": "0",
+                  "bottom": "15",
+                  "left": "0",
+                  "isLinked": false
+                }
+              }
+            },
+            {
+              "id": "compatibility-accordion",
+              "elType": "widget",
+              "widgetType": "accordion",
+              "settings": {
+                "tabs": [
+                  {
+                    "tab_title": "Which platforms is Smart Property Widget compatible with?",
+                    "tab_content": "<p>Smart Property Widget works with virtually any website platform:</p><ul><li><strong>WordPress:</strong> Dedicated plugin with easy setup</li><li><strong>Wix:</strong> Add via custom code embed</li><li><strong>Squarespace:</strong> Add via code injection</li><li><strong>Webflow:</strong> Add via custom code</li><li><strong>Custom HTML:</strong> Works with any HTML website</li></ul>",
+                    "_id": "compat-1"
+                  },
+                  {
+                    "tab_title": "Does it work with WordPress page builders?",
+                    "tab_content": "<p>Yes! Smart Property Widget is fully compatible with popular WordPress page builders including:</p><ul><li>Elementor</li><li>Divi Builder</li><li>WPBakery Page Builder</li><li>Beaver Builder</li><li>Gutenberg (WordPress Block Editor)</li></ul><p>Simply add an HTML block and paste the widget code.</p>",
+                    "_id": "compat-2"
+                  },
+                  {
+                    "tab_title": "Is the widget mobile-friendly?",
+                    "tab_content": "<p>Absolutely! Smart Property Widget is fully responsive and works perfectly on all devices including smartphones, tablets, laptops, and desktop computers. The layout automatically adjusts to provide the best viewing experience on any screen size.</p>",
+                    "_id": "compat-3"
+                  },
+                  {
+                    "tab_title": "Which browsers are supported?",
+                    "tab_content": "<p>Smart Property Widget supports all modern browsers including:</p><ul><li>Google Chrome</li><li>Mozilla Firefox</li><li>Safari</li><li>Microsoft Edge</li><li>Opera</li></ul><p>The widget is built with modern web standards to ensure consistent performance across all browsers.</p>",
+                    "_id": "compat-4"
+                  }
+                ],
+                "border_width": {
+                  "unit": "px",
+                  "size": 1
+                },
+                "border_color": "#e2e8f0",
+                "title_background": "#ffffff",
+                "title_color": "#1e293b",
+                "title_active_color": "#2563eb",
+                "tab_active_color": "#2563eb",
+                "content_background_color": "#ffffff",
+                "content_color": "#64748b",
+                "icon_color": "#64748b",
+                "icon_active_color": "#2563eb",
+                "typography_typography": "custom",
+                "typography_font_family": "DM Sans",
+                "typography_font_size": {
+                  "unit": "px",
+                  "size": 16
+                },
+                "typography_font_weight": "500",
+                "_margin": {
+                  "unit": "px",
+                  "top": "0",
+                  "right": "0",
+                  "bottom": "50",
+                  "left": "0",
+                  "isLinked": false
+                }
+              }
+            },
+            {
+              "id": "properties-title",
+              "elType": "widget",
+              "widgetType": "heading",
+              "settings": {
+                "title": "Properties",
+                "header_size": "h2",
+                "title_color": "#1e293b",
+                "typography_typography": "custom",
+                "typography_font_family": "DM Sans",
+                "typography_font_size": {
+                  "unit": "px",
+                  "size": 28
+                },
+                "typography_font_weight": "600",
+                "_margin": {
+                  "unit": "px",
+                  "top": "0",
+                  "right": "0",
+                  "bottom": "25",
+                  "left": "0",
+                  "isLinked": false
+                },
+                "_border_border": "solid",
+                "_border_width": {
+                  "unit": "px",
+                  "top": "0",
+                  "right": "0",
+                  "bottom": "2",
+                  "left": "0",
+                  "isLinked": false
+                },
+                "_border_color": "#2563eb",
+                "_padding": {
+                  "unit": "px",
+                  "top": "0",
+                  "right": "0",
+                  "bottom": "15",
+                  "left": "0",
+                  "isLinked": false
+                }
+              }
+            },
+            {
+              "id": "properties-accordion",
+              "elType": "widget",
+              "widgetType": "accordion",
+              "settings": {
+                "tabs": [
+                  {
+                    "tab_title": "How are properties synced to my website?",
+                    "tab_content": "<p>Properties are automatically synced from your property management system (like Resales Online, Infocasa, or other CRM systems). When you add, update, or remove a property in your CRM, the changes are automatically reflected on your website. No manual updates required!</p>",
+                    "_id": "props-1"
+                  },
+                  {
+                    "tab_title": "Can I feature specific properties on my homepage?",
+                    "tab_content": "<p>Yes! You can display specific properties by filtering based on various criteria like location, property type, price range, or by marking properties as \"featured\" in your CRM. You can also create dedicated pages for specific property categories (e.g., \"Luxury Villas in Marbella\").</p>",
+                    "_id": "props-2"
+                  },
+                  {
+                    "tab_title": "How many properties can I display?",
+                    "tab_content": "<p>There is no limit to the number of properties you can display. Whether you have 10 properties or 10,000, the widget handles them efficiently with pagination and lazy loading to ensure fast page performance.</p>",
+                    "_id": "props-3"
+                  },
+                  {
+                    "tab_title": "Can visitors share properties on social media?",
+                    "tab_content": "<p>Yes, property detail pages include social sharing buttons that allow visitors to share properties on Facebook, Twitter, WhatsApp, LinkedIn, and via email. This helps increase exposure for your listings through word-of-mouth sharing.</p>",
+                    "_id": "props-4"
+                  },
+                  {
+                    "tab_title": "What property information is displayed?",
+                    "tab_content": "<p>Property detail pages can display comprehensive information including:</p><ul><li>Photo gallery with fullscreen view</li><li>Price and property reference</li><li>Location with interactive map</li><li>Bedrooms, bathrooms, and size details</li><li>Full property description</li><li>Features and amenities list</li><li>Video tour and virtual tour</li><li>PDF brochure download</li><li>Similar/related properties</li><li>Contact/inquiry form</li></ul>",
+                    "_id": "props-5"
+                  }
+                ],
+                "border_width": {
+                  "unit": "px",
+                  "size": 1
+                },
+                "border_color": "#e2e8f0",
+                "title_background": "#ffffff",
+                "title_color": "#1e293b",
+                "title_active_color": "#2563eb",
+                "tab_active_color": "#2563eb",
+                "content_background_color": "#ffffff",
+                "content_color": "#64748b",
+                "icon_color": "#64748b",
+                "icon_active_color": "#2563eb",
+                "typography_typography": "custom",
+                "typography_font_family": "DM Sans",
+                "typography_font_size": {
+                  "unit": "px",
+                  "size": 16
+                },
+                "typography_font_weight": "500",
+                "_margin": {
+                  "unit": "px",
+                  "top": "0",
+                  "right": "0",
+                  "bottom": "50",
+                  "left": "0",
+                  "isLinked": false
+                }
+              }
+            },
+            {
+              "id": "support-title",
+              "elType": "widget",
+              "widgetType": "heading",
+              "settings": {
+                "title": "Support",
+                "header_size": "h2",
+                "title_color": "#1e293b",
+                "typography_typography": "custom",
+                "typography_font_family": "DM Sans",
+                "typography_font_size": {
+                  "unit": "px",
+                  "size": 28
+                },
+                "typography_font_weight": "600",
+                "_margin": {
+                  "unit": "px",
+                  "top": "0",
+                  "right": "0",
+                  "bottom": "25",
+                  "left": "0",
+                  "isLinked": false
+                },
+                "_border_border": "solid",
+                "_border_width": {
+                  "unit": "px",
+                  "top": "0",
+                  "right": "0",
+                  "bottom": "2",
+                  "left": "0",
+                  "isLinked": false
+                },
+                "_border_color": "#2563eb",
+                "_padding": {
+                  "unit": "px",
+                  "top": "0",
+                  "right": "0",
+                  "bottom": "15",
+                  "left": "0",
+                  "isLinked": false
+                }
+              }
+            },
+            {
+              "id": "support-accordion",
+              "elType": "widget",
+              "widgetType": "accordion",
+              "settings": {
+                "tabs": [
+                  {
+                    "tab_title": "How do I get help if I have issues?",
+                    "tab_content": "<p>If you encounter any issues or have questions, you can:</p><ul><li>Check our <a href=\"https://smartpropertywidget.com/spw/Documentation.html\" target=\"_blank\">Documentation</a> for detailed guides</li><li>Contact our support team via email</li><li>Reach out through your CRM provider's support channel</li></ul><p>We're here to help you get the most out of Smart Property Widget!</p>",
+                    "_id": "support-1"
+                  },
+                  {
+                    "tab_title": "Is there documentation available?",
+                    "tab_content": "<p>Yes, we provide comprehensive documentation covering all aspects of the widget. Visit our <a href=\"https://smartpropertywidget.com/spw/Documentation.html\" target=\"_blank\">Documentation page</a> for detailed guides on components, templates, configuration options, and more.</p>",
+                    "_id": "support-2"
+                  },
+                  {
+                    "tab_title": "Can I request new features?",
+                    "tab_content": "<p>Absolutely! We're always looking to improve Smart Property Widget based on user feedback. If you have a feature request or suggestion, please contact our support team. We review all requests and prioritize based on user demand and feasibility.</p>",
+                    "_id": "support-3"
+                  },
+                  {
+                    "tab_title": "My properties are not showing. What should I do?",
+                    "tab_content": "<p>If properties are not displaying, try these steps:</p><ul><li><strong>Check your connection:</strong> Ensure your website is properly connected to your property management system</li><li><strong>Verify property status:</strong> Make sure properties are marked as \"active\" or \"published\" in your CRM</li><li><strong>Clear cache:</strong> Clear your browser cache and any website caching plugins</li><li><strong>Check filters:</strong> Ensure no filters are accidentally limiting the results</li></ul><p>If the issue persists, contact our support team for assistance.</p>",
+                    "_id": "support-4"
+                  },
+                  {
+                    "tab_title": "How often is the widget updated?",
+                    "tab_content": "<p>We regularly update Smart Property Widget with new features, improvements, and bug fixes. Updates are deployed automatically, so you always have access to the latest version without needing to do anything. Major updates are announced through our communication channels.</p>",
+                    "_id": "support-5"
+                  }
+                ],
+                "border_width": {
+                  "unit": "px",
+                  "size": 1
+                },
+                "border_color": "#e2e8f0",
+                "title_background": "#ffffff",
+                "title_color": "#1e293b",
+                "title_active_color": "#2563eb",
+                "tab_active_color": "#2563eb",
+                "content_background_color": "#ffffff",
+                "content_color": "#64748b",
+                "icon_color": "#64748b",
+                "icon_active_color": "#2563eb",
+                "typography_typography": "custom",
+                "typography_font_family": "DM Sans",
+                "typography_font_size": {
+                  "unit": "px",
+                  "size": 16
+                },
+                "typography_font_weight": "500",
+                "_margin": {
+                  "unit": "px",
+                  "top": "0",
+                  "right": "0",
+                  "bottom": "0",
+                  "left": "0",
+                  "isLinked": false
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cta-section",
+      "elType": "section",
+      "settings": {
+        "background_background": "gradient",
+        "background_color": "#1e3a8a",
+        "background_color_b": "#3b82f6",
+        "background_gradient_angle": {
+          "unit": "deg",
+          "size": 135
+        },
+        "padding": {
+          "unit": "px",
+          "top": "60",
+          "right": "20",
+          "bottom": "60",
+          "left": "20",
+          "isLinked": false
+        },
+        "border_radius": {
+          "unit": "px",
+          "top": "16",
+          "right": "16",
+          "bottom": "16",
+          "left": "16",
+          "isLinked": true
+        },
+        "margin": {
+          "unit": "px",
+          "top": "60",
+          "right": "20",
+          "bottom": "60",
+          "left": "20",
+          "isLinked": false
+        },
+        "content_width": {
+          "unit": "px",
+          "size": 900
+        }
+      },
+      "elements": [
+        {
+          "id": "cta-column",
+          "elType": "column",
+          "settings": {
+            "_column_size": 100
+          },
+          "elements": [
+            {
+              "id": "cta-title",
+              "elType": "widget",
+              "widgetType": "heading",
+              "settings": {
+                "title": "Still have questions?",
+                "align": "center",
+                "title_color": "#ffffff",
+                "typography_typography": "custom",
+                "typography_font_family": "DM Sans",
+                "typography_font_size": {
+                  "unit": "px",
+                  "size": 32
+                },
+                "typography_font_weight": "700"
+              }
+            },
+            {
+              "id": "cta-text",
+              "elType": "widget",
+              "widgetType": "text-editor",
+              "settings": {
+                "editor": "<p style=\"text-align: center; color: rgba(255,255,255,0.9); font-size: 18px; margin: 15px 0 25px;\">Can't find what you're looking for? Our support team is here to help.</p>",
+                "align": "center"
+              }
+            },
+            {
+              "id": "cta-button",
+              "elType": "widget",
+              "widgetType": "button",
+              "settings": {
+                "text": "Contact Support",
+                "link": {
+                  "url": "mailto:support@smartpropertywidget.com",
+                  "is_external": false,
+                  "nofollow": false
+                },
+                "align": "center",
+                "background_color": "#ffffff",
+                "button_text_color": "#1e3a8a",
+                "typography_typography": "custom",
+                "typography_font_family": "DM Sans",
+                "typography_font_size": {
+                  "unit": "px",
+                  "size": 16
+                },
+                "typography_font_weight": "600",
+                "border_radius": {
+                  "unit": "px",
+                  "top": "8",
+                  "right": "8",
+                  "bottom": "8",
+                  "left": "8",
+                  "isLinked": true
+                },
+                "text_padding": {
+                  "unit": "px",
+                  "top": "15",
+                  "right": "30",
+                  "bottom": "15",
+                  "left": "30",
+                  "isLinked": false
+                },
+                "button_background_hover_color": "#f1f5f9",
+                "hover_color": "#1e3a8a"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

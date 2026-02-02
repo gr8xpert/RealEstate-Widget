@@ -20,4 +20,5 @@ import './resources';
 import './pdf-button';
 import './back-button';
 import './video-embed';
+import './mortgage-calculator';
 import './property-detail-template';

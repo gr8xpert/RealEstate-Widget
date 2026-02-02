@@ -54,6 +54,7 @@ $propertyId = $data['propertyId'] ?? $data['property_id'] ?? '';
 
 // Get owner email - check multiple sources
 $ownerEmail = $data['ownerEmail'] ?? $data['owner_email'] ?? null;
+inquiryLog("OWNER EMAIL FROM REQUEST: " . ($ownerEmail ?: '(empty)'));
 
 // If no owner email provided, try to get from config
 if (!$ownerEmail) {
@@ -68,11 +69,14 @@ if (!$ownerEmail) {
             $clientDomain = preg_replace('/^www\./', '', $clientDomain);
             if ($clientDomain === $domain || $clientDomain === 'localhost') {
                 $ownerEmail = $config['owner_email'] ?? null;
+                inquiryLog("OWNER EMAIL FROM FALLBACK CONFIG: " . ($ownerEmail ?: '(empty)') . " for domain: $domain");
                 break;
             }
         }
     }
 }
+
+inquiryLog("FINAL OWNER EMAIL BEING USED: " . ($ownerEmail ?: '(empty)'));
 
 // Validate required fields
 if (empty($name) && empty($firstName)) {
@@ -184,14 +188,14 @@ $emailHtml = '
 // Email headers - use server domain for From to pass SPF/DKIM
 $headers = "MIME-Version: 1.0\r\n";
 $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
-$headers .= "From: RealtySoft <noreply@realtysoft.ai>\r\n";
+$headers .= "From: Smart Property Widget <noreply@smartpropertywidget.com>\r\n";
 $headers .= "Reply-To: $email\r\n";
 
 // Email subject
 $subject = "Property Inquiry: $propertyTitle" . ($propertyRef ? " (Ref: $propertyRef)" : "");
 
 // Send email to owner
-inquiryLog("OWNER MAIL: to=$ownerEmail, from=noreply@realtysoft.ai, reply-to=$email, subject=$subject");
+inquiryLog("OWNER MAIL: to=$ownerEmail, from=noreply@smartpropertywidget.com, reply-to=$email, subject=$subject");
 $success = mail($ownerEmail, $subject, $emailHtml, $headers);
 inquiryLog("OWNER MAIL RESULT: " . ($success ? 'TRUE' : 'FALSE'));
 
@@ -250,7 +254,7 @@ if ($success && $sendConfirmation) {
 
     $confirmHeaders = "MIME-Version: 1.0\r\n";
     $confirmHeaders .= "Content-Type: text/html; charset=UTF-8\r\n";
-    $confirmHeaders .= "From: RealtySoft <noreply@realtysoft.ai>\r\n";
+    $confirmHeaders .= "From: Smart Property Widget <noreply@smartpropertywidget.com>\r\n";
     $confirmHeaders .= "Reply-To: $ownerEmail\r\n";
 
     $confirmSubject = "Your Inquiry: $propertyTitle" . ($propertyRef ? " (Ref: $propertyRef)" : "");

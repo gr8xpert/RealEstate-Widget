@@ -22,6 +22,13 @@ declare const RealtySoftState: RealtySoftStateModule;
 declare const RealtySoftAPI: RealtySoftAPIModule;
 declare const RealtySoftLabels: RealtySoftLabelsModule;
 declare const RealtySoftAnalytics: RealtySoftAnalyticsModule;
+declare const RealtySoftLogger: { debug: (msg: string, ...args: unknown[]) => void } | undefined;
+
+const Logger = {
+  debug: (msg: string, ...args: unknown[]) => {
+    if (typeof RealtySoftLogger !== 'undefined') RealtySoftLogger.debug(msg, ...args);
+  }
+};
 
 // Declare external managers
 declare const WishlistManager: {
@@ -122,10 +129,10 @@ class RSPropertyGrid extends RSBaseComponent {
   private extractCardTemplate(): HTMLElement | null {
     // Check if there's a custom card template inside
     const customCard = this.element.querySelector('.rs_card');
-    console.log('[RSPropertyGrid] extractCardTemplate - element:', this.element.className);
-    console.log('[RSPropertyGrid] extractCardTemplate - found .rs_card:', !!customCard);
+    Logger.debug('[RSPropertyGrid] extractCardTemplate - element:', this.element.className);
+    Logger.debug('[RSPropertyGrid] extractCardTemplate - found .rs_card:', !!customCard);
     if (customCard) {
-      console.log('[RSPropertyGrid] extractCardTemplate - card classes:', customCard.className);
+      Logger.debug('[RSPropertyGrid] extractCardTemplate - card classes:', customCard.className);
       const template = customCard.cloneNode(true) as HTMLElement;
       customCard.remove();
       return template;
@@ -291,7 +298,7 @@ class RSPropertyGrid extends RSBaseComponent {
   private setupImageObserver(): void {
     // Check if IntersectionObserver is supported
     if (!('IntersectionObserver' in window)) {
-      console.log('[RSPropertyGrid] IntersectionObserver not supported, using fallback');
+      Logger.debug('[RSPropertyGrid] IntersectionObserver not supported, using fallback');
       return;
     }
 
@@ -410,12 +417,12 @@ class RSPropertyGrid extends RSBaseComponent {
   }
 
   private createCard(property: Property): HTMLElement {
-    console.log('[RSPropertyGrid] createCard - has cardTemplate:', !!this.cardTemplate);
+    Logger.debug('[RSPropertyGrid] createCard - has cardTemplate:', !!this.cardTemplate);
     if (this.cardTemplate) {
-      console.log('[RSPropertyGrid] createCard - using CUSTOM card template');
+      Logger.debug('[RSPropertyGrid] createCard - using CUSTOM card template');
       return this.createCustomCard(property);
     }
-    console.log('[RSPropertyGrid] createCard - using DEFAULT card');
+    Logger.debug('[RSPropertyGrid] createCard - using DEFAULT card');
     return this.createDefaultCard(property);
   }
 

@@ -53,5 +53,7 @@ void RSBaseComponent;
 // Sub-modules are accessible via RealtySoft.State, RealtySoft.API, etc.
 export default RealtySoft;
 
-// Version info
-console.log('[RealtySoft] Widget v3.0.0 loaded (Vite build)');
+// Version info (only in debug mode)
+if ((window as any).RealtySoftConfig?.debug) {
+  console.log('[RealtySoft] Widget v3.0.0 loaded (Vite build)');
+}

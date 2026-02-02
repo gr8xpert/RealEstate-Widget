@@ -15,6 +15,13 @@ import type {
 // Declare globals
 declare const RealtySoft: RealtySoftModule;
 declare const RealtySoftState: RealtySoftStateModule;
+declare const RealtySoftLogger: { debug: (msg: string, ...args: unknown[]) => void } | undefined;
+
+const Logger = {
+  debug: (msg: string, ...args: unknown[]) => {
+    if (typeof RealtySoftLogger !== 'undefined') RealtySoftLogger.debug(msg, ...args);
+  }
+};
 
 interface ExtendedPropertyType extends PropertyType {
   parent_id?: number | string | null;
@@ -139,8 +146,8 @@ class RSPropertyType extends RSBaseComponent {
 
     const filtered = allParents.filter(type => hasPropertiesOrChildren(type, this.propertyTypes));
 
-    console.log(`[RealtySoft] Property type parents: ${allParents.length} total, ${filtered.length} after filtering`);
-    console.log(`[RealtySoft] Filtered out types: ${allParents.filter(p => !filtered.includes(p)).map(p => `${p.name}(${p.property_count})`).join(', ')}`);
+    Logger.debug(`[RealtySoft] Property type parents: ${allParents.length} total, ${filtered.length} after filtering`);
+    Logger.debug(`[RealtySoft] Filtered out types: ${allParents.filter(p => !filtered.includes(p)).map(p => `${p.name}(${p.property_count})`).join(', ')}`);
 
     return filtered.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
   }

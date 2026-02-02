@@ -7496,6 +7496,17 @@ a[class*=" rs-"]:focus-visible {
     justify-content: center;
 }
 
+/* Sidebar Mortgage Calculator */
+.rs-template__mortgage-calculator {
+    width: 100%;
+    margin-top: 16px;
+}
+
+.rs-template__mortgage-calculator .rs-mortgage-btn {
+    width: 100%;
+    justify-content: center;
+}
+
 /* Sidebar Features Button */
 .rs-template__sidebar .rs-template__section--features-button {
     margin-bottom: 0;
@@ -16588,5 +16599,671 @@ a[class*=" rs-"]:focus-visible {
     .rs-ai-mode__examples button {
         font-size: var(--rs-font-size-xs);
         padding: var(--rs-spacing-xs) var(--rs-spacing-sm);
+    }
+}
+
+/* ==========================================================================
+   Page Builder Compatibility (Elementor, Divi, WPBakery, etc.)
+   ========================================================================== */
+
+/**
+ * AGGRESSIVE SVG Icon Fixes
+ * Page builders often hide or override SVG icons.
+ * Using maximum specificity and !important to ensure visibility.
+ */
+
+/* ========== GLOBAL SVG RESET FOR RS COMPONENTS ========== */
+.rs-property-grid svg,
+.rs-property-carousel svg,
+[class*="rs-template-card"] svg,
+[class*="rs-listing-template"] svg,
+.rs-card svg {
+    display: inline-flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    overflow: visible !important;
+    vertical-align: middle !important;
+    flex-shrink: 0 !important;
+    position: relative !important;
+    z-index: 1 !important;
+}
+
+/* ========== PROPERTY CARD SPECS (Beds, Baths, Area) ========== */
+/* Fix alignment - center icons with text */
+[class*="rs-template-card"] [class*="__specs"],
+[class*="rs-template-card"] [class*="__info"],
+[class*="rs-template-card"] [class*="__details"],
+.rs-card__specs,
+.rs-card__info {
+    display: flex !important;
+    align-items: center !important;
+    flex-wrap: wrap !important;
+    gap: 12px !important;
+}
+
+[class*="rs-template-card"] [class*="__spec"],
+[class*="rs-template-card"] [class*="__detail"],
+.rs-card__spec {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+}
+
+/* Spec icons - beds, baths, built area, plot */
+[class*="rs-template-card"] [class*="__spec"] svg,
+[class*="rs-template-card"] [class*="__specs"] svg,
+[class*="rs-template-card"] .rs_card_beds svg,
+[class*="rs-template-card"] .rs_card_baths svg,
+[class*="rs-template-card"] .rs_card_built svg,
+[class*="rs-template-card"] .rs_card_plot svg,
+.rs_card_beds svg,
+.rs_card_baths svg,
+.rs_card_built svg,
+.rs_card_plot svg {
+    display: inline-flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    width: 16px !important;
+    height: 16px !important;
+    min-width: 16px !important;
+    min-height: 16px !important;
+    stroke: currentColor !important;
+    fill: none !important;
+    vertical-align: middle !important;
+    flex-shrink: 0 !important;
+    margin-right: 4px !important;
+}
+
+/* ========== WISHLIST HEART ICON ========== */
+.rs_card_wishlist,
+.rs-card__wishlist,
+[class*="rs-template-card"] .rs_card_wishlist,
+[class*="rs-template-card"] .rs-card__wishlist {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    color: #ffffff !important;
+}
+
+/* Ensure the stroke is visible */
+[class*="rs-listing-template"] svg path,
+[class*="rs-listing-template"] svg line,
+[class*="rs-listing-template"] svg rect,
+[class*="rs-listing-template"] svg circle {
+    stroke: currentColor !important;
+    stroke-width: 2 !important;
+}
+
+.rs_card_wishlist svg,
+.rs-card__wishlist svg,
+[class*="rs-template-card"] .rs_card_wishlist svg,
+[class*="rs-template-card"] .rs-card__wishlist svg {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    width: 20px !important;
+    height: 20px !important;
+    min-width: 20px !important;
+    min-height: 20px !important;
+    overflow: visible !important;
+}
+
+/* Empty heart - ensure stroke is visible */
+.rs_card_wishlist svg path,
+.rs-card__wishlist svg path,
+[class*="rs-template-card"] .rs_card_wishlist svg path,
+[class*="rs-template-card"] .rs-card__wishlist svg path {
+    stroke: currentColor !important;
+    stroke-width: 2 !important;
+    fill: none !important;
+    visibility: visible !important;
+}
+
+/* Empty heart - gray color */
+.rs-card__wishlist:not(.rs-card__wishlist--active) svg path,
+.rs_card_wishlist:not(.rs-card__wishlist--active) svg path {
+    stroke: #64748b !important;
+}
+
+/* Active/Filled heart - red */
+.rs_card_wishlist.rs-card__wishlist--active svg path,
+.rs-card__wishlist--active svg path,
+[class*="rs-template-card"] .rs_card_wishlist.rs-card__wishlist--active svg path {
+    fill: #ef4444 !important;
+    stroke: #ef4444 !important;
+}
+
+/* ========== CAROUSEL NAVIGATION ARROWS ========== */
+.rs-card__nav,
+[class*="rs-template-card"] .rs-card__nav,
+.rs-card__carousel-nav,
+.rs-property-carousel__nav {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+.rs-card__nav svg,
+[class*="rs-template-card"] .rs-card__nav svg,
+.rs-card__carousel-nav svg,
+.rs-property-carousel__nav svg {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    width: 14px !important;
+    height: 14px !important;
+    min-width: 14px !important;
+    min-height: 14px !important;
+    stroke: currentColor !important;
+    stroke-width: 2.5px !important;
+    fill: none !important;
+    overflow: visible !important;
+}
+
+.rs-card__nav svg polyline,
+.rs-card__nav svg path,
+[class*="rs-template-card"] .rs-card__nav svg polyline,
+[class*="rs-template-card"] .rs-card__nav svg path {
+    stroke: currentColor !important;
+    stroke-width: 2.5px !important;
+    visibility: visible !important;
+}
+
+/* ========== IMAGE COUNT ICON ========== */
+[class*="rs-template-card"] [class*="__image-count"] svg,
+.rs-card__image-count svg {
+    display: inline-flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    width: 14px !important;
+    height: 14px !important;
+    stroke: currentColor !important;
+    fill: none !important;
+}
+
+/* ========== DETAIL PAGE SVG ICONS ========== */
+[class*="rs-detail"] svg {
+    display: inline-block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    vertical-align: middle !important;
+    flex-shrink: 0 !important;
+}
+
+/* ========== DETAIL PAGE BUTTONS - PROMINENT STYLE ========== */
+
+/* Features Button - Make prominent like mortgage */
+.rs-template__features-btn {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    padding: 14px 20px !important;
+    background: linear-gradient(135deg, var(--rs-primary-dark) 0%, var(--rs-primary) 100%) !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 10px !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+    box-shadow: 0 2px 8px rgba(0, 102, 204, 0.3) !important;
+}
+
+.rs-template__features-btn:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4) !important;
+}
+
+.rs-template__features-btn svg,
+.rs-template__features-btn-icon svg {
+    display: inline-flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    width: 18px !important;
+    height: 18px !important;
+    stroke: white !important;
+    fill: none !important;
+}
+
+.rs-template__features-btn-count {
+    background: rgba(255,255,255,0.2) !important;
+    color: white !important;
+}
+
+/* PDF Button - Make prominent */
+.rs-detail-pdf__btn {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    padding: 14px 20px !important;
+    background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%) !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 10px !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    text-decoration: none !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+    box-shadow: 0 2px 8px rgba(220, 38, 38, 0.3) !important;
+}
+
+.rs-detail-pdf__btn:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4) !important;
+    color: white !important;
+}
+
+.rs-detail-pdf__btn svg,
+.rs-detail-pdf__icon {
+    display: inline-flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    width: 18px !important;
+    height: 18px !important;
+    stroke: white !important;
+    color: white !important;
+    fill: none !important;
+}
+
+/* Share Buttons */
+.rs-detail-share__btn svg {
+    display: inline-flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    width: 18px !important;
+    height: 18px !important;
+}
+
+/* Features Modal */
+.rs-template__features-modal svg {
+    display: inline-flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+.rs-template__features-check {
+    stroke: #22c55e !important;
+}
+
+/* ========== PREVENT PAGE BUILDERS FROM HIDING SVG ========== */
+[class*="rs-"] svg:empty {
+    min-width: 1em !important;
+    min-height: 1em !important;
+}
+
+/* Force all RS SVG paths to be visible */
+[class*="rs-"] svg path,
+[class*="rs-"] svg line,
+[class*="rs-"] svg polyline,
+[class*="rs-"] svg circle,
+[class*="rs-"] svg rect {
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+/* ==========================================================================
+   Mortgage Calculator
+   ========================================================================== */
+
+/* Button */
+.rs-mortgage-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 20px;
+    background: linear-gradient(135deg, var(--rs-primary) 0%, var(--rs-primary-dark) 100%);
+    color: white;
+    border: none;
+    border-radius: var(--rs-border-radius);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--rs-transition);
+    box-shadow: var(--rs-shadow-sm);
+}
+
+.rs-mortgage-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--rs-shadow-md);
+    background: linear-gradient(135deg, var(--rs-primary-dark) 0%, var(--rs-primary) 100%);
+}
+
+.rs-mortgage-btn:active {
+    transform: translateY(0);
+}
+
+.rs-mortgage-btn svg {
+    display: inline-block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    width: 18px !important;
+    height: 18px !important;
+    flex-shrink: 0;
+    stroke: currentColor !important;
+}
+
+.rs-mortgage-btn svg rect,
+.rs-mortgage-btn svg path {
+    stroke: currentColor !important;
+}
+
+/* Modal */
+.rs-mortgage-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 999999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.rs-mortgage-modal--open {
+    opacity: 1;
+    visibility: visible;
+}
+
+.rs-mortgage-modal__backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+}
+
+.rs-mortgage-modal__container {
+    position: relative;
+    width: 100%;
+    max-width: 480px;
+    max-height: 90vh;
+    overflow-y: auto;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    transform: scale(0.95) translateY(20px);
+    transition: transform 0.3s ease;
+}
+
+.rs-mortgage-modal--open .rs-mortgage-modal__container {
+    transform: scale(1) translateY(0);
+}
+
+.rs-mortgage-modal__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--rs-gray-200);
+}
+
+.rs-mortgage-modal__header h3 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--rs-gray-900);
+}
+
+.rs-mortgage-modal__close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    background: var(--rs-gray-100);
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all var(--rs-transition);
+    font-size: 24px;
+    font-weight: 300;
+    color: var(--rs-gray-600);
+    line-height: 1;
+}
+
+.rs-mortgage-modal__close:hover {
+    background: var(--rs-gray-200);
+    color: var(--rs-gray-800);
+}
+
+.rs-mortgage-modal__body {
+    padding: 24px;
+}
+
+/* Form */
+.rs-mortgage-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.rs-mortgage-form__group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.rs-mortgage-form__group label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--rs-gray-700);
+}
+
+.rs-mortgage-form__row {
+    display: flex;
+    gap: 12px;
+}
+
+.rs-mortgage-form__input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.rs-mortgage-form__input-wrapper--flex {
+    flex: 1;
+}
+
+.rs-mortgage-form__input-wrapper--small {
+    width: 120px;
+}
+
+.rs-mortgage-form__currency {
+    position: absolute;
+    left: 5px;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--rs-gray-500);
+    pointer-events: none;
+    z-index: 1;
+}
+
+.rs-mortgage-form__suffix {
+    position: absolute;
+    right: 40px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--rs-gray-500);
+    pointer-events: none;
+}
+
+.rs-mortgage-form__input {
+    width: 100%;
+    padding: 14px 16px;
+    padding-left: 28px;
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--rs-gray-900);
+    background: var(--rs-gray-50);
+    border: 2px solid var(--rs-gray-200);
+    border-radius: 10px;
+    transition: all var(--rs-transition);
+}
+
+.rs-mortgage-form__input:focus {
+    outline: none;
+    border-color: var(--rs-primary);
+    background: white;
+    box-shadow: 0 0 0 4px var(--rs-primary-alpha-10);
+}
+
+.rs-mortgage-form__input--percent {
+    padding-left: 16px;
+    padding-right: 36px;
+    text-align: left;
+}
+
+.rs-mortgage-form__submit {
+    margin-top: 8px;
+    padding: 16px 24px;
+    background: linear-gradient(135deg, var(--rs-primary) 0%, var(--rs-primary-dark) 100%);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all var(--rs-transition);
+}
+
+.rs-mortgage-form__submit:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px var(--rs-primary-alpha-20);
+}
+
+.rs-mortgage-form__submit:active {
+    transform: translateY(0);
+}
+
+/* Results */
+.rs-mortgage-results {
+    margin-top: 24px;
+    padding-top: 24px;
+    border-top: 2px solid var(--rs-gray-100);
+}
+
+.rs-mortgage-results h4 {
+    margin: 0 0 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--rs-gray-500);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.rs-mortgage-results__monthly {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+    margin-bottom: 24px;
+}
+
+.rs-mortgage-results__currency {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--rs-gray-600);
+}
+
+.rs-mortgage-results__amount {
+    font-size: 48px;
+    font-weight: 800;
+    color: var(--rs-primary);
+    line-height: 1;
+}
+
+.rs-mortgage-results__period {
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--rs-gray-500);
+}
+
+.rs-mortgage-results__breakdown {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px;
+    background: var(--rs-gray-50);
+    border-radius: 12px;
+}
+
+.rs-mortgage-results__item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.rs-mortgage-results__item--total {
+    padding-top: 12px;
+    border-top: 1px solid var(--rs-gray-200);
+}
+
+.rs-mortgage-results__label {
+    font-size: 14px;
+    color: var(--rs-gray-600);
+}
+
+.rs-mortgage-results__value {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--rs-gray-900);
+}
+
+.rs-mortgage-results__item--total .rs-mortgage-results__label,
+.rs-mortgage-results__item--total .rs-mortgage-results__value {
+    font-weight: 700;
+    color: var(--rs-gray-900);
+}
+
+.rs-mortgage-results__disclaimer {
+    margin: 16px 0 0;
+    font-size: 12px;
+    color: var(--rs-gray-500);
+    line-height: 1.5;
+}
+
+/* Animation */
+.rs-mortgage-results--animate .rs-mortgage-results__amount {
+    animation: rs-mortgage-pop 0.4s ease-out;
+}
+
+@keyframes rs-mortgage-pop {
+    0% { transform: scale(0.8); opacity: 0; }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+/* Mobile Responsive */
+@media (max-width: 480px) {
+    .rs-mortgage-modal {
+        padding: 0;
+        align-items: flex-end;
+    }
+
+    .rs-mortgage-modal__container {
+        max-width: 100%;
+        max-height: 95vh;
+        border-radius: 20px 20px 0 0;
+    }
+
+    .rs-mortgage-modal--open .rs-mortgage-modal__container {
+        transform: translateY(0);
+    }
+
+    .rs-mortgage-form__row {
+        flex-direction: column;
+    }
+
+    .rs-mortgage-form__input-wrapper--small {
+        width: 100%;
+    }
+
+    .rs-mortgage-results__amount {
+        font-size: 36px;
     }
 }

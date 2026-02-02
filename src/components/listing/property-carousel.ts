@@ -23,6 +23,13 @@ declare const RealtySoft: RealtySoftModule;
 declare const RealtySoftState: RealtySoftStateModule;
 declare const RealtySoftAPI: RealtySoftAPIModule;
 declare const RealtySoftLabels: RealtySoftLabelsModule;
+declare const RealtySoftLogger: { debug: (msg: string, ...args: unknown[]) => void } | undefined;
+
+const Logger = {
+  debug: (msg: string, ...args: unknown[]) => {
+    if (typeof RealtySoftLogger !== 'undefined') RealtySoftLogger.debug(msg, ...args);
+  }
+};
 
 interface VisibleItem {
   property: Property;
@@ -72,7 +79,7 @@ class RSPropertyCarousel extends RSBaseComponent {
   }
 
   init(): void {
-    console.log('[RSPropertyCarousel] Initializing...');
+    Logger.debug('[RSPropertyCarousel] Initializing...');
 
     this.properties = (this.options as { properties?: Property[] }).properties || [];
     this.active = 0;
@@ -100,7 +107,7 @@ class RSPropertyCarousel extends RSBaseComponent {
     this.maxPrice = this.element.dataset.rsMaxPrice || null;
     this.minBeds = this.element.dataset.rsMinBeds || null;
 
-    console.log('[RSPropertyCarousel] Config:', {
+    Logger.debug('[RSPropertyCarousel] Config:', {
       autoPlay: this.autoPlay,
       interval: this.autoPlayInterval,
       limit: this.limit,
@@ -125,7 +132,7 @@ class RSPropertyCarousel extends RSBaseComponent {
     // Subscribe to language changes - reload properties with translated content
     // Carousel is independent and makes its own API calls, so we need to refetch
     this.subscribe('config.language', () => {
-      console.log('[RSPropertyCarousel] Language changed, reloading properties...');
+      Logger.debug('[RSPropertyCarousel] Language changed, reloading properties...');
       // Reset and reload properties with new language
       this.properties = [];
       this.active = 0;
@@ -377,7 +384,7 @@ class RSPropertyCarousel extends RSBaseComponent {
   }
 
   private async loadProperties(): Promise<void> {
-    console.log('[RSPropertyCarousel] Loading properties...');
+    Logger.debug('[RSPropertyCarousel] Loading properties...');
     this.showLoader();
 
     try {
@@ -401,9 +408,9 @@ class RSPropertyCarousel extends RSBaseComponent {
       if (this.maxPrice) params.price_max = this.maxPrice;
       if (this.minBeds) params.bedrooms_min = this.minBeds;
 
-      console.log('[RSPropertyCarousel] API params:', params);
+      Logger.debug('[RSPropertyCarousel] API params:', params);
       const result = await RealtySoftAPI.searchProperties(params);
-      console.log('[RSPropertyCarousel] API result:', result);
+      Logger.debug('[RSPropertyCarousel] API result:', result);
 
       if (result && result.data && result.data.length > 0) {
         this.properties = result.data;
@@ -415,10 +422,10 @@ class RSPropertyCarousel extends RSBaseComponent {
             const bOwn = b.is_own ? 1 : 0;
             return bOwn - aOwn; // Own properties first
           });
-          console.log('[RSPropertyCarousel] Sorted with own properties first');
+          Logger.debug('[RSPropertyCarousel] Sorted with own properties first');
         }
 
-        console.log('[RSPropertyCarousel] Loaded', this.properties.length, 'properties');
+        Logger.debug('[RSPropertyCarousel] Loaded', this.properties.length, 'properties');
 
         // For template 2 and 3, start at index 2 to show cards on both sides
         if ((this.variation === '2' || this.variation === '3') && this.properties.length > 4) {
@@ -429,7 +436,7 @@ class RSPropertyCarousel extends RSBaseComponent {
         this.renderItems();
         this.startAutoPlay();
       } else {
-        console.log('[RSPropertyCarousel] No properties returned');
+        Logger.debug('[RSPropertyCarousel] No properties returned');
         this.showEmptyState();
       }
     } catch (error) {
@@ -527,7 +534,7 @@ class RSPropertyCarousel extends RSBaseComponent {
       return;
     }
 
-    console.log('[RSPropertyCarousel] Rendering V1 with', this.properties.length, 'items, active:', this.active);
+    Logger.debug('[RSPropertyCarousel] Rendering V1 with', this.properties.length, 'items, active:', this.active);
 
     if (this.properties.length === 0) {
       this.showEmptyState();
@@ -555,7 +562,7 @@ class RSPropertyCarousel extends RSBaseComponent {
    */
   private renderItemsV2(): void {
     const maxVisibility = 3;
-    console.log('[RSPropertyCarousel] Rendering V2 with', this.properties.length, 'items, active:', this.active);
+    Logger.debug('[RSPropertyCarousel] Rendering V2 with', this.properties.length, 'items, active:', this.active);
 
     if (this.properties.length === 0) {
       this.showEmptyState();
@@ -710,7 +717,7 @@ class RSPropertyCarousel extends RSBaseComponent {
    */
   private renderItemsV3(): void {
     const maxVisibility = 3;
-    console.log('[RSPropertyCarousel] Rendering V3 with', this.properties.length, 'items, active:', this.active);
+    Logger.debug('[RSPropertyCarousel] Rendering V3 with', this.properties.length, 'items, active:', this.active);
 
     if (this.properties.length === 0) {
       this.showEmptyState();
@@ -871,7 +878,7 @@ class RSPropertyCarousel extends RSBaseComponent {
    * Render items for Template 4 (Fullwidth Image with Side Navigation)
    */
   private renderItemsV4(): void {
-    console.log('[RSPropertyCarousel] Rendering V4 with', this.properties.length, 'items, active:', this.active);
+    Logger.debug('[RSPropertyCarousel] Rendering V4 with', this.properties.length, 'items, active:', this.active);
 
     if (this.properties.length === 0) {
       this.showEmptyState();
@@ -964,7 +971,7 @@ class RSPropertyCarousel extends RSBaseComponent {
    * Render items for Template 5 (Tilted/Skewed Images)
    */
   private renderItemsV5(): void {
-    console.log('[RSPropertyCarousel] Rendering V5 with', this.properties.length, 'items, active:', this.active);
+    Logger.debug('[RSPropertyCarousel] Rendering V5 with', this.properties.length, 'items, active:', this.active);
 
     if (this.properties.length === 0) {
       this.showEmptyState();
@@ -1047,7 +1054,7 @@ class RSPropertyCarousel extends RSBaseComponent {
    * Render items for Template 6 (Dark Cards with Numbers)
    */
   private renderItemsV6(): void {
-    console.log('[RSPropertyCarousel] Rendering V6 with', this.properties.length, 'items, active:', this.active);
+    Logger.debug('[RSPropertyCarousel] Rendering V6 with', this.properties.length, 'items, active:', this.active);
 
     if (this.properties.length === 0) {
       this.showEmptyState();

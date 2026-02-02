@@ -12,6 +12,7 @@ A modular "Lego blocks" real estate property search widget system built with Typ
 |----------|-------------|
 | **README.md** | This file - quick start and overview |
 | **[DOCUMENTATION.md](DOCUMENTATION.md)** | Full technical documentation |
+| **[Designer Guide](docs/designer-guide.html)** | Visual guide for designers building websites |
 | **[DEVELOPMENT_STATUS.md](DEVELOPMENT_STATUS.md)** | What's done, what's pending |
 
 ---

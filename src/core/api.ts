@@ -21,6 +21,17 @@ import type {
 
 import { LRUCache } from './lru-cache';
 
+// Logger utility (set by controller)
+declare const RealtySoftLogger: {
+  debug: (message: string, ...args: unknown[]) => void;
+} | undefined;
+
+const Logger = {
+  debug: (msg: string, ...args: unknown[]) => {
+    if (typeof RealtySoftLogger !== 'undefined') RealtySoftLogger.debug(msg, ...args);
+  }
+};
+
 // Cache entry interface
 interface CacheEntry<T> {
   data: T;
@@ -406,7 +417,7 @@ const RealtySoftAPI: RealtySoftAPIModule = (function () {
 
     // Return existing promise if same request is already in-flight
     if (pendingRequests.has(requestKey)) {
-      console.log('[RealtySoft] Deduplicating request:', endpoint);
+      Logger.debug('[RealtySoft] Deduplicating request:', endpoint);
       return pendingRequests.get(requestKey) as Promise<T>;
     }
 
@@ -483,7 +494,7 @@ const RealtySoftAPI: RealtySoftAPIModule = (function () {
     // Check cache first
     const cached = CacheManager.get<APIResponse<Location[]>>(cacheKey, 'locations');
     if (cached) {
-      console.log('[RealtySoft] Locations loaded from cache');
+      Logger.debug('[RealtySoft] Locations loaded from cache');
       return cached;
     }
 
@@ -510,7 +521,7 @@ const RealtySoftAPI: RealtySoftAPIModule = (function () {
 
     // Cache the result
     CacheManager.set(cacheKey, result);
-    console.log('[RealtySoft] Locations cached');
+    Logger.debug('[RealtySoft] Locations cached');
 
     return result;
   }
@@ -524,7 +535,7 @@ const RealtySoftAPI: RealtySoftAPIModule = (function () {
     // Check cache first
     const cached = CacheManager.get<APIResponse<Location[]>>(cacheKey, 'locations');
     if (cached) {
-      console.log('[RealtySoft] Parent locations loaded from cache');
+      Logger.debug('[RealtySoft] Parent locations loaded from cache');
       return cached;
     }
 
@@ -537,7 +548,7 @@ const RealtySoftAPI: RealtySoftAPIModule = (function () {
 
     // Cache the result
     CacheManager.set(cacheKey, result);
-    console.log('[RealtySoft] Parent locations cached');
+    Logger.debug('[RealtySoft] Parent locations cached');
 
     return result;
   }
@@ -551,7 +562,7 @@ const RealtySoftAPI: RealtySoftAPIModule = (function () {
     // Check cache first
     const cached = CacheManager.get<APIResponse<Location[]>>(cacheKey, 'locations');
     if (cached) {
-      console.log('[RealtySoft] Child locations loaded from cache for parent:', parentId);
+      Logger.debug('[RealtySoft] Child locations loaded from cache for parent:', parentId);
       return cached;
     }
 
@@ -564,7 +575,7 @@ const RealtySoftAPI: RealtySoftAPIModule = (function () {
 
     // Cache the result
     CacheManager.set(cacheKey, result);
-    console.log('[RealtySoft] Child locations cached for parent:', parentId);
+    Logger.debug('[RealtySoft] Child locations cached for parent:', parentId);
 
     return result;
   }
@@ -592,7 +603,7 @@ const RealtySoftAPI: RealtySoftAPIModule = (function () {
     // Check cache first
     const cached = CacheManager.get<APIResponse<PropertyType[]>>(cacheKey, 'propertyTypes');
     if (cached) {
-      console.log('[RealtySoft] Property types loaded from cache');
+      Logger.debug('[RealtySoft] Property types loaded from cache');
       return cached;
     }
 
@@ -600,7 +611,7 @@ const RealtySoftAPI: RealtySoftAPIModule = (function () {
 
     // Cache the result
     CacheManager.set(cacheKey, result);
-    console.log('[RealtySoft] Property types cached');
+    Logger.debug('[RealtySoft] Property types cached');
 
     return result;
   }
@@ -614,7 +625,7 @@ const RealtySoftAPI: RealtySoftAPIModule = (function () {
     // Check cache first
     const cached = CacheManager.get<APIResponse<Feature[]>>(cacheKey, 'features');
     if (cached) {
-      console.log('[RealtySoft] Features loaded from cache');
+      Logger.debug('[RealtySoft] Features loaded from cache');
       return cached;
     }
 
@@ -622,7 +633,7 @@ const RealtySoftAPI: RealtySoftAPIModule = (function () {
 
     // Cache the result
     CacheManager.set(cacheKey, result);
-    console.log('[RealtySoft] Features cached');
+    Logger.debug('[RealtySoft] Features cached');
 
     return result;
   }
@@ -636,7 +647,7 @@ const RealtySoftAPI: RealtySoftAPIModule = (function () {
     // Check cache first
     const cached = CacheManager.get<Record<string, string>>(cacheKey, 'labels');
     if (cached) {
-      console.log('[RealtySoft] Labels loaded from cache');
+      Logger.debug('[RealtySoft] Labels loaded from cache');
       return cached;
     }
 
@@ -647,7 +658,7 @@ const RealtySoftAPI: RealtySoftAPIModule = (function () {
       const prefetched = await prefetch.labels;
       delete prefetch.labels; // Consume once
       if (prefetched) {
-        console.log('[RealtySoft] Labels loaded from PHP prefetch');
+        Logger.debug('[RealtySoft] Labels loaded from PHP prefetch');
         result = prefetched;
       } else {
         result = await request<Record<string, string>>('v1/plugin_labels');
@@ -658,7 +669,7 @@ const RealtySoftAPI: RealtySoftAPIModule = (function () {
 
     // Cache the result
     CacheManager.set(cacheKey, result);
-    console.log('[RealtySoft] Labels cached');
+    Logger.debug('[RealtySoft] Labels cached');
 
     return result;
   }
@@ -1016,7 +1027,7 @@ const RealtySoftAPI: RealtySoftAPIModule = (function () {
     // Check cache
     const cached = CacheManager.get<APIResponse<Property[]>>(cacheKey, 'search');
     if (cached) {
-      console.log('[RealtySoft] Search results from cache');
+      Logger.debug('[RealtySoft] Search results from cache');
       return cached;
     }
 
@@ -1036,7 +1047,7 @@ const RealtySoftAPI: RealtySoftAPIModule = (function () {
       });
       // Cache search results
       CacheManager.set(cacheKey, normalizedResult);
-      console.log('[RealtySoft] Search results cached');
+      Logger.debug('[RealtySoft] Search results cached');
     }
 
     return normalizedResult;
@@ -1092,7 +1103,7 @@ const RealtySoftAPI: RealtySoftAPIModule = (function () {
         const actualRef = (propData?.ref || propData?.ref_no || propData?.reference || '').toLowerCase();
 
         if (actualRef === requestedRef) {
-          console.log('[RealtySoft] Property loaded from PHP prefetch:', requestedRef);
+          Logger.debug('[RealtySoft] Property loaded from PHP prefetch:', requestedRef);
           result = prefetchedData;
         } else {
           console.warn('[RealtySoft] Prefetch data mismatch - expected:', requestedRef, 'got:', actualRef, '- fetching from API');
@@ -1107,7 +1118,7 @@ const RealtySoftAPI: RealtySoftAPIModule = (function () {
     } else {
       // Clear stale prefetch if ref doesn't match
       if (prefetch?.property && isRef && prefetchRef !== requestedRef) {
-        console.log('[RealtySoft] Clearing stale prefetch - expected:', requestedRef, 'prefetch has:', prefetchRef);
+        Logger.debug('[RealtySoft] Clearing stale prefetch - expected:', requestedRef, 'prefetch has:', prefetchRef);
         delete (window as any).__rsPrefetch;
       }
       const params = isRef ? { ref_no: idOrRef } : { id: idOrRef };
@@ -1142,7 +1153,7 @@ const RealtySoftAPI: RealtySoftAPIModule = (function () {
   ): Promise<{ data: Property; fromCache?: boolean }> {
     const cached = getCachedProperty(id);
     if (cached && !options.forceRefresh) {
-      console.log('[RealtySoft] Property loaded from cache:', id);
+      Logger.debug('[RealtySoft] Property loaded from cache:', id);
       if (!options.skipBackgroundRefresh) {
         fetchAndCacheProperty(id, false).catch(() => {});
       }
@@ -1161,7 +1172,7 @@ const RealtySoftAPI: RealtySoftAPIModule = (function () {
   ): Promise<{ data: Property; fromCache?: boolean }> {
     const cached = getCachedProperty(ref, true);
     if (cached && !options.forceRefresh) {
-      console.log('[RealtySoft] Property loaded from cache (ref):', ref);
+      Logger.debug('[RealtySoft] Property loaded from cache (ref):', ref);
       if (!options.skipBackgroundRefresh) {
         fetchAndCacheProperty(ref, true).catch(() => {});
       }
@@ -1180,7 +1191,7 @@ const RealtySoftAPI: RealtySoftAPIModule = (function () {
 
     try {
       await fetchAndCacheProperty(idOrRef, isRef);
-      console.log('[RealtySoft] Prefetched property:', idOrRef);
+      Logger.debug('[RealtySoft] Prefetched property:', idOrRef);
     } catch (e) {
       // Silently ignore prefetch errors
     }
@@ -1273,7 +1284,7 @@ const RealtySoftAPI: RealtySoftAPIModule = (function () {
         }
       }
       keysToRemove.forEach(key => localStorage.removeItem(key));
-      console.log('[RealtySoft API] Cleared', keysToRemove.length, 'property cache entries from localStorage');
+      Logger.debug('[RealtySoft API] Cleared', keysToRemove.length, 'property cache entries from localStorage');
     } catch (e) {
       console.warn('[RealtySoft API] Error clearing property cache from localStorage:', e);
     }
@@ -1290,7 +1301,7 @@ const RealtySoftAPI: RealtySoftAPIModule = (function () {
       }
     });
     memoryKeysToRemove.forEach(key => memoryCache.delete(key));
-    console.log('[RealtySoft API] Cleared', memoryKeysToRemove.length, 'property cache entries from memory');
+    Logger.debug('[RealtySoft API] Cleared', memoryKeysToRemove.length, 'property cache entries from memory');
   }
 
   // Public API

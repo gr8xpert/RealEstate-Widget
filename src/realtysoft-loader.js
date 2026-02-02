@@ -82,7 +82,10 @@
         script.async = true;
 
         script.onload = function() {
-            console.log('[RealtySoft] Widget v3.0 loaded (cache key: ' + version + ')');
+            // Only log in debug mode
+            if (window.RealtySoftConfig && window.RealtySoftConfig.debug) {
+                console.log('[RealtySoft] Widget v3.0 loaded (cache key: ' + version + ')');
+            }
             document.dispatchEvent(new CustomEvent('realtysoft:loader-complete'));
         };
 

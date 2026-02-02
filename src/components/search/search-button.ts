@@ -17,6 +17,13 @@ import type {
 declare const RealtySoft: RealtySoftModule;
 declare const RealtySoftState: RealtySoftStateModule;
 declare const RealtySoftAPI: RealtySoftAPIModule;
+declare const RealtySoftLogger: { debug: (msg: string, ...args: unknown[]) => void } | undefined;
+
+const Logger = {
+  debug: (msg: string, ...args: unknown[]) => {
+    if (typeof RealtySoftLogger !== 'undefined') RealtySoftLogger.debug(msg, ...args);
+  }
+};
 
 class RSSearchButton extends RSBaseComponent {
   private isLoading: boolean = false;
@@ -49,7 +56,7 @@ class RSSearchButton extends RSBaseComponent {
 
     // Subscribe to filter changes to update count
     this.subscribe<FilterState>('filters', (filters, oldValue, path) => {
-      console.log('[RealtySoft] Search button: filters changed', { path, filters });
+      Logger.debug('[RealtySoft] Search button: filters changed', { path, filters });
       this.fetchCount();
     });
 
@@ -109,9 +116,9 @@ class RSSearchButton extends RSBaseComponent {
         const params = RealtySoftState.getSearchParams() as unknown as Record<string, unknown>;
         params.limit = 1; // Only need count, not actual results
         params.page = 1;
-        console.log('[RealtySoft] Search button: fetching count with params', JSON.stringify(params));
+        Logger.debug('[RealtySoft] Search button: fetching count with params', JSON.stringify(params));
         const result = await RealtySoftAPI.searchProperties(params);
-        console.log('[RealtySoft] Search button: API result', result);
+        Logger.debug('[RealtySoft] Search button: API result', result);
 
         // Handle different API response formats for total count
         const resultAny = result as unknown as Record<string, unknown>;
@@ -123,7 +130,7 @@ class RSSearchButton extends RSBaseComponent {
           (resultAny.total_results as number) ||
           (result.data ? result.data.length : 0) ||
           0;
-        console.log('[RealtySoft] Search button: count =', this.propertyCount);
+        Logger.debug('[RealtySoft] Search button: count =', this.propertyCount);
         this.updateCountDisplay();
       } catch (e) {
         console.warn('Could not fetch property count:', e);

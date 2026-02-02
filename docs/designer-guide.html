@@ -1,0 +1,3679 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Property Widget - Documentation</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --primary-light: #a5b4fc;
+            --secondary: #64748b;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --bg: #fafbfc;
+            --bg-card: #ffffff;
+            --bg-code: #0f172a;
+            --text: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --sidebar-width: 280px;
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+            --shadow-md: 0 4px 16px rgba(0,0,0,0.06);
+            --shadow-lg: 0 12px 40px rgba(0,0,0,0.08);
+            --radius: 12px;
+            --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            font-size: 15px;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* Reading Progress Bar */
+        .progress-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 0%;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary), var(--primary-light));
+            z-index: 1000;
+            transition: width 0.1s linear;
+        }
+
+        /* Back to Top Button */
+        .back-to-top {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 48px;
+            height: 48px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 50%;
+            cursor: pointer;
+            z-index: 200;
+            box-shadow: var(--shadow-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(20px);
+            transition: all var(--transition);
+        }
+
+        .back-to-top.visible {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .back-to-top:hover {
+            background: var(--primary);
+            border-color: var(--primary);
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .back-to-top:hover svg {
+            stroke: #fff;
+        }
+
+        .back-to-top svg {
+            stroke: var(--text);
+            transition: stroke var(--transition);
+        }
+
+        /* Keyboard Hint */
+        .kbd {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 22px;
+            height: 22px;
+            padding: 0 6px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            font-weight: 500;
+            color: var(--text-muted);
+            box-shadow: 0 1px 0 var(--border);
+        }
+
+        /* Sidebar */
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: var(--sidebar-width);
+            height: 100vh;
+            background: var(--bg-card);
+            border-right: 1px solid var(--border);
+            overflow-y: auto;
+            overflow-x: hidden;
+            z-index: 100;
+            padding: 24px 0;
+            scrollbar-width: thin;
+            scrollbar-color: var(--border) transparent;
+        }
+
+        .sidebar::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .sidebar::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 3px;
+        }
+
+        .sidebar-header {
+            padding: 0 20px 20px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 16px;
+        }
+
+        .sidebar-logo {
+            font-size: 1.125rem;
+            font-weight: 700;
+            color: var(--primary);
+            letter-spacing: -0.02em;
+        }
+
+        .sidebar-version {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        .sidebar-search {
+            padding: 0 16px 16px;
+        }
+
+        .search-wrapper {
+            position: relative;
+        }
+
+        .search-wrapper svg {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            stroke: var(--text-muted);
+            pointer-events: none;
+            transition: stroke var(--transition);
+        }
+
+        .sidebar-search input {
+            width: 100%;
+            padding: 10px 12px 10px 38px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-family: inherit;
+            outline: none;
+            background: var(--bg);
+            transition: all var(--transition);
+        }
+
+        .sidebar-search input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .sidebar-search input:focus {
+            border-color: var(--primary);
+            background: var(--bg-card);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        .sidebar-search input:focus + svg,
+        .search-wrapper:focus-within svg {
+            stroke: var(--primary);
+        }
+
+        .search-hint {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            gap: 2px;
+            opacity: 0.7;
+            pointer-events: none;
+        }
+
+        .nav-section {
+            margin-bottom: 8px;
+        }
+
+        .nav-section-title {
+            padding: 12px 20px 8px;
+            font-size: 0.6875rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-muted);
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 9px 20px;
+            color: var(--text);
+            text-decoration: none;
+            font-size: 0.875rem;
+            font-weight: 450;
+            transition: all var(--transition);
+            position: relative;
+        }
+
+        .nav-link::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: var(--primary);
+            transform: scaleY(0);
+            transition: transform var(--transition);
+        }
+
+        .nav-link:hover {
+            background: var(--bg);
+            color: var(--primary);
+        }
+
+        .nav-link.active {
+            background: rgba(99, 102, 241, 0.08);
+            color: var(--primary);
+            font-weight: 500;
+        }
+
+        .nav-link.active::before {
+            transform: scaleY(1);
+        }
+
+        .nav-link-sub {
+            padding-left: 36px;
+            font-size: 0.8125rem;
+            font-weight: 400;
+            color: var(--text-muted);
+        }
+
+        .nav-link-sub:hover {
+            color: var(--primary);
+        }
+
+        /* Main Content */
+        .main {
+            margin-left: var(--sidebar-width);
+            padding: 48px 64px 80px;
+            max-width: 960px;
+        }
+
+        /* Sections */
+        section {
+            margin-bottom: 72px;
+            scroll-margin-top: 32px;
+            animation: fadeInUp 0.4s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(12px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        h1 {
+            font-size: 2.75rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: var(--text);
+            letter-spacing: -0.03em;
+            line-height: 1.2;
+        }
+
+        h2 {
+            font-size: 1.625rem;
+            font-weight: 600;
+            margin-bottom: 24px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid var(--border);
+            color: var(--text);
+            letter-spacing: -0.02em;
+            position: relative;
+        }
+
+        h2::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            bottom: -2px;
+            width: 48px;
+            height: 2px;
+            background: var(--primary);
+        }
+
+        h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin: 36px 0 16px;
+            color: var(--text);
+            letter-spacing: -0.01em;
+        }
+
+        h4 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin: 24px 0 12px;
+            color: var(--text);
+        }
+
+        p {
+            margin-bottom: 16px;
+            color: var(--text);
+        }
+
+        .subtitle {
+            font-size: 1.125rem;
+            color: var(--text-muted);
+            margin-bottom: 36px;
+            line-height: 1.7;
+        }
+
+        /* Cards */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .card-title {
+            font-weight: 600;
+            font-size: 1rem;
+        }
+
+        /* Code Blocks */
+        .code-block {
+            position: relative;
+            background: var(--bg-code);
+            border-radius: var(--radius);
+            margin: 20px 0;
+            overflow: hidden;
+            box-shadow: var(--shadow-md);
+        }
+
+        .code-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            background: rgba(255, 255, 255, 0.03);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .code-lang {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.6875rem;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            font-weight: 500;
+        }
+
+        .copy-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: #94a3b8;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: all var(--transition);
+        }
+
+        .copy-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.15);
+            color: #fff;
+            transform: translateY(-1px);
+        }
+
+        .copy-btn:active {
+            transform: translateY(0);
+        }
+
+        .copy-btn.copied {
+            background: var(--success);
+            border-color: var(--success);
+            color: #fff;
+        }
+
+        pre {
+            margin: 0;
+            padding: 20px;
+            overflow-x: auto;
+        }
+
+        code {
+            font-family: 'JetBrains Mono', 'SF Mono', monospace;
+            font-size: 0.8125rem;
+            line-height: 1.6;
+            color: #e2e8f0;
+        }
+
+        .inline-code {
+            background: rgba(99, 102, 241, 0.1);
+            color: var(--primary);
+            padding: 3px 7px;
+            border-radius: 5px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8125rem;
+            font-weight: 500;
+        }
+
+        /* Tables */
+        .table-wrapper {
+            overflow-x: auto;
+            margin: 20px 0;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            background: var(--bg-card);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.875rem;
+        }
+
+        th, td {
+            padding: 14px 18px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            background: var(--bg);
+            font-weight: 600;
+            color: var(--text);
+            font-size: 0.8125rem;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tbody tr {
+            transition: background var(--transition);
+        }
+
+        tbody tr:hover {
+            background: rgba(99, 102, 241, 0.03);
+        }
+
+        /* Badges */
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .badge-primary {
+            background: rgba(37, 99, 235, 0.1);
+            color: var(--primary);
+        }
+
+        .badge-success {
+            background: rgba(34, 197, 94, 0.1);
+            color: var(--success);
+        }
+
+        .badge-warning {
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--warning);
+        }
+
+        /* Alerts */
+        .alert {
+            padding: 18px 22px;
+            border-radius: var(--radius);
+            margin: 24px 0;
+            border-left: 4px solid;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .alert::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, currentColor, transparent);
+            opacity: 0.1;
+        }
+
+        .alert-info {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.06) 0%, rgba(99, 102, 241, 0.02) 100%);
+            border-color: var(--primary);
+        }
+
+        .alert-warning {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.06) 0%, rgba(245, 158, 11, 0.02) 100%);
+            border-color: var(--warning);
+        }
+
+        .alert-success {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.06) 0%, rgba(16, 185, 129, 0.02) 100%);
+            border-color: var(--success);
+        }
+
+        .alert-title {
+            font-weight: 600;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Component Preview */
+        .component-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 16px;
+            margin: 24px 0;
+        }
+
+        .component-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px;
+            transition: all var(--transition);
+            cursor: default;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .component-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary), var(--primary-light));
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform var(--transition);
+        }
+
+        .component-card:hover {
+            border-color: var(--primary-light);
+            box-shadow: var(--shadow-md);
+            transform: translateY(-2px);
+        }
+
+        .component-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .component-name {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--primary);
+            margin-bottom: 8px;
+        }
+
+        .component-desc {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+            line-height: 1.5;
+        }
+
+        .component-variations {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.6875rem;
+            color: var(--text-muted);
+            background: var(--bg);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+
+        /* Collapsible */
+        .collapsible {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin: 15px 0;
+            overflow: hidden;
+        }
+
+        .collapsible-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            background: var(--bg);
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .collapsible-header:hover {
+            background: #f1f5f9;
+        }
+
+        .collapsible-title {
+            font-weight: 600;
+            font-size: 0.9375rem;
+        }
+
+        .collapsible-icon {
+            transition: transform 0.2s;
+        }
+
+        .collapsible.open .collapsible-icon {
+            transform: rotate(180deg);
+        }
+
+        .collapsible-content {
+            display: none;
+            padding: 20px;
+            background: var(--bg-card);
+        }
+
+        .collapsible.open .collapsible-content {
+            display: block;
+        }
+
+        /* Tabs */
+        .tabs {
+            margin: 20px 0;
+        }
+
+        .tab-buttons {
+            display: flex;
+            border-bottom: 2px solid var(--border);
+            margin-bottom: 20px;
+        }
+
+        .tab-btn {
+            padding: 10px 20px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-muted);
+            margin-bottom: -2px;
+            transition: all 0.15s;
+        }
+
+        .tab-btn:hover {
+            color: var(--text);
+        }
+
+        .tab-btn.active {
+            color: var(--primary);
+            border-bottom: 2px solid var(--primary);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Lists */
+        ul, ol {
+            margin: 15px 0;
+            padding-left: 25px;
+        }
+
+        li {
+            margin-bottom: 8px;
+        }
+
+        /* Mobile Sidebar Toggle */
+        .mobile-toggle {
+            display: none;
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            z-index: 200;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        /* Template Preview Grid */
+        .template-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 16px;
+            margin: 24px 0;
+        }
+
+        .template-card {
+            display: block;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+            transition: all var(--transition);
+            text-decoration: none;
+            color: inherit;
+            position: relative;
+        }
+
+        .template-card::after {
+            content: '↗';
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            width: 28px;
+            height: 28px;
+            background: rgba(255,255,255,0.95);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            opacity: 0;
+            transform: translate(4px, -4px);
+            transition: all var(--transition);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .template-card:hover {
+            border-color: var(--primary);
+            box-shadow: var(--shadow-lg);
+            transform: translateY(-4px);
+        }
+
+        .template-card:hover::after {
+            opacity: 1;
+            transform: translate(0, 0);
+        }
+
+        .template-preview {
+            height: 100px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 1.75rem;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .template-preview::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg, transparent 50%, rgba(0,0,0,0.1) 100%);
+        }
+
+        .template-info {
+            padding: 14px 16px;
+        }
+
+        .template-name {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: var(--primary);
+            margin-bottom: 4px;
+        }
+
+        .template-desc {
+            font-size: 0.8125rem;
+            color: var(--text-muted);
+            line-height: 1.4;
+        }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            .sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                box-shadow: none;
+            }
+
+            .sidebar.open {
+                transform: translateX(0);
+                box-shadow: var(--shadow-lg);
+            }
+
+            .main {
+                margin-left: 0;
+                padding: 32px 20px 100px;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+
+            h2 {
+                font-size: 1.375rem;
+            }
+
+            .mobile-toggle {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .search-hint {
+                display: none;
+            }
+
+            .back-to-top {
+                bottom: 90px;
+                right: 20px;
+            }
+
+            .component-grid,
+            .template-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .main {
+                padding: 24px 16px 100px;
+            }
+
+            .code-block {
+                border-radius: 8px;
+                margin-left: -16px;
+                margin-right: -16px;
+            }
+
+            .table-wrapper {
+                margin-left: -16px;
+                margin-right: -16px;
+                border-radius: 0;
+                border-left: none;
+                border-right: none;
+            }
+        }
+
+        /* Syntax Highlighting (simple) */
+        .hljs-keyword { color: #c792ea; }
+        .hljs-string { color: #c3e88d; }
+        .hljs-comment { color: #546e7a; }
+        .hljs-tag { color: #89ddff; }
+        .hljs-attr { color: #ffcb6b; }
+        .hljs-value { color: #c3e88d; }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--secondary);
+        }
+
+        /* Quick Reference Chip */
+        .quick-ref {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 5px 10px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            font-size: 0.75rem;
+            margin: 3px;
+        }
+
+        .quick-ref code {
+            color: var(--primary);
+            font-size: 0.75rem;
+        }
+
+        /* Collapsible Enhanced */
+        .collapsible {
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            margin: 16px 0;
+            overflow: hidden;
+            background: var(--bg-card);
+            transition: box-shadow var(--transition);
+        }
+
+        .collapsible:hover {
+            box-shadow: var(--shadow-sm);
+        }
+
+        .collapsible-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 20px;
+            background: var(--bg);
+            cursor: pointer;
+            user-select: none;
+            transition: background var(--transition);
+        }
+
+        .collapsible-header:hover {
+            background: #eef2f6;
+        }
+
+        .collapsible-title {
+            font-weight: 600;
+            font-size: 0.9375rem;
+        }
+
+        .collapsible-icon {
+            width: 20px;
+            height: 20px;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            color: var(--text-muted);
+        }
+
+        .collapsible.open .collapsible-icon {
+            transform: rotate(180deg);
+        }
+
+        .collapsible-content {
+            display: none;
+            padding: 20px;
+            background: var(--bg-card);
+            border-top: 1px solid var(--border);
+        }
+
+        .collapsible.open .collapsible-content {
+            display: block;
+            animation: slideDown 0.3s ease-out;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-8px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Lists Enhanced */
+        ul, ol {
+            margin: 16px 0;
+            padding-left: 24px;
+        }
+
+        li {
+            margin-bottom: 10px;
+            position: relative;
+        }
+
+        ul li::marker {
+            color: var(--primary);
+        }
+
+        /* Selection */
+        ::selection {
+            background: rgba(99, 102, 241, 0.2);
+            color: var(--text);
+        }
+
+        /* Focus Visible */
+        :focus-visible {
+            outline: 2px solid var(--primary);
+            outline-offset: 2px;
+        }
+
+        /* Mobile Toggle Enhanced */
+        .mobile-toggle {
+            display: none;
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            width: 56px;
+            height: 56px;
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            z-index: 200;
+            box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4);
+            transition: all var(--transition);
+        }
+
+        .mobile-toggle:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 24px rgba(99, 102, 241, 0.5);
+        }
+
+        .mobile-toggle:active {
+            transform: scale(0.95);
+        }
+
+        /* Overlay for mobile sidebar */
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.4);
+            z-index: 99;
+            opacity: 0;
+            transition: opacity 0.3s;
+            backdrop-filter: blur(2px);
+        }
+
+        .sidebar-overlay.visible {
+            display: block;
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <!-- Reading Progress Bar -->
+    <div class="progress-bar" id="progressBar"></div>
+
+    <!-- Back to Top Button -->
+    <button class="back-to-top" id="backToTop" title="Back to top (Press T)">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 15l-6-6-6 6"/>
+        </svg>
+    </button>
+
+    <!-- Sidebar Overlay -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    <!-- Sidebar Navigation -->
+    <nav class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo">Smart Property Widget</div>
+            <div class="sidebar-version">Guide</div>
+        </div>
+
+        <div class="sidebar-search">
+            <div class="search-wrapper">
+                <input type="text" id="searchInput" placeholder="Search..." onkeyup="filterNav()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <path d="M21 21l-4.35-4.35"></path>
+                </svg>
+                <div class="search-hint">
+                    <span class="kbd">/</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-section-title">Getting Started</div>
+            <a href="#getting-started" class="nav-link">Quick Setup</a>
+            <a href="#configuration" class="nav-link">Configuration</a>
+            <a href="#wordpress" class="nav-link">WordPress Integration</a>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-section-title">Search Components</div>
+            <a href="#search-components" class="nav-link">Overview</a>
+            <a href="#rs_location" class="nav-link nav-link-sub">Location</a>
+            <a href="#rs_listing_type" class="nav-link nav-link-sub">Listing Type</a>
+            <a href="#rs_property_type" class="nav-link nav-link-sub">Property Type</a>
+            <a href="#rs_bedrooms" class="nav-link nav-link-sub">Bedrooms</a>
+            <a href="#rs_bathrooms" class="nav-link nav-link-sub">Bathrooms</a>
+            <a href="#rs_price" class="nav-link nav-link-sub">Price</a>
+            <a href="#rs_built_area" class="nav-link nav-link-sub">Built Area</a>
+            <a href="#rs_plot_size" class="nav-link nav-link-sub">Plot Size</a>
+            <a href="#rs_features" class="nav-link nav-link-sub">Features</a>
+            <a href="#rs_reference" class="nav-link nav-link-sub">Reference</a>
+            <a href="#search-buttons" class="nav-link nav-link-sub">Search/Reset Buttons</a>
+            <a href="#search-example" class="nav-link nav-link-sub">Complete Example</a>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-section-title">Search Templates</div>
+            <a href="#search-templates" class="nav-link">Pre-built Templates</a>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-section-title">Listing Components</div>
+            <a href="#listing-components" class="nav-link">Overview</a>
+            <a href="#rs_property_grid" class="nav-link nav-link-sub">Property Grid</a>
+            <a href="#rs_property_carousel" class="nav-link nav-link-sub">Property Carousel</a>
+            <a href="#rs_pagination" class="nav-link nav-link-sub">Pagination</a>
+            <a href="#listing-utilities" class="nav-link nav-link-sub">Sort, Count, Toggle</a>
+            <a href="#rs_map_view" class="nav-link nav-link-sub">Map View</a>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-section-title">Listing Templates</div>
+            <a href="#listing-templates" class="nav-link">Card Styles (12)</a>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-section-title">Property Detail</div>
+            <a href="#detail-components" class="nav-link">Overview</a>
+            <a href="#detail-gallery" class="nav-link nav-link-sub">Gallery</a>
+            <a href="#detail-info" class="nav-link nav-link-sub">Info Components</a>
+            <a href="#detail-agent" class="nav-link nav-link-sub">Agent Card</a>
+            <a href="#detail-form" class="nav-link nav-link-sub">Inquiry Form</a>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-section-title">Utility Components</div>
+            <a href="#wishlist" class="nav-link">Wishlist System</a>
+            <a href="#language-selector" class="nav-link">Language Selector</a>
+            <a href="#share-buttons" class="nav-link">Share Buttons</a>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-section-title">Advanced</div>
+            <a href="#filter-locking" class="nav-link">Filter Locking</a>
+            <a href="#config-reference" class="nav-link">Config Reference</a>
+            <a href="#troubleshooting" class="nav-link">Troubleshooting</a>
+        </div>
+    </nav>
+
+    <!-- Mobile Toggle Button -->
+    <button class="mobile-toggle" onclick="toggleSidebar()">
+        <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M4 6h16M4 12h16M4 18h16"/>
+        </svg>
+    </button>
+
+    <!-- Main Content -->
+    <main class="main">
+        <!-- Hero Section -->
+        <section id="intro">
+            <h1>Smart Property Widget Documentation</h1>
+            <p class="subtitle">Complete reference for building property listing websites with RealtySoft components</p>
+
+            <div class="alert alert-info">
+                <div class="alert-title">Welcome,</div>
+                <p>This guide covers all components, templates, and configuration options. Use the sidebar to navigate, or search for specific components.</p>
+            </div>
+
+            <h3>What You'll Build</h3>
+            <ul>
+                <li><strong>Search pages</strong> - Filter properties by location, price, type, and more</li>
+                <li><strong>Listing pages</strong> - Display properties in grids, lists, or carousels</li>
+                <li><strong>Detail pages</strong> - Full property information with galleries and forms</li>
+                <li><strong>Wishlist pages</strong> - Let users save and compare favorites</li>
+            </ul>
+        </section>
+
+        <!-- Getting Started -->
+        <section id="getting-started">
+            <h2>Getting Started</h2>
+
+            <h3>Quick Setup</h3>
+            <p>Add the RealtySoft loader script to your page. It automatically loads all required CSS and JavaScript files.</p>
+
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">HTML</span>
+                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code>&lt;!-- Add before closing &lt;/body&gt; tag --&gt;
+&lt;script src="https://smartpropertywidget.com/spw/dist/realtysoft-loader.min.js"&gt;&lt;/script&gt;</code></pre>
+            </div>
+
+            <p>The loader script:</p>
+            <ul>
+                <li>Automatically loads both CSS and JS files</li>
+                <li>Uses hourly cache busting for updates</li>
+                <li>Prevents double-loading if already included</li>
+            </ul>
+
+            <h3>Alternative: Direct Include</h3>
+            <p>If you prefer manual control over file loading:</p>
+
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">HTML</span>
+                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code>&lt;!-- In &lt;head&gt; --&gt;
+&lt;link rel="stylesheet" href="https://smartpropertywidget.com/spw/dist/realtysoft.min.css"&gt;
+
+&lt;!-- Before &lt;/body&gt; --&gt;
+&lt;script src="https://smartpropertywidget.com/spw/dist/realtysoft.min.js"&gt;&lt;/script&gt;</code></pre>
+            </div>
+
+            <h3>Your First Page</h3>
+            <p>Here's a complete example showing a search form and property listings:</p>
+
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">HTML</span>
+                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code>&lt;!DOCTYPE html&gt;
+&lt;html lang="en"&gt;
+&lt;head&gt;
+    &lt;meta charset="UTF-8"&gt;
+    &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;
+    &lt;title&gt;Property Search&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+    &lt;!-- Search Form --&gt;
+    &lt;div class="rs-search-template-01"&gt;&lt;/div&gt;
+
+    &lt;!-- Property Listings --&gt;
+    &lt;div class="rs-listing-template-01"&gt;&lt;/div&gt;
+
+    &lt;script src="https://smartpropertywidget.com/spw/dist/realtysoft-loader.min.js"&gt;&lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;</code></pre>
+            </div>
+
+            <div class="alert alert-success">
+                <div class="alert-title">That's it!</div>
+                <p>The widget auto-initializes when it detects any <code class="inline-code">rs_</code> or <code class="inline-code">rs-</code> containers on the page.</p>
+            </div>
+        </section>
+
+        <!-- Configuration -->
+        <section id="configuration">
+            <h2>Configuration</h2>
+
+            <p>Customize the widget using the global configuration object. Add this <strong>before</strong> including the widget script:</p>
+
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">JavaScript</span>
+                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code>&lt;script&gt;
+window.RealtySoftConfig = {
+    // Owner settings
+    ownerEmail: 'agent@example.com',
+    privacyPolicyUrl: '/privacy-policy',
+
+    // Language settings
+    language: 'en_US',
+
+    // URL structure
+    propertyPageSlug: 'property',
+    resultsPage: '/properties',
+
+    // Display settings
+    perPage: 12,
+    enableMapView: true
+};
+&lt;/script&gt;</code></pre>
+            </div>
+
+            <h3>Labels Mode</h3>
+            <p>The widget uses <code class="inline-code">static</code> labels mode, which loads hardcoded labels for the fastest performance.</p>
+
+            <h3>Supported Languages</h3>
+            <p>The widget supports 16 languages:</p>
+            <p>
+                <span class="quick-ref"><code>en_US</code> English</span>
+                <span class="quick-ref"><code>es_ES</code> Spanish</span>
+                <span class="quick-ref"><code>de_DE</code> German</span>
+                <span class="quick-ref"><code>fr_FR</code> French</span>
+                <span class="quick-ref"><code>nl_NL</code> Dutch</span>
+                <span class="quick-ref"><code>pt_PT</code> Portuguese</span>
+                <span class="quick-ref"><code>it_IT</code> Italian</span>
+                <span class="quick-ref"><code>ru_RU</code> Russian</span>
+                <span class="quick-ref"><code>sv_SE</code> Swedish</span>
+                <span class="quick-ref"><code>no_NO</code> Norwegian</span>
+                <span class="quick-ref"><code>da_DK</code> Danish</span>
+                <span class="quick-ref"><code>fi_FI</code> Finnish</span>
+                <span class="quick-ref"><code>pl_PL</code> Polish</span>
+                <span class="quick-ref"><code>cs_CZ</code> Czech</span>
+                <span class="quick-ref"><code>ar_SA</code> Arabic</span>
+                <span class="quick-ref"><code>zh_CN</code> Chinese</span>
+            </p>
+
+            <h3>Label Overrides</h3>
+            <p>Override specific labels without changing the language:</p>
+
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">JavaScript</span>
+                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code>window.RealtySoftConfig = {
+    labelOverrides: {
+        _default: {
+            search_button: 'Find Properties',
+            reset_button: 'Clear All'
+        },
+        es_ES: {
+            search_button: 'Buscar Propiedades'
+        }
+    }
+};</code></pre>
+            </div>
+        </section>
+
+        <!-- WordPress Integration -->
+        <section id="wordpress">
+            <h2>WordPress Integration</h2>
+
+            <p>Smart Property Widget has a dedicated WordPress plugin for easy integration.</p>
+
+            <h3>Installation</h3>
+            <ol>
+                <li>Install the Smart Property Widget plugin</li>
+                <li>Activate the plugin</li>
+                <li>Start adding components to your pages</li>
+            </ol>
+
+            <h3>Adding Components</h3>
+            <p>Once the plugin is activated, you can add components using:</p>
+
+            <ul>
+                <li><strong>Gutenberg blocks</strong> - Use Custom HTML or Shortcode blocks</li>
+                <li><strong>Classic Editor</strong> - Switch to Text mode and paste HTML</li>
+                <li><strong>Elementor/Divi</strong> - Use HTML/Code widgets</li>
+            </ul>
+
+            <h4>Example: Gutenberg Custom HTML Block</h4>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">HTML</span>
+                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code>&lt;!-- Gutenberg Custom HTML Block --&gt;
+&lt;div class="rs-search-template-01"&gt;&lt;/div&gt;
+&lt;div class="rs-listing-template-01" data-rs-columns="3"&gt;&lt;/div&gt;</code></pre>
+            </div>
+        </section>
+
+        <!-- Search Components -->
+        <section id="search-components">
+            <h2>Search Components</h2>
+
+            <p>Build custom search forms using these 12 modular components. Each can be placed independently and styled as needed.</p>
+
+            <div class="component-grid">
+                <div class="component-card">
+                    <div class="component-name">rs_location</div>
+                    <div class="component-desc">Filter by location/area</div>
+                    <div class="component-variations">4 variations</div>
+                </div>
+                <div class="component-card">
+                    <div class="component-name">rs_listing_type</div>
+                    <div class="component-desc">Sale, Rent, Holiday, New</div>
+                    <div class="component-variations">3 variations</div>
+                </div>
+                <div class="component-card">
+                    <div class="component-name">rs_property_type</div>
+                    <div class="component-desc">Villa, Apartment, Plot...</div>
+                    <div class="component-variations">4 variations</div>
+                </div>
+                <div class="component-card">
+                    <div class="component-name">rs_bedrooms</div>
+                    <div class="component-desc">Bedroom count filter</div>
+                    <div class="component-variations">3 variations</div>
+                </div>
+                <div class="component-card">
+                    <div class="component-name">rs_bathrooms</div>
+                    <div class="component-desc">Bathroom count filter</div>
+                    <div class="component-variations">3 variations</div>
+                </div>
+                <div class="component-card">
+                    <div class="component-name">rs_price</div>
+                    <div class="component-desc">Price range filter</div>
+                    <div class="component-variations">3 variations</div>
+                </div>
+                <div class="component-card">
+                    <div class="component-name">rs_built_area</div>
+                    <div class="component-desc">Built size in m&sup2;</div>
+                    <div class="component-variations">2 variations</div>
+                </div>
+                <div class="component-card">
+                    <div class="component-name">rs_plot_size</div>
+                    <div class="component-desc">Plot size in m&sup2;</div>
+                    <div class="component-variations">2 variations</div>
+                </div>
+                <div class="component-card">
+                    <div class="component-name">rs_features</div>
+                    <div class="component-desc">Pool, garage, views...</div>
+                    <div class="component-variations">3 variations</div>
+                </div>
+                <div class="component-card">
+                    <div class="component-name">rs_reference</div>
+                    <div class="component-desc">Search by property ref</div>
+                    <div class="component-variations">1 variation</div>
+                </div>
+                <div class="component-card">
+                    <div class="component-name">rs_search_button</div>
+                    <div class="component-desc">Trigger search</div>
+                    <div class="component-variations">1 variation</div>
+                </div>
+                <div class="component-card">
+                    <div class="component-name">rs_reset_button</div>
+                    <div class="component-desc">Clear all filters</div>
+                    <div class="component-variations">1 variation</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Location Component -->
+        <section id="rs_location">
+            <h3>Location Component</h3>
+            <p>Filter properties by geographic location. Supports 4 different interaction patterns.</p>
+
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Variation</th>
+                            <th>Type</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code class="inline-code">1</code></td>
+                            <td>Typeahead</td>
+                            <td>Autocomplete search input</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">2</code></td>
+                            <td>Cascading</td>
+                            <td>Parent &rarr; Child dropdowns (e.g., Municipality &rarr; City)</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">3</code></td>
+                            <td>Hierarchical</td>
+                            <td>Tree structure with checkboxes for multi-select</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">4</code></td>
+                            <td>Dropdown</td>
+                            <td>Traditional select dropdown</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">HTML</span>
+                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code>&lt;!-- Typeahead autocomplete --&gt;
+&lt;div class="rs_location" data-rs-variation="1"&gt;&lt;/div&gt;
+
+&lt;!-- Cascading dropdowns (Municipality &rarr; City) --&gt;
+&lt;div class="rs_location" data-rs-variation="2"
+     data-rs-parent-type="municipality"
+     data-rs-child-type="city"&gt;&lt;/div&gt;
+
+&lt;!-- Hierarchical multi-select --&gt;
+&lt;div class="rs_location" data-rs-variation="3"&gt;&lt;/div&gt;
+
+&lt;!-- Simple dropdown --&gt;
+&lt;div class="rs_location" data-rs-variation="4"&gt;&lt;/div&gt;</code></pre>
+            </div>
+
+            <h4>Attributes</h4>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Attribute</th>
+                            <th>Values</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code class="inline-code">data-rs-variation</code></td>
+                            <td>1, 2, 3, 4</td>
+                            <td>Which variation to use</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">data-rs-parent-type</code></td>
+                            <td>municipality, region, province</td>
+                            <td>Parent level (variation 2 only)</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">data-rs-child-type</code></td>
+                            <td>city, area, neighborhood</td>
+                            <td>Child level (variation 2 only)</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Listing Type Component -->
+        <section id="rs_listing_type">
+            <h3>Listing Type Component</h3>
+            <p>Toggle between Sale, Rent, Holiday Rental, or New Development properties.</p>
+
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Variation</th>
+                            <th>Type</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code class="inline-code">1</code></td>
+                            <td>Buttons</td>
+                            <td>Horizontal button group</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">2</code></td>
+                            <td>Dropdown</td>
+                            <td>Select dropdown</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">3</code></td>
+                            <td>Tabs</td>
+                            <td>Tab-style navigation</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">HTML</span>
+                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code>&lt;!-- Button group --&gt;
+&lt;div class="rs_listing_type" data-rs-variation="1"&gt;&lt;/div&gt;
+
+&lt;!-- Dropdown --&gt;
+&lt;div class="rs_listing_type" data-rs-variation="2"&gt;&lt;/div&gt;
+
+&lt;!-- Tabs --&gt;
+&lt;div class="rs_listing_type" data-rs-variation="3"&gt;&lt;/div&gt;</code></pre>
+            </div>
+        </section>
+
+        <!-- Property Type Component -->
+        <section id="rs_property_type">
+            <h3>Property Type Component</h3>
+            <p>Filter by property type (Villa, Apartment, Townhouse, Plot, etc.).</p>
+
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Variation</th>
+                            <th>Type</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code class="inline-code">1</code></td>
+                            <td>Typeahead</td>
+                            <td>Autocomplete search</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">2</code></td>
+                            <td>Dropdown</td>
+                            <td>Simple select</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">3</code></td>
+                            <td>Multi-select</td>
+                            <td>Checkboxes for multiple types</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">4</code></td>
+                            <td>Icons</td>
+                            <td>Visual icon buttons</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">HTML</span>
+                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code>&lt;div class="rs_property_type" data-rs-variation="2"&gt;&lt;/div&gt;</code></pre>
+            </div>
+        </section>
+
+        <!-- Bedrooms Component -->
+        <section id="rs_bedrooms">
+            <h3>Bedrooms Component</h3>
+            <p>Filter by bedroom count.</p>
+
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Variation</th>
+                            <th>Type</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code class="inline-code">1</code></td>
+                            <td>Dropdown</td>
+                            <td>Min/max select dropdown</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">2</code></td>
+                            <td>Button boxes</td>
+                            <td>0, 1, 2, 3, 4, 5+ buttons</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">3</code></td>
+                            <td>Free input</td>
+                            <td>Number input field</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">HTML</span>
+                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code>&lt;!-- Button boxes with "minimum" style (1+, 2+, 3+) --&gt;
+&lt;div class="rs_bedrooms" data-rs-variation="2" data-rs-style="minimum"&gt;&lt;/div&gt;
+
+&lt;!-- Button boxes with "exact" style (1, 2, 3) --&gt;
+&lt;div class="rs_bedrooms" data-rs-variation="2" data-rs-style="exact"&gt;&lt;/div&gt;
+
+&lt;!-- Dropdown --&gt;
+&lt;div class="rs_bedrooms" data-rs-variation="1"&gt;&lt;/div&gt;</code></pre>
+            </div>
+        </section>
+
+        <!-- Bathrooms Component -->
+        <section id="rs_bathrooms">
+            <h3>Bathrooms Component</h3>
+            <p>Filter by bathroom count. Same variations as bedrooms (1=Dropdown, 2=Button boxes, 3=Free input).</p>
+
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">HTML</span>
+                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code>&lt;div class="rs_bathrooms" data-rs-variation="1"&gt;&lt;/div&gt;</code></pre>
+            </div>
+        </section>
+
+        <!-- Price Component -->
+        <section id="rs_price">
+            <h3>Price Component</h3>
+            <p>Filter by price range. Supports separate min/max inputs or combined range.</p>
+
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Variation</th>
+                            <th>Type</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code class="inline-code">1</code></td>
+                            <td>Input fields</td>
+                            <td>Separate min/max number inputs</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">2</code></td>
+                            <td>Range slider</td>
+                            <td>Dual-handle slider</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">3</code></td>
+                            <td>Dropdown</td>
+                            <td>Select dropdown for min or max</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">HTML</span>
+                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code>&lt;!-- Separate min/max inputs --&gt;
+&lt;div class="rs_price" data-rs-variation="1" data-rs-type="min"&gt;&lt;/div&gt;
+&lt;div class="rs_price" data-rs-variation="1" data-rs-type="max"&gt;&lt;/div&gt;
+
+&lt;!-- Range slider (both min/max) --&gt;
+&lt;div class="rs_price" data-rs-variation="2"&gt;&lt;/div&gt;
+
+&lt;!-- Dropdown --&gt;
+&lt;div class="rs_price" data-rs-variation="3" data-rs-type="min"&gt;&lt;/div&gt;
+&lt;div class="rs_price" data-rs-variation="3" data-rs-type="max"&gt;&lt;/div&gt;</code></pre>
+            </div>
+        </section>
+
+        <!-- Built Area Component -->
+        <section id="rs_built_area">
+            <h3>Built Area Component</h3>
+            <p>Filter by built/living area in square meters.</p>
+
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">HTML</span>
+                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code>&lt;!-- Min/max inputs --&gt;
+&lt;div class="rs_built_area" data-rs-variation="1"&gt;&lt;/div&gt;
+
+&lt;!-- Range slider --&gt;
+&lt;div class="rs_built_area" data-rs-variation="2"&gt;&lt;/div&gt;</code></pre>
+            </div>
+        </section>
+
+        <!-- Plot Size Component -->
+        <section id="rs_plot_size">
+            <h3>Plot Size Component</h3>
+            <p>Filter by plot/land size in square meters.</p>
+
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">HTML</span>
+                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code>&lt;div class="rs_plot_size" data-rs-variation="1"&gt;&lt;/div&gt;</code></pre>
+            </div>
+        </section>
+
+        <!-- Features Component -->
+        <section id="rs_features">
+            <h3>Features Component</h3>
+            <p>Filter by property features like pool, garage, sea views, etc.</p>
+
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Variation</th>
+                            <th>Type</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code class="inline-code">1</code></td>
+                            <td>Popup modal</td>
+                            <td>Click to open categorized feature list</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">2</code></td>
+                            <td>Inline checkboxes</td>
+                            <td>All features visible as checkboxes</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">3</code></td>
+                            <td>Tags/chips</td>
+                            <td>Clickable tag badges</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">HTML</span>
+                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code>&lt;div class="rs_features" data-rs-variation="1"&gt;&lt;/div&gt;</code></pre>
+            </div>
+        </section>
+
+        <!-- Reference Component -->
+        <section id="rs_reference">
+            <h3>Reference Component</h3>
+            <p>Search by property reference number (e.g., R123456).</p>
+
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">HTML</span>
+                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code>&lt;div class="rs_reference"&gt;&lt;/div&gt;</code></pre>
+            </div>
+        </section>
+
+        <!-- Search Buttons -->
+        <section id="search-buttons">
+            <h3>Search &amp; Reset Buttons</h3>
+
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">HTML</span>
+                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code>&lt;!-- Search button - triggers search --&gt;
+&lt;div class="rs_search_button"&gt;&lt;/div&gt;
+
+&lt;!-- Reset button - clears all filters --&gt;
+&lt;div class="rs_reset_button"&gt;&lt;/div&gt;</code></pre>
+            </div>
+        </section>
+
+        <!-- Complete Search Example -->
+        <section id="search-example">
+            <h3>Complete Custom Search Example</h3>
+            <p>Here's a complete working example showing all search components together. Copy this code and modify it to fit your design.</p>
+
+            <div class="alert alert-info">
+                <div class="alert-title">How it works</div>
+                <p>All search components must be inside a container with <code class="inline-code">id="rs_search"</code>. The widget automatically connects all components and handles the search logic.</p>
+            </div>
+
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">HTML</span>
+                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code>&lt;!-- Search Container - All components must be inside this --&gt;
+&lt;div id="rs_search"&gt;
+
+    &lt;!-- Row 1: Location and Listing Type --&gt;
+    &lt;div class="search-row"&gt;
+        &lt;div class="rs_location" data-rs-variation="1"&gt;&lt;/div&gt;
+        &lt;div class="rs_listing_type" data-rs-variation="1"&gt;&lt;/div&gt;
+    &lt;/div&gt;
+
+    &lt;!-- Row 2: Property Type and Bedrooms --&gt;
+    &lt;div class="search-row"&gt;
+        &lt;div class="rs_property_type" data-rs-variation="2"&gt;&lt;/div&gt;
+        &lt;div class="rs_bedrooms" data-rs-variation="1"&gt;&lt;/div&gt;
+        &lt;div class="rs_bathrooms" data-rs-variation="1"&gt;&lt;/div&gt;
+    &lt;/div&gt;
+
+    &lt;!-- Row 3: Price Range --&gt;
+    &lt;div class="search-row"&gt;
+        &lt;div class="rs_price" data-rs-variation="1" data-rs-type="min"&gt;&lt;/div&gt;
+        &lt;div class="rs_price" data-rs-variation="1" data-rs-type="max"&gt;&lt;/div&gt;
+    &lt;/div&gt;
+
+    &lt;!-- Row 4: Additional Filters (optional) --&gt;
+    &lt;div class="search-row"&gt;
+        &lt;div class="rs_built_area" data-rs-variation="1"&gt;&lt;/div&gt;
+        &lt;div class="rs_plot_size" data-rs-variation="1"&gt;&lt;/div&gt;
+        &lt;div class="rs_features" data-rs-variation="1"&gt;&lt;/div&gt;
+    &lt;/div&gt;
+
+    &lt;!-- Row 5: Reference Search (optional) --&gt;
+    &lt;div class="search-row"&gt;
+        &lt;div class="rs_reference"&gt;&lt;/div&gt;
+    &lt;/div&gt;
+
+    &lt;!-- Row 6: Buttons --&gt;
+    &lt;div class="search-row"&gt;
+        &lt;div class="rs_search_button"&gt;&lt;/div&gt;
+        &lt;div class="rs_reset_button"&gt;&lt;/div&gt;
+    &lt;/div&gt;
+
+&lt;/div&gt;</code></pre>
+            </div>
+
+            <h4>Minimal Search Example</h4>
+            <p>A simpler version with just the essential filters:</p>
+
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">HTML</span>
+                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code>&lt;div id="rs_search"&gt;
+    &lt;div class="rs_location" data-rs-variation="1"&gt;&lt;/div&gt;
+    &lt;div class="rs_listing_type" data-rs-variation="1"&gt;&lt;/div&gt;
+    &lt;div class="rs_property_type" data-rs-variation="2"&gt;&lt;/div&gt;
+    &lt;div class="rs_bedrooms" data-rs-variation="2"&gt;&lt;/div&gt;
+    &lt;div class="rs_price" data-rs-variation="1" data-rs-type="min"&gt;&lt;/div&gt;
+    &lt;div class="rs_price" data-rs-variation="1" data-rs-type="max"&gt;&lt;/div&gt;
+    &lt;div class="rs_search_button"&gt;&lt;/div&gt;
+&lt;/div&gt;</code></pre>
+            </div>
+
+            <h4>Search with Locked Filters</h4>
+            <p>Pre-filter results by adding data attributes to the container:</p>
+
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">HTML</span>
+                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code>&lt;!-- Only show villas for sale in Marbella --&gt;
+&lt;div id="rs_search"
+     data-rs-location="505"
+     data-rs-property-type="76"
+     data-rs-listing-type="resale"&gt;
+
+    &lt;div class="rs_bedrooms" data-rs-variation="2"&gt;&lt;/div&gt;
+    &lt;div class="rs_price" data-rs-variation="1" data-rs-type="min"&gt;&lt;/div&gt;
+    &lt;div class="rs_price" data-rs-variation="1" data-rs-type="max"&gt;&lt;/div&gt;
+    &lt;div class="rs_features" data-rs-variation="1"&gt;&lt;/div&gt;
+    &lt;div class="rs_search_button"&gt;&lt;/div&gt;
+
+&lt;/div&gt;</code></pre>
+            </div>
+
+            <div class="alert alert-success">
+                <div class="alert-title">Tip: Mix and Match</div>
+                <p>You can use any combination of components. Only include the filters relevant to your use case. The widget handles all the connections automatically.</p>
+            </div>
+        </section>
+
+        <!-- Search Templates -->
+        <section id="search-templates">
+            <h2>Search Templates</h2>
+
+            <p>Pre-built search form layouts. Just add a single div and the template renders automatically.</p>
+
+            <div class="template-grid">
+                <a href="https://smartpropertywidget.com/search-01/" target="_blank" class="template-card">
+                    <div class="template-preview">01</div>
+                    <div class="template-info">
+                        <div class="template-name">rs-search-template-01</div>
+                        <div class="template-desc">Compact 2-row horizontal</div>
+                    </div>
+                </a>
+                <a href="https://smartpropertywidget.com/search-02/" target="_blank" class="template-card">
+                    <div class="template-preview" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">02</div>
+                    <div class="template-info">
+                        <div class="template-name">rs-search-template-02</div>
+                        <div class="template-desc">Single-row search bar</div>
+                    </div>
+                </a>
+                <a href="https://smartpropertywidget.com/search-03/" target="_blank" class="template-card">
+                    <div class="template-preview" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">03</div>
+                    <div class="template-info">
+                        <div class="template-name">rs-search-template-03</div>
+                        <div class="template-desc">Tab-based with listing type tabs</div>
+                    </div>
+                </a>
+                <a href="https://smartpropertywidget.com/search-04/" target="_blank" class="template-card">
+                    <div class="template-preview" style="background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);">04</div>
+                    <div class="template-info">
+                        <div class="template-name">rs-search-template-04</div>
+                        <div class="template-desc">Dark horizontal bar</div>
+                    </div>
+                </a>
+                <a href="https://smartpropertywidget.com/search-05/" target="_blank" class="template-card">
+                    <div class="template-preview" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">05</div>
+                    <div class="template-info">
+                        <div class="template-name">rs-search-template-05</div>
+                        <div class="template-desc">Vertical card/sidebar</div>
+                    </div>
+                </a>
+                <a href="https://smartpropertywidget.com/search-06/" target="_blank" class="template-card">
+                    <div class="template-preview" style="background: linear-gradient(135deg, #ee0979 0%, #ff6a00 100%);">06</div>
+                    <div class="template-info">
+                        <div class="template-name">rs-search-template-06</div>
+                        <div class="template-desc">Minimal single row</div>
+                    </div>
+                </a>
+            </div>
+
+            <h3>Usage</h3>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">HTML</span>
+                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code>&lt;!-- Basic usage --&gt;
+&lt;div class="rs-search-template-01"&gt;&lt;/div&gt;
+
+&lt;!-- With locked filters --&gt;
+&lt;div class="rs-search-template-01"
+     data-rs-location="505"
+     data-rs-listing-type="resale"&gt;&lt;/div&gt;</code></pre>
+            </div>
+        </section>
+
+        <!-- Listing Components -->
+        <section id="listing-components">
+            <h2>Listing Components</h2>
+
+            <p>Display search results using these components.</p>
+
+            <div class="component-grid">
+                <div class="component-card">
+                    <div class="component-name">rs_property_grid</div>
+                    <div class="component-desc">Grid/list view of properties</div>
+                </div>
+                <div class="component-card">
+                    <div class="component-name">rs_property_carousel</div>
+                    <div class="component-desc">Sliding property carousel</div>
+                </div>
+                <div class="component-card">
+                    <div class="component-name">rs_pagination</div>
+                    <div class="component-desc">Page navigation</div>
+                </div>
+                <div class="component-card">
+                    <div class="component-name">rs_sort</div>
+                    <div class="component-desc">Sort dropdown</div>
+                </div>
+                <div class="component-card">
+                    <div class="component-name">rs_results_count</div>
+                    <div class="component-desc">"X properties found"</div>
+                </div>
+                <div class="component-card">
+                    <div class="component-name">rs_active_filters</div>
+                    <div class="component-desc">Removable filter tags</div>
+                </div>
+                <div class="component-card">
+                    <div class="component-name">rs_view_toggle</div>
+                    <div class="component-desc">Grid/List/Map buttons</div>
+                </div>
+                <div class="component-card">
+                    <div class="component-name">rs_map_view</div>
+                    <div class="component-desc">Interactive property map</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Property Grid -->
+        <section id="rs_property_grid">
+            <h3>Property Grid</h3>
+            <p>Displays search results as property cards in a responsive grid layout.</p>
+
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">HTML</span>
+                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code>&lt;!-- Basic grid --&gt;
+&lt;div class="rs_property_grid"&gt;&lt;/div&gt;
+
+&lt;!-- Grid with column control --&gt;
+&lt;div class="rs_property_grid" data-rs-columns="3"&gt;&lt;/div&gt;
+
+&lt;!-- Grid with card template --&gt;
+&lt;div class="rs_property_grid" data-rs-template="2"&gt;&lt;/div&gt;</code></pre>
+            </div>
+
+            <h4>Grid Columns</h4>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Attribute Value</th>
+                            <th>Desktop</th>
+                            <th>Tablet</th>
+                            <th>Mobile</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code class="inline-code">data-rs-columns="2"</code></td>
+                            <td>2 cards</td>
+                            <td>2 cards</td>
+                            <td>1 card</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">data-rs-columns="3"</code></td>
+                            <td>3 cards</td>
+                            <td>2 cards</td>
+                            <td>1 card</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">data-rs-columns="4"</code></td>
+                            <td>4 cards</td>
+                            <td>2 cards</td>
+                            <td>1 card</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h4>Standalone Grid</h4>
+            <p>Create a grid that fetches its own data, independent from search filters:</p>
+
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">HTML</span>
+                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code>&lt;!-- Featured properties section --&gt;
+&lt;div class="rs_property_grid"
+     data-rs-standalone
+     data-rs-featured="true"
+     data-rs-limit="6"
+     data-rs-columns="3"&gt;&lt;/div&gt;
+
+&lt;!-- Own properties first, then others --&gt;
+&lt;div class="rs_property_grid"
+     data-rs-standalone
+     data-rs-own-first="true"
+     data-rs-limit="12"&gt;&lt;/div&gt;</code></pre>
+            </div>
+
+            <h4>Standalone Grid Attributes</h4>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Attribute</th>
+                            <th>Description</th>
+                            <th>Example</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code class="inline-code">data-rs-standalone</code></td>
+                            <td>Makes grid independent from page filters</td>
+                            <td>(no value)</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">data-rs-limit</code></td>
+                            <td>Number of properties to show</td>
+                            <td>"6", "12"</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">data-rs-columns</code></td>
+                            <td>Number of columns (1-4)</td>
+                            <td>"2", "3", "4"</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">data-rs-template</code></td>
+                            <td>Card template style (1-12)</td>
+                            <td>"1", "6"</td>
+                        </tr>
+                        <tr>
+                            <td colspan="3" style="background: var(--bg); font-weight: 600;">Property Source</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">data-rs-own</code></td>
+                            <td>Show only own properties</td>
+                            <td>"true"</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">data-rs-own-first</code></td>
+                            <td>Show own properties first, then others</td>
+                            <td>"true"</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">data-rs-featured</code></td>
+                            <td>Show only featured properties</td>
+                            <td>"true"</td>
+                        </tr>
+                        <tr>
+                            <td colspan="3" style="background: var(--bg); font-weight: 600;">Location &amp; Type Filters</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">data-rs-location</code></td>
+                            <td>Filter by location ID</td>
+                            <td>"505"</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">data-rs-listing-type</code></td>
+                            <td>Filter by listing type</td>
+                            <td>"resale", "long_rental", "short_rental", "development"</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">data-rs-property-type</code></td>
+                            <td>Filter by property type ID</td>
+                            <td>"76"</td>
+                        </tr>
+                        <tr>
+                            <td colspan="3" style="background: var(--bg); font-weight: 600;">Bedroom &amp; Bathroom Filters</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">data-rs-beds-min</code></td>
+                            <td>Minimum bedrooms</td>
+                            <td>"2", "3"</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">data-rs-beds-max</code></td>
+                            <td>Maximum bedrooms</td>
+                            <td>"4", "5"</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">data-rs-baths-min</code></td>
+                            <td>Minimum bathrooms</td>
+                            <td>"1", "2"</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">data-rs-baths-max</code></td>
+                            <td>Maximum bathrooms</td>
+                            <td>"2", "3"</td>
+                        </tr>
+                        <tr>
+                            <td colspan="3" style="background: var(--bg); font-weight: 600;">Price Filters</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">data-rs-price-min</code></td>
+                            <td>Minimum price</td>
+                            <td>"100000", "250000"</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">data-rs-price-max</code></td>
+                            <td>Maximum price</td>
+                            <td>"500000", "1000000"</td>
+                        </tr>
+                        <tr>
+                            <td colspan="3" style="background: var(--bg); font-weight: 600;">Size Filters</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">data-rs-built-min</code></td>
+                            <td>Minimum built area (m&sup2;)</td>
+                            <td>"50", "100"</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">data-rs-built-max</code></td>
+                            <td>Maximum built area (m&sup2;)</td>
+                            <td>"200", "500"</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">data-rs-plot-min</code></td>
+                            <td>Minimum plot size (m&sup2;)</td>
+                            <td>"200", "500"</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">data-rs-plot-max</code></td>
+                            <td>Maximum plot size (m&sup2;)</td>
+                            <td>"1000", "5000"</td>
+                        </tr>
+                        <tr>
+                            <td colspan="3" style="background: var(--bg); font-weight: 600;">Other Filters</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">data-rs-ref</code></td>
+                            <td>Filter by property reference</td>
+                            <td>"R123456"</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">data-rs-features</code></td>
+                            <td>Filter by feature IDs (comma-separated)</td>
+                            <td>"1,5,12"</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Property Carousel -->
+        <section id="rs_property_carousel">
+            <h3>Property Carousel</h3>
+            <p>Sliding carousel for showcasing properties. 6 visual templates available.</p>
+
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">HTML</span>
+                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code>&lt;!-- Basic carousel --&gt;
+&lt;div class="rs_property_carousel"&gt;&lt;/div&gt;
+
+&lt;!-- With template and filters --&gt;
+&lt;div class="rs_property_carousel"
+     data-rs-template="6"
+     data-rs-limit="8"
+     data-rs-autoplay="true"&gt;&lt;/div&gt;
+
+&lt;!-- Own properties carousel --&gt;
+&lt;div class="rs_property_carousel"
+     data-rs-own="true"
+     data-rs-limit="6"&gt;&lt;/div&gt;</code></pre>
+            </div>
+
+            <h4>Carousel Templates</h4>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Template</th>
+                            <th>Style</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code class="inline-code">1</code></td>
+                            <td>Standard</td>
+                            <td>Horizontal sliding carousel</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">2</code></td>
+                            <td>3D Stacked</td>
+                            <td>Cards with perspective effect</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">3</code></td>
+                            <td>Coverflow</td>
+                            <td>Grayscale inactive cards</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">4</code></td>
+                            <td>Hero</td>
+                            <td>Full-width hero cards</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">5</code></td>
+                            <td>Overlay</td>
+                            <td>Info always visible on overlay</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">6</code></td>
+                            <td>Dark Numbered</td>
+                            <td>Dark cards with large numbers</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h4>Carousel Attributes</h4>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Attribute</th>
+                            <th>Description</th>
+                            <th>Example</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code class="inline-code">data-rs-template</code></td>
+                            <td>Visual template (1-6)</td>
+                            <td>"6"</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">data-rs-limit</code></td>
+                            <td>Number of properties</td>
+                            <td>"8"</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">data-rs-autoplay</code></td>
+                            <td>Auto-rotate slides</td>
+                            <td>"true"</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">data-rs-interval</code></td>
+                            <td>Autoplay interval (ms)</td>
+                            <td>"5000"</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Pagination -->
+        <section id="rs_pagination">
+            <h3>Pagination</h3>
+            <p>Page navigation for results.</p>
+
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">HTML</span>
+                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code>&lt;div class="rs_pagination"&gt;&lt;/div&gt;</code></pre>
+            </div>
+        </section>
+
+        <!-- Listing Utilities -->
+        <section id="listing-utilities">
+            <h3>Sort, Count, Toggle, Active Filters</h3>
+
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">HTML</span>
+                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code>&lt;!-- Sort dropdown --&gt;
+&lt;div class="rs_sort"&gt;&lt;/div&gt;
+
+&lt;!-- "X properties found" --&gt;
+&lt;div class="rs_results_count"&gt;&lt;/div&gt;
+
+&lt;!-- Grid/List/Map toggle buttons --&gt;
+&lt;div class="rs_view_toggle"&gt;&lt;/div&gt;
+
+&lt;!-- Active filter tags (removable) --&gt;
+&lt;div class="rs_active_filters"&gt;&lt;/div&gt;</code></pre>
+            </div>
+
+            <h4>Sort Options</h4>
+            <ul>
+                <li><code class="inline-code">create_date_desc</code> - Newest Listings</li>
+                <li><code class="inline-code">create_date</code> - Oldest Listings</li>
+                <li><code class="inline-code">last_date_desc</code> - Recently Updated</li>
+                <li><code class="inline-code">list_price</code> - Price: Low to High</li>
+                <li><code class="inline-code">list_price_desc</code> - Price: High to Low</li>
+                <li><code class="inline-code">is_featured_desc</code> - Featured First</li>
+            </ul>
+        </section>
+
+        <!-- Map View -->
+        <section id="rs_map_view">
+            <h3>Map View</h3>
+            <p>Interactive Leaflet map with property markers and clustering.</p>
+
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">HTML</span>
+                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code>&lt;div class="rs_map_view"&gt;&lt;/div&gt;</code></pre>
+            </div>
+
+            <h4>Features</h4>
+            <ul>
+                <li>OpenStreetMap tiles</li>
+                <li>Property markers with price labels</li>
+                <li>Marker clustering when zoomed out</li>
+                <li>Popups with property info on click</li>
+                <li>Pan/zoom to filter visible properties</li>
+                <li>Responsive design</li>
+            </ul>
+
+            <h4>Configuration</h4>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">JavaScript</span>
+                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code>window.RealtySoftConfig = {
+    enableMapView: true,   // Show map toggle button
+    perPage: 12,           // Items per page for grid/list
+    mapPerPage: 50         // Items per page for map view
+};</code></pre>
+            </div>
+        </section>
+
+        <!-- Listing Templates -->
+        <section id="listing-templates">
+            <h2>Listing Templates</h2>
+
+            <p>12 pre-designed property card styles. Use with grids or carousels.</p>
+
+            <div class="template-grid">
+                <a href="https://smartpropertywidget.com/listing-01" target="_blank" class="template-card">
+                    <div class="template-preview">01</div>
+                    <div class="template-info">
+                        <div class="template-name">rs-listing-template-01</div>
+                        <div class="template-desc">Location-first cards</div>
+                    </div>
+                </a>
+                <a href="https://smartpropertywidget.com/listing-02" target="_blank" class="template-card">
+                    <div class="template-preview" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">02</div>
+                    <div class="template-info">
+                        <div class="template-name">rs-listing-template-02</div>
+                        <div class="template-desc">Price on image overlay</div>
+                    </div>
+                </a>
+                <a href="https://smartpropertywidget.com/listing-03" target="_blank" class="template-card">
+                    <div class="template-preview" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">03</div>
+                    <div class="template-info">
+                        <div class="template-name">rs-listing-template-03</div>
+                        <div class="template-desc">Tag + icon specs</div>
+                    </div>
+                </a>
+                <a href="https://smartpropertywidget.com/listing-04" target="_blank" class="template-card">
+                    <div class="template-preview" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">04</div>
+                    <div class="template-info">
+                        <div class="template-name">rs-listing-template-04</div>
+                        <div class="template-desc">Airbnb style</div>
+                    </div>
+                </a>
+                <a href="https://smartpropertywidget.com/listing-05" target="_blank" class="template-card">
+                    <div class="template-preview" style="background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);">05</div>
+                    <div class="template-info">
+                        <div class="template-name">rs-listing-template-05</div>
+                        <div class="template-desc">Hover overlay</div>
+                    </div>
+                </a>
+                <a href="https://smartpropertywidget.com/listing-06" target="_blank" class="template-card">
+                    <div class="template-preview" style="background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);">06</div>
+                    <div class="template-info">
+                        <div class="template-name">rs-listing-template-06</div>
+                        <div class="template-desc">Gradient overlay</div>
+                    </div>
+                </a>
+                <a href="https://smartpropertywidget.com/listing-07" target="_blank" class="template-card">
+                    <div class="template-preview" style="background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);">07</div>
+                    <div class="template-info">
+                        <div class="template-name">rs-listing-template-07</div>
+                        <div class="template-desc">Dark overlay badges</div>
+                    </div>
+                </a>
+                <a href="https://smartpropertywidget.com/listing-08" target="_blank" class="template-card">
+                    <div class="template-preview" style="background: linear-gradient(135deg, #bdc3c7 0%, #2c3e50 100%);">08</div>
+                    <div class="template-info">
+                        <div class="template-name">rs-listing-template-08</div>
+                        <div class="template-desc">Minimal card</div>
+                    </div>
+                </a>
+                <a href="https://smartpropertywidget.com/listing-09" target="_blank" class="template-card">
+                    <div class="template-preview" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">09</div>
+                    <div class="template-info">
+                        <div class="template-name">rs-listing-template-09</div>
+                        <div class="template-desc">Modern with accent</div>
+                    </div>
+                </a>
+                <a href="https://smartpropertywidget.com/listing-10" target="_blank" class="template-card">
+                    <div class="template-preview" style="background: linear-gradient(135deg, #ee0979 0%, #ff6a00 100%);">10</div>
+                    <div class="template-info">
+                        <div class="template-name">rs-listing-template-10</div>
+                        <div class="template-desc">Compact list-style</div>
+                    </div>
+                </a>
+                <a href="https://smartpropertywidget.com/listing-11" target="_blank" class="template-card">
+                    <div class="template-preview" style="background: linear-gradient(135deg, #8360c3 0%, #2ebf91 100%);">11</div>
+                    <div class="template-info">
+                        <div class="template-name">rs-listing-template-11</div>
+                        <div class="template-desc">Full-featured + tags</div>
+                    </div>
+                </a>
+                <a href="https://smartpropertywidget.com/listing-12" target="_blank" class="template-card">
+                    <div class="template-preview" style="background: linear-gradient(135deg, #fc4a1a 0%, #f7b733 100%);">12</div>
+                    <div class="template-info">
+                        <div class="template-name">rs-listing-template-12</div>
+                        <div class="template-desc">Magazine layout</div>
+                    </div>
+                </a>
+            </div>
+
+            <h3>Usage</h3>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">HTML</span>
+                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code>&lt;!-- Basic template --&gt;
+&lt;div class="rs-listing-template-01"&gt;&lt;/div&gt;
+
+&lt;!-- With column control --&gt;
+&lt;div class="rs-listing-template-03" data-rs-columns="4"&gt;&lt;/div&gt;
+
+&lt;!-- With locked filters --&gt;
+&lt;div class="rs-listing-template-01"
+     data-rs-location="505"
+     data-rs-property-type="76"
+     data-rs-listing-type="resale"&gt;&lt;/div&gt;</code></pre>
+            </div>
+        </section>
+
+        <!-- Detail Components -->
+        <section id="detail-components">
+            <h2>Property Detail Components</h2>
+
+            <p>Components for building property detail pages. All must be inside a <code class="inline-code">rs_detail</code> container.</p>
+
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">HTML</span>
+                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code>&lt;div class="rs_detail" data-property-id="R5251381"&gt;
+    &lt;!-- Components go here --&gt;
+&lt;/div&gt;</code></pre>
+            </div>
+
+            <h4>Property ID Sources (in priority order)</h4>
+            <ol>
+                <li><code class="inline-code">data-property-id="R123456"</code> on container</li>
+                <li><code class="inline-code">data-property-ref="ABC-123"</code> on container</li>
+                <li>URL path: <code class="inline-code">/property/123</code></li>
+                <li>URL path: <code class="inline-code">/property/title-slug-R123456</code></li>
+                <li>URL param: <code class="inline-code">?id=123</code> or <code class="inline-code">?property_id=123</code></li>
+                <li>URL param: <code class="inline-code">?ref=ABC-123</code></li>
+            </ol>
+        </section>
+
+        <!-- Detail Gallery -->
+        <section id="detail-gallery">
+            <h3>Gallery Component</h3>
+            <p>Image gallery with thumbnails and lightbox.</p>
+
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">HTML</span>
+                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code>&lt;div class="rs_detail_gallery"&gt;&lt;/div&gt;</code></pre>
+            </div>
+        </section>
+
+        <!-- Detail Info -->
+        <section id="detail-info">
+            <h3>Info Components</h3>
+            <p>Text containers that auto-populate with property data.</p>
+
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Class</th>
+                            <th>Content</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code class="inline-code">rs_detail_title</code></td><td>Property title</td></tr>
+                        <tr><td><code class="inline-code">rs_detail_price</code></td><td>Formatted price</td></tr>
+                        <tr><td><code class="inline-code">rs_detail_ref</code></td><td>Reference number</td></tr>
+                        <tr><td><code class="inline-code">rs_detail_location</code></td><td>Location name</td></tr>
+                        <tr><td><code class="inline-code">rs_detail_address</code></td><td>Street address</td></tr>
+                        <tr><td><code class="inline-code">rs_detail_type</code></td><td>Property type</td></tr>
+                        <tr><td><code class="inline-code">rs_detail_status</code></td><td>Listing status</td></tr>
+                        <tr><td><code class="inline-code">rs_detail_beds</code></td><td>Bedrooms count</td></tr>
+                        <tr><td><code class="inline-code">rs_detail_baths</code></td><td>Bathrooms count</td></tr>
+                        <tr><td><code class="inline-code">rs_detail_built</code></td><td>Built area (m&sup2;)</td></tr>
+                        <tr><td><code class="inline-code">rs_detail_plot</code></td><td>Plot size (m&sup2;)</td></tr>
+                        <tr><td><code class="inline-code">rs_detail_description</code></td><td>Full description</td></tr>
+                        <tr><td><code class="inline-code">rs_detail_features</code></td><td>Features list</td></tr>
+                        <tr><td><code class="inline-code">rs_detail_specs</code></td><td>Key specs grid</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h4>Additional Detail Classes</h4>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Class</th>
+                            <th>Content</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code class="inline-code">rs_detail_terrace</code></td><td>Terrace size (m&sup2;)</td></tr>
+                        <tr><td><code class="inline-code">rs_detail_garden</code></td><td>Garden size (m&sup2;)</td></tr>
+                        <tr><td><code class="inline-code">rs_detail_year</code></td><td>Year built</td></tr>
+                        <tr><td><code class="inline-code">rs_detail_floor</code></td><td>Floor number</td></tr>
+                        <tr><td><code class="inline-code">rs_detail_orientation</code></td><td>Orientation</td></tr>
+                        <tr><td><code class="inline-code">rs_detail_parking</code></td><td>Parking spaces</td></tr>
+                        <tr><td><code class="inline-code">rs_detail_energy_rating</code></td><td>Energy rating</td></tr>
+                        <tr><td><code class="inline-code">rs_detail_community_fees</code></td><td>Community fees/month</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h4>Component Containers</h4>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Class</th>
+                            <th>Description</th>
+                            <th>Options</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code class="inline-code">rs_detail_map</code></td>
+                            <td>Location map</td>
+                            <td><code class="inline-code">data-variation="1|2|3"</code></td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">rs_detail_related</code></td>
+                            <td>Similar properties</td>
+                            <td><code class="inline-code">data-limit="6"</code></td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">rs_detail_resources</code></td>
+                            <td>All resources combined (video, tour, PDF buttons)</td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">rs_detail_video_embed</code></td>
+                            <td>Embedded video player (YouTube/Vimeo)</td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">rs_detail_video_link</code></td>
+                            <td>Link/button to open video in new tab</td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">rs_detail_tour_link</code></td>
+                            <td>Link/button to open virtual tour in new tab</td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">rs_detail_pdf</code></td>
+                            <td>PDF download button</td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">rs_detail_wishlist</code></td>
+                            <td>Wishlist button</td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">rs_detail_share</code></td>
+                            <td>Share buttons</td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">rs_detail_back</code></td>
+                            <td>Back button</td>
+                            <td></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h4>Map Variations</h4>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">HTML</span>
+                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code>&lt;!-- Municipality level (default) --&gt;
+&lt;div class="rs_detail_map" data-variation="1"&gt;&lt;/div&gt;
+
+&lt;!-- Pinpoint (exact coordinates) --&gt;
+&lt;div class="rs_detail_map" data-variation="2"&gt;&lt;/div&gt;
+
+&lt;!-- Zipcode level --&gt;
+&lt;div class="rs_detail_map" data-variation="3"&gt;&lt;/div&gt;</code></pre>
+            </div>
+
+            <h4>Video &amp; Virtual Tour</h4>
+            <p>Multiple options for displaying video and virtual tour content:</p>
+
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Component</th>
+                            <th>What it does</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code class="inline-code">rs_detail_resources</code></td>
+                            <td>Shows all available resources (Video, Virtual Tour, PDF) as styled buttons. Opens in modal or new tab. Auto-hides if no resources available.</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">rs_detail_video_embed</code></td>
+                            <td>Embeds the video directly on the page. Supports YouTube and Vimeo. Auto-hides if no video.</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">rs_detail_video_link</code></td>
+                            <td>Standalone link/button that opens video in new tab. Use with <code class="inline-code">&lt;a&gt;</code> tag.</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">rs_detail_tour_link</code></td>
+                            <td>Standalone link/button that opens virtual tour in new tab. Use with <code class="inline-code">&lt;a&gt;</code> tag.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">HTML</span>
+                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code>&lt;!-- Option 1: All resources as buttons (recommended) --&gt;
+&lt;div class="rs_detail_resources"&gt;&lt;/div&gt;
+
+&lt;!-- Option 2: Embed video directly on page --&gt;
+&lt;div class="rs_detail_video_embed"&gt;&lt;/div&gt;
+
+&lt;!-- Option 3: Custom video link --&gt;
+&lt;a class="rs_detail_video_link" href="#"&gt;Watch Video&lt;/a&gt;
+
+&lt;!-- Option 4: Custom virtual tour link --&gt;
+&lt;a class="rs_detail_tour_link" href="#"&gt;Take Virtual Tour&lt;/a&gt;
+
+&lt;!-- Option 5: PDF download only --&gt;
+&lt;div class="rs_detail_pdf"&gt;&lt;/div&gt;</code></pre>
+            </div>
+
+            <div class="alert alert-info">
+                <div class="alert-title">Auto-hide behavior</div>
+                <p>All video/tour components automatically hide themselves if the property doesn't have the corresponding URL (video_url, virtual_tour_url, or pdf_url).</p>
+            </div>
+        </section>
+
+        <!-- Agent Card -->
+        <section id="detail-agent">
+            <h3>Agent Card</h3>
+            <p>Display agent/contact information.</p>
+
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">HTML</span>
+                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code>&lt;div class="rs_detail_agent"&gt;
+    &lt;div class="rs_detail_agent_photo"&gt;&lt;/div&gt;
+    &lt;div class="rs_detail_agent_name"&gt;&lt;/div&gt;
+    &lt;a class="rs_detail_agent_phone"&gt;&lt;/a&gt;
+    &lt;a class="rs_detail_agent_email"&gt;&lt;/a&gt;
+&lt;/div&gt;</code></pre>
+            </div>
+        </section>
+
+        <!-- Inquiry Form -->
+        <section id="detail-form">
+            <h3>Inquiry Form</h3>
+            <p>Contact form for property inquiries.</p>
+
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">HTML</span>
+                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code>&lt;div class="rs_detail_inquiry_form"&gt;&lt;/div&gt;</code></pre>
+            </div>
+
+            <h4>Complete Detail Page Example</h4>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">HTML</span>
+                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code>&lt;div class="rs_detail"&gt;
+    &lt;!-- Gallery --&gt;
+    &lt;div class="rs_detail_gallery"&gt;&lt;/div&gt;
+
+    &lt;!-- Two Column Layout --&gt;
+    &lt;div class="rs_detail_layout"&gt;
+        &lt;!-- Main Content --&gt;
+        &lt;div class="rs_detail_main"&gt;
+            &lt;h1 class="rs_detail_title"&gt;&lt;/h1&gt;
+            &lt;div class="rs_detail_price"&gt;&lt;/div&gt;
+            &lt;div class="rs_detail_location"&gt;&lt;/div&gt;
+            &lt;div class="rs_detail_specs"&gt;&lt;/div&gt;
+            &lt;div class="rs_detail_description"&gt;&lt;/div&gt;
+            &lt;div class="rs_detail_features"&gt;&lt;/div&gt;
+            &lt;div class="rs_detail_map" data-variation="1"&gt;&lt;/div&gt;
+        &lt;/div&gt;
+
+        &lt;!-- Sidebar --&gt;
+        &lt;div class="rs_detail_sidebar"&gt;
+            &lt;div class="rs_detail_agent"&gt;&lt;/div&gt;
+            &lt;div class="rs_detail_inquiry_form"&gt;&lt;/div&gt;
+        &lt;/div&gt;
+    &lt;/div&gt;
+
+    &lt;!-- Related Properties --&gt;
+    &lt;div class="rs_detail_related" data-limit="6"&gt;&lt;/div&gt;
+&lt;/div&gt;</code></pre>
+            </div>
+        </section>
+
+        <!-- Wishlist -->
+        <section id="wishlist">
+            <h2>Wishlist System</h2>
+
+            <p>Let users save, compare, share, and manage favorite properties.</p>
+
+            <h3>Quick Start</h3>
+            <p>For a standard wishlist page, use the combined component:</p>
+
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">HTML</span>
+                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code>&lt;div class="rs_wishlist_list"&gt;&lt;/div&gt;</code></pre>
+            </div>
+
+            <h3>Modular Components</h3>
+            <p>For custom layouts, use individual components:</p>
+
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Component</th>
+                            <th>Class</th>
+                            <th>Purpose</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Header</td>
+                            <td><code class="inline-code">rs_wishlist_header</code></td>
+                            <td>Title + count</td>
+                        </tr>
+                        <tr>
+                            <td>Actions</td>
+                            <td><code class="inline-code">rs_wishlist_actions</code></td>
+                            <td>PDF, Share, Email, Clear buttons</td>
+                        </tr>
+                        <tr>
+                            <td>Sort</td>
+                            <td><code class="inline-code">rs_wishlist_sort</code></td>
+                            <td>Sort dropdown</td>
+                        </tr>
+                        <tr>
+                            <td>Grid</td>
+                            <td><code class="inline-code">rs_wishlist_grid</code></td>
+                            <td>Property cards</td>
+                        </tr>
+                        <tr>
+                            <td>Empty State</td>
+                            <td><code class="inline-code">rs_wishlist_empty</code></td>
+                            <td>Empty message</td>
+                        </tr>
+                        <tr>
+                            <td>Compare Button</td>
+                            <td><code class="inline-code">rs_wishlist_compare_btn</code></td>
+                            <td>Floating compare button</td>
+                        </tr>
+                        <tr>
+                            <td>Shared Banner</td>
+                            <td><code class="inline-code">rs_wishlist_shared_banner</code></td>
+                            <td>Banner for shared view</td>
+                        </tr>
+                        <tr>
+                            <td>Modals</td>
+                            <td><code class="inline-code">rs_wishlist_modals</code></td>
+                            <td>All modals (required)</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h4>Custom Layout Example</h4>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">HTML</span>
+                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code>&lt;div class="my-wishlist-page"&gt;
+    &lt;div class="my-header-bar"&gt;
+        &lt;div class="rs_wishlist_header"&gt;&lt;/div&gt;
+        &lt;div class="rs_wishlist_sort"&gt;&lt;/div&gt;
+    &lt;/div&gt;
+
+    &lt;div class="rs_wishlist_shared_banner"&gt;&lt;/div&gt;
+
+    &lt;div class="my-sidebar"&gt;
+        &lt;div class="rs_wishlist_actions"&gt;&lt;/div&gt;
+    &lt;/div&gt;
+
+    &lt;div class="my-main"&gt;
+        &lt;div class="rs_wishlist_empty"&gt;&lt;/div&gt;
+        &lt;div class="rs_wishlist_grid"&gt;&lt;/div&gt;
+    &lt;/div&gt;
+
+    &lt;div class="rs_wishlist_compare_btn"&gt;&lt;/div&gt;
+    &lt;div class="rs_wishlist_modals"&gt;&lt;/div&gt;
+&lt;/div&gt;</code></pre>
+            </div>
+
+            <h3>Wishlist Counter</h3>
+            <p>Badge showing wishlist count (for header/nav):</p>
+
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">HTML</span>
+                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code>&lt;div class="rs_wishlist_counter"&gt;&lt;/div&gt;</code></pre>
+            </div>
+        </section>
+
+        <!-- Language Selector -->
+        <section id="language-selector">
+            <h3>Language Selector</h3>
+            <p>Dropdown to change widget language.</p>
+
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">HTML</span>
+                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code>&lt;div class="rs_language_selector"&gt;&lt;/div&gt;</code></pre>
+            </div>
+        </section>
+
+        <!-- Share Buttons -->
+        <section id="share-buttons">
+            <h3>Share Buttons</h3>
+            <p>Social sharing buttons for properties.</p>
+
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">HTML</span>
+                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code>&lt;div class="rs_share_buttons" data-property-id="R123456"&gt;&lt;/div&gt;</code></pre>
+            </div>
+        </section>
+
+        <!-- Filter Locking -->
+        <section id="filter-locking">
+            <h2>Filter Locking</h2>
+
+            <p>Lock or preset filters using <code class="inline-code">data-rs-*</code> attributes. Locked filters cannot be changed by visitors.</p>
+
+            <div class="callout" style="background: linear-gradient(135deg, #e8f4fd 0%, #f0f7ff 100%); border-left: 4px solid #2271b1; padding: 20px 24px; border-radius: 8px; margin: 24px 0;">
+                <h4 style="margin: 0 0 8px; color: #1d4ed8; font-size: 16px; display: flex; align-items: center; gap: 8px;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+                    Finding Your Filter IDs
+                </h4>
+                <p style="margin: 0 0 12px; color: #334155;">
+                    To lock filters, you need the IDs for your locations, property types, and features.
+                </p>
+                <div style="display: grid; gap: 12px; margin-top: 12px;">
+                    <div style="background: white; padding: 12px 16px; border-radius: 6px; border: 1px solid #e2e8f0;">
+                        <strong style="color: #1e40af;">WordPress Users</strong>
+                        <p style="margin: 4px 0 0; font-size: 14px; color: #475569;">
+                            <strong>Admin</strong> → <strong>Settings</strong> → <strong>RealtySoft</strong> → <strong>Open Filter IDs Reference</strong>
+                        </p>
+                    </div>
+                    <div style="background: white; padding: 12px 16px; border-radius: 6px; border: 1px solid #e2e8f0;">
+                        <strong style="color: #1e40af;">Wix / Squarespace / Standalone</strong>
+                        <p style="margin: 4px 0 0; font-size: 14px;">
+                            <a href="https://smartpropertywidget.com/spw/pages/filter-ids.html" target="_blank" style="color: #2563eb; text-decoration: none; font-weight: 500;">
+                                Open Filter IDs Tool →
+                            </a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Attribute</th>
+                            <th>Description</th>
+                            <th>Example Values</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code class="inline-code">data-rs-location</code></td>
+                            <td>Location ID</td>
+                            <td>"505", "123"</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">data-rs-property-type</code></td>
+                            <td>Property type ID</td>
+                            <td>"76", "77"</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">data-rs-listing-type</code></td>
+                            <td>Listing type</td>
+                            <td>"resale", "development", "long_rental", "short_rental"</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">data-rs-beds-min</code></td>
+                            <td>Minimum bedrooms</td>
+                            <td>"1", "2", "3"</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">data-rs-beds-max</code></td>
+                            <td>Maximum bedrooms</td>
+                            <td>"3", "4", "5"</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">data-rs-baths-min</code></td>
+                            <td>Minimum bathrooms</td>
+                            <td>"1", "2"</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">data-rs-baths-max</code></td>
+                            <td>Maximum bathrooms</td>
+                            <td>"2", "3"</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">data-rs-price-min</code></td>
+                            <td>Minimum price</td>
+                            <td>"100000", "200000"</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">data-rs-price-max</code></td>
+                            <td>Maximum price</td>
+                            <td>"500000", "1000000"</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">data-rs-built-min</code></td>
+                            <td>Minimum built area (m&sup2;)</td>
+                            <td>"50", "100"</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">data-rs-built-max</code></td>
+                            <td>Maximum built area (m&sup2;)</td>
+                            <td>"200", "500"</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">data-rs-plot-min</code></td>
+                            <td>Minimum plot size (m&sup2;)</td>
+                            <td>"200", "500"</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">data-rs-plot-max</code></td>
+                            <td>Maximum plot size (m&sup2;)</td>
+                            <td>"1000", "5000"</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">data-rs-features</code></td>
+                            <td>Feature IDs (comma-separated)</td>
+                            <td>"1,5,12"</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">data-rs-ref</code></td>
+                            <td>Property reference</td>
+                            <td>"R123456"</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">data-rs-columns</code></td>
+                            <td>Grid columns (1-4)</td>
+                            <td>"2", "3", "4"</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3>Example: Luxury Villas Page</h3>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">HTML</span>
+                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code>&lt;!-- Only show villas, 3+ beds, over 500k --&gt;
+&lt;div class="rs-search-template-01"
+     data-rs-property-type="76"
+     data-rs-beds-min="3"
+     data-rs-price-min="500000"&gt;&lt;/div&gt;
+
+&lt;div class="rs-listing-template-01"
+     data-rs-property-type="76"
+     data-rs-beds-min="3"
+     data-rs-price-min="500000"&gt;&lt;/div&gt;</code></pre>
+            </div>
+
+            <h3>Example: Location-Specific Rentals Page</h3>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">HTML</span>
+                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code>&lt;!-- Only show long-term rentals in Marbella (ID: 505) --&gt;
+&lt;div class="rs-search-template-01"
+     data-rs-location="505"
+     data-rs-listing-type="long_rental"&gt;&lt;/div&gt;
+
+&lt;div class="rs-listing-template-01"
+     data-rs-location="505"
+     data-rs-listing-type="long_rental"&gt;&lt;/div&gt;</code></pre>
+            </div>
+        </section>
+
+        <!-- Config Reference -->
+        <section id="config-reference">
+            <h2>Configuration Reference</h2>
+
+            <p>Complete list of <code class="inline-code">RealtySoftConfig</code> options:</p>
+
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Option</th>
+                            <th>Type</th>
+                            <th>Default</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code class="inline-code">language</code></td>
+                            <td>string</td>
+                            <td>"en_US"</td>
+                            <td>Default language code</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">ownerEmail</code></td>
+                            <td>string</td>
+                            <td>""</td>
+                            <td>Inquiry form recipient email</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">privacyPolicyUrl</code></td>
+                            <td>string</td>
+                            <td>""</td>
+                            <td>Privacy policy page URL</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">propertyPageSlug</code></td>
+                            <td>string</td>
+                            <td>"property"</td>
+                            <td>URL slug for property pages</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">resultsPage</code></td>
+                            <td>string</td>
+                            <td>"/properties"</td>
+                            <td>Redirect URL for search-only mode</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">perPage</code></td>
+                            <td>number</td>
+                            <td>12</td>
+                            <td>Items per page (grid/list)</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">mapPerPage</code></td>
+                            <td>number</td>
+                            <td>50</td>
+                            <td>Items per page (map view)</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">enableMapView</code></td>
+                            <td>boolean</td>
+                            <td>true</td>
+                            <td>Show map view toggle</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">labelOverrides</code></td>
+                            <td>object</td>
+                            <td>{}</td>
+                            <td>Custom label overrides</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">lockedFilters</code></td>
+                            <td>object</td>
+                            <td>{}</td>
+                            <td>Filters locked via config</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3>Full Configuration Example</h3>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">JavaScript</span>
+                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code>&lt;script&gt;
+window.RealtySoftConfig = {
+    // Language
+    language: 'en_US',
+
+    // Contact
+    ownerEmail: 'info@myrealestate.com',
+    privacyPolicyUrl: '/privacy-policy',
+
+    // URLs
+    propertyPageSlug: 'property',
+    resultsPage: '/properties',
+
+    // Display
+    perPage: 12,
+    mapPerPage: 50,
+    enableMapView: true,
+
+    // Custom labels
+    labelOverrides: {
+        _default: {
+            search_button: 'Find My Home',
+            reset_button: 'Start Over',
+            no_results: 'No properties match your criteria'
+        },
+        es_ES: {
+            search_button: 'Buscar Mi Casa'
+        }
+    },
+
+    // Global filter locks
+    lockedFilters: {
+        listing_type: 'resale'
+    }
+};
+&lt;/script&gt;</code></pre>
+            </div>
+        </section>
+
+        <!-- Troubleshooting -->
+        <section id="troubleshooting">
+            <h2>Troubleshooting</h2>
+
+            <div class="collapsible open">
+                <div class="collapsible-header" onclick="toggleCollapsible(this)">
+                    <span class="collapsible-title">Widget not loading</span>
+                    <svg class="collapsible-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+                </div>
+                <div class="collapsible-content">
+                    <ul>
+                        <li>Verify the loader script is included before <code class="inline-code">&lt;/body&gt;</code></li>
+                        <li>Check browser console for errors (F12 &rarr; Console)</li>
+                        <li>Ensure no JavaScript errors from other scripts are blocking execution</li>
+                        <li>Confirm your domain is whitelisted in the widget configuration</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="collapsible">
+                <div class="collapsible-header" onclick="toggleCollapsible(this)">
+                    <span class="collapsible-title">Components not rendering</span>
+                    <svg class="collapsible-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+                </div>
+                <div class="collapsible-content">
+                    <ul>
+                        <li>Verify class names are correct (e.g., <code class="inline-code">rs_location</code> not <code class="inline-code">rs-location</code>)</li>
+                        <li>Check that <code class="inline-code">data-rs-variation</code> is a valid number for that component</li>
+                        <li>Ensure parent containers are visible (not <code class="inline-code">display: none</code>)</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="collapsible">
+                <div class="collapsible-header" onclick="toggleCollapsible(this)">
+                    <span class="collapsible-title">No properties showing</span>
+                    <svg class="collapsible-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+                </div>
+                <div class="collapsible-content">
+                    <ul>
+                        <li>Check if filters are too restrictive</li>
+                        <li>Verify API connection in browser Network tab</li>
+                        <li>Ensure locked filters have valid IDs</li>
+                        <li>Check <code class="inline-code">data-rs-standalone</code> is set correctly for independent grids</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="collapsible">
+                <div class="collapsible-header" onclick="toggleCollapsible(this)">
+                    <span class="collapsible-title">Styling conflicts</span>
+                    <svg class="collapsible-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+                </div>
+                <div class="collapsible-content">
+                    <ul>
+                        <li>Widget CSS uses <code class="inline-code">rs_</code> and <code class="inline-code">rs-</code> prefixes to avoid conflicts</li>
+                        <li>If your theme overrides widget styles, use more specific selectors</li>
+                        <li>Check for <code class="inline-code">!important</code> rules in your theme</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="collapsible">
+                <div class="collapsible-header" onclick="toggleCollapsible(this)">
+                    <span class="collapsible-title">Property detail page not loading</span>
+                    <svg class="collapsible-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+                </div>
+                <div class="collapsible-content">
+                    <ul>
+                        <li>Verify <code class="inline-code">rs_detail</code> container exists on the page</li>
+                        <li>Check property ID is in the URL or set via <code class="inline-code">data-property-id</code></li>
+                        <li>Ensure <code class="inline-code">propertyPageSlug</code> matches your URL structure</li>
+                    </ul>
+                </div>
+            </div>
+
+            <h3>Debug Mode</h3>
+            <p>Enable debug mode to see detailed logs in the browser console:</p>
+
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">JavaScript</span>
+                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code>window.RealtySoftConfig = {
+    debug: true
+};</code></pre>
+            </div>
+
+            <h3>Browser Console Commands</h3>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">JavaScript</span>
+                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code>// Check widget mode
+RealtySoft.getMode();
+
+// Get current state
+RealtySoft.State.getState();
+
+// Get current filters
+RealtySoft.State.get('filters');
+
+// Manually trigger search
+RealtySoft.search();
+
+// Reset all filters
+RealtySoft.reset();</code></pre>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        // Reading Progress Bar
+        function updateProgressBar() {
+            const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+            const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrolled = (winScroll / height) * 100;
+            document.getElementById('progressBar').style.width = scrolled + '%';
+        }
+
+        // Back to Top Button
+        function updateBackToTop() {
+            const btn = document.getElementById('backToTop');
+            if (window.scrollY > 400) {
+                btn.classList.add('visible');
+            } else {
+                btn.classList.remove('visible');
+            }
+        }
+
+        document.getElementById('backToTop').addEventListener('click', () => {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+
+        // Combined scroll handler
+        window.addEventListener('scroll', () => {
+            updateProgressBar();
+            updateBackToTop();
+            updateActiveLink();
+        }, { passive: true });
+
+        // Copy to clipboard
+        function copyCode(btn) {
+            const codeBlock = btn.closest('.code-block');
+            const code = codeBlock.querySelector('code').innerText;
+
+            navigator.clipboard.writeText(code).then(() => {
+                const originalText = btn.textContent;
+                btn.textContent = '✓ Copied!';
+                btn.classList.add('copied');
+                setTimeout(() => {
+                    btn.textContent = 'Copy';
+                    btn.classList.remove('copied');
+                }, 2000);
+            });
+        }
+
+        // Toggle collapsible
+        function toggleCollapsible(header) {
+            const collapsible = header.closest('.collapsible');
+            collapsible.classList.toggle('open');
+        }
+
+        // Toggle sidebar (mobile)
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            sidebar.classList.toggle('open');
+            overlay.classList.toggle('visible');
+        }
+
+        // Filter navigation
+        function filterNav() {
+            const filter = document.getElementById('searchInput').value.toLowerCase();
+            const links = document.querySelectorAll('.nav-link');
+            const sections = document.querySelectorAll('.nav-section');
+
+            links.forEach(link => {
+                const text = link.textContent.toLowerCase();
+                const href = link.getAttribute('href').toLowerCase();
+                if (text.includes(filter) || href.includes(filter)) {
+                    link.style.display = 'flex';
+                } else {
+                    link.style.display = 'none';
+                }
+            });
+
+            // Show/hide section titles based on visible links
+            sections.forEach(section => {
+                const visibleLinks = section.querySelectorAll('.nav-link[style="display: flex"], .nav-link:not([style])');
+                const title = section.querySelector('.nav-section-title');
+                if (title) {
+                    if (filter && visibleLinks.length === 0) {
+                        title.style.display = 'none';
+                    } else {
+                        title.style.display = 'block';
+                    }
+                }
+            });
+        }
+
+        // Active link highlighting
+        function updateActiveLink() {
+            const sections = document.querySelectorAll('section[id]');
+            const navLinks = document.querySelectorAll('.nav-link');
+
+            let current = '';
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop;
+                if (window.scrollY >= sectionTop - 120) {
+                    current = section.getAttribute('id');
+                }
+            });
+
+            navLinks.forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href') === '#' + current) {
+                    link.classList.add('active');
+                    // Scroll active link into view in sidebar
+                    if (window.innerWidth > 900) {
+                        link.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+                    }
+                }
+            });
+        }
+
+        // Close sidebar when clicking overlay (mobile)
+        document.getElementById('sidebarOverlay').addEventListener('click', () => {
+            document.getElementById('sidebar').classList.remove('open');
+            document.getElementById('sidebarOverlay').classList.remove('visible');
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            // Press "/" to focus search
+            if (e.key === '/' && !['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) {
+                e.preventDefault();
+                document.getElementById('searchInput').focus();
+            }
+
+            // Press "Escape" to clear search and blur
+            if (e.key === 'Escape') {
+                const searchInput = document.getElementById('searchInput');
+                if (document.activeElement === searchInput) {
+                    searchInput.value = '';
+                    filterNav();
+                    searchInput.blur();
+                }
+                // Close mobile sidebar
+                document.getElementById('sidebar').classList.remove('open');
+                document.getElementById('sidebarOverlay').classList.remove('visible');
+            }
+
+            // Press "T" to scroll to top
+            if (e.key === 't' && !['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        });
+
+        // Tab functionality
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const tabs = btn.closest('.tabs');
+                const tabId = btn.dataset.tab;
+
+                tabs.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                tabs.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+                btn.classList.add('active');
+                tabs.querySelector(`#${tabId}`).classList.add('active');
+            });
+        });
+
+        // Smooth scroll for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                const href = this.getAttribute('href');
+                if (href !== '#') {
+                    e.preventDefault();
+                    const target = document.querySelector(href);
+                    if (target) {
+                        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        // Close mobile sidebar after navigation
+                        if (window.innerWidth <= 900) {
+                            document.getElementById('sidebar').classList.remove('open');
+                            document.getElementById('sidebarOverlay').classList.remove('visible');
+                        }
+                    }
+                }
+            });
+        });
+
+        // Initialize on load
+        document.addEventListener('DOMContentLoaded', () => {
+            updateProgressBar();
+            updateBackToTop();
+            updateActiveLink();
+        });
+    </script>
+</body>
+</html>

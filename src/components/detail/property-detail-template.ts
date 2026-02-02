@@ -20,6 +20,7 @@ import { RSDetailWishlist } from './wishlist';
 import { RSDetailMap } from './map';
 import { RSDetailInquiryForm } from './inquiry-form';
 import { RSDetailRelated } from './related';
+import { RSMortgageCalculator } from './mortgage-calculator';
 
 // Declare globals
 declare const RealtySoft: RealtySoftModule;
@@ -392,6 +393,7 @@ class RSPropertyDetailTemplate extends RSBaseComponent {
           ${this.renderSidebarPdf(p)}
           <div class="rs-template__inquiry-form" id="rs-template-inquiry"></div>
           <div class="rs-template__sidebar-share" id="rs-template-share"></div>
+          <div class="rs-template__mortgage-calculator" id="rs-template-mortgage"></div>
         </div>
       </div>
 
@@ -900,6 +902,7 @@ class RSPropertyDetailTemplate extends RSBaseComponent {
       ['#rs-template-map', RSDetailMap],
       ['#rs-template-inquiry', RSDetailInquiryForm],
       ['#rs-template-related', RSDetailRelated],
+      ['#rs-template-mortgage', RSMortgageCalculator],
     ];
 
     for (const [selector, ComponentClass] of componentMappings) {

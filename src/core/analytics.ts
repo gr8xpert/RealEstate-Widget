@@ -117,7 +117,9 @@ const RealtySoftAnalytics: RealtySoftAnalyticsModule = (function () {
       config.endpoint = detectEndpoint();
     }
 
-    console.log('[RealtySoft] Analytics initialized, endpoint:', config.endpoint);
+    if (config.debug) {
+      console.log('[RealtySoft] Analytics initialized, endpoint:', config.endpoint);
+    }
 
     window.addEventListener('beforeunload', flush);
 
@@ -183,12 +185,14 @@ const RealtySoftAnalytics: RealtySoftAnalyticsModule = (function () {
     const events = eventQueue.slice();
     eventQueue = [];
 
-    console.log(
-      '[RealtySoft] Analytics: Sending',
-      events.length,
-      'events to',
-      config.endpoint
-    );
+    if (config.debug) {
+      console.log(
+        '[RealtySoft] Analytics: Sending',
+        events.length,
+        'events to',
+        config.endpoint
+      );
+    }
 
     if (!config.endpoint) return;
 
@@ -199,11 +203,15 @@ const RealtySoftAnalytics: RealtySoftAnalyticsModule = (function () {
       keepalive: true,
     })
       .then(function (response) {
-        console.log('[RealtySoft] Analytics response:', response.status);
+        if (config.debug) {
+          console.log('[RealtySoft] Analytics response:', response.status);
+        }
         return response.json();
       })
       .then(function (data) {
-        console.log('[RealtySoft] Analytics result:', data);
+        if (config.debug) {
+          console.log('[RealtySoft] Analytics result:', data);
+        }
       })
       .catch(function (err) {
         console.error('[RealtySoft] Analytics send failed:', err);

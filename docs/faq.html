@@ -1,0 +1,1105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Property Widget - FAQ</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --primary-light: #dbeafe;
+            --text: #1e293b;
+            --text-muted: #64748b;
+            --bg: #f8fafc;
+            --white: #ffffff;
+            --border: #e2e8f0;
+            --success: #10b981;
+            --warning: #f59e0b;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            font-size: 16px;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            color: white;
+            padding: 60px 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* Search Box */
+        .search-container {
+            max-width: 500px;
+            margin: 30px auto 0;
+            position: relative;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 16px 20px 16px 50px;
+            font-size: 16px;
+            border: none;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.95);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            outline: none;
+            font-family: inherit;
+        }
+
+        .search-input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 18px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+        }
+
+        /* Main Content */
+        .main {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 20px 80px;
+        }
+
+        /* Category Navigation */
+        .category-nav {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 40px;
+            padding: 20px;
+            background: var(--white);
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+        }
+
+        .category-btn {
+            padding: 10px 20px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text);
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+
+        .category-btn:hover {
+            background: var(--primary-light);
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .category-btn.active {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
+        }
+
+        /* FAQ Section */
+        .faq-section {
+            margin-bottom: 40px;
+        }
+
+        .faq-section-title {
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .faq-section-title svg {
+            color: var(--primary);
+        }
+
+        /* FAQ Item */
+        .faq-item {
+            background: var(--white);
+            border-radius: 12px;
+            margin-bottom: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+            overflow: hidden;
+            border: 1px solid var(--border);
+            transition: all 0.2s;
+        }
+
+        .faq-item:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .faq-item.hidden {
+            display: none;
+        }
+
+        .faq-question {
+            width: 100%;
+            padding: 20px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: none;
+            border: none;
+            text-align: left;
+            font-size: 16px;
+            font-weight: 500;
+            color: var(--text);
+            cursor: pointer;
+            font-family: inherit;
+            gap: 16px;
+        }
+
+        .faq-question:hover {
+            color: var(--primary);
+        }
+
+        .faq-icon {
+            flex-shrink: 0;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: var(--bg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+
+        .faq-item.open .faq-icon {
+            background: var(--primary);
+            color: white;
+            transform: rotate(180deg);
+        }
+
+        .faq-answer {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+
+        .faq-item.open .faq-answer {
+            max-height: 500px;
+        }
+
+        .faq-answer-content {
+            padding: 0 24px 24px;
+            color: var(--text-muted);
+            line-height: 1.7;
+        }
+
+        .faq-answer-content a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        .faq-answer-content a:hover {
+            text-decoration: underline;
+        }
+
+        .faq-answer-content ul {
+            margin: 12px 0;
+            padding-left: 20px;
+        }
+
+        .faq-answer-content li {
+            margin-bottom: 8px;
+        }
+
+        .faq-answer-content strong {
+            color: var(--text);
+        }
+
+        /* No Results */
+        .no-results {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-muted);
+            display: none;
+        }
+
+        .no-results.show {
+            display: block;
+        }
+
+        .no-results svg {
+            width: 64px;
+            height: 64px;
+            margin-bottom: 16px;
+            opacity: 0.4;
+        }
+
+        .no-results h3 {
+            font-size: 1.2rem;
+            color: var(--text);
+            margin-bottom: 8px;
+        }
+
+        /* Contact CTA */
+        .contact-cta {
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            color: white;
+            padding: 40px;
+            border-radius: 16px;
+            text-align: center;
+            margin-top: 60px;
+        }
+
+        .contact-cta h2 {
+            font-size: 1.5rem;
+            margin-bottom: 12px;
+        }
+
+        .contact-cta p {
+            opacity: 0.9;
+            margin-bottom: 24px;
+        }
+
+        .contact-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 14px 28px;
+            background: white;
+            color: var(--primary-dark);
+            border-radius: 8px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+
+        .contact-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 30px 20px;
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        .footer a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        /* Back to Top */
+        .back-to-top {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 48px;
+            height: 48px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+        }
+
+        .back-to-top.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .back-to-top:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 16px rgba(37, 99, 235, 0.5);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header {
+                padding: 40px 20px;
+            }
+
+            .header h1 {
+                font-size: 1.8rem;
+            }
+
+            .category-nav {
+                padding: 15px;
+            }
+
+            .category-btn {
+                padding: 8px 16px;
+                font-size: 13px;
+            }
+
+            .faq-question {
+                padding: 16px 20px;
+                font-size: 15px;
+            }
+
+            .faq-answer-content {
+                padding: 0 20px 20px;
+            }
+
+            .contact-cta {
+                padding: 30px 20px;
+            }
+
+            .back-to-top {
+                bottom: 20px;
+                right: 20px;
+                width: 44px;
+                height: 44px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <h1>Frequently Asked Questions</h1>
+        <p>Find answers to common questions about Smart Property Widget</p>
+
+        <div class="search-container">
+            <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+            </svg>
+            <input type="text" class="search-input" id="faqSearch" placeholder="Search for answers...">
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main">
+        <!-- Category Navigation -->
+        <nav class="category-nav">
+            <button class="category-btn active" data-category="all">All Questions</button>
+            <button class="category-btn" data-category="general">General</button>
+            <button class="category-btn" data-category="features">Features</button>
+            <button class="category-btn" data-category="compatibility">Compatibility</button>
+            <button class="category-btn" data-category="properties">Properties</button>
+            <button class="category-btn" data-category="support">Support</button>
+        </nav>
+
+        <!-- No Results Message -->
+        <div class="no-results" id="noResults">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+            </svg>
+            <h3>No results found</h3>
+            <p>Try searching with different keywords or browse all categories.</p>
+        </div>
+
+        <!-- General Questions -->
+        <section class="faq-section" data-category="general">
+            <h2 class="faq-section-title">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/>
+                </svg>
+                General Questions
+            </h2>
+
+            <div class="faq-item" data-category="general">
+                <button class="faq-question">
+                    What is Smart Property Widget?
+                    <span class="faq-icon">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="m6 9 6 6 6-6"/>
+                        </svg>
+                    </span>
+                </button>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        Smart Property Widget is a powerful property listing solution that allows real estate agencies and property websites to display their property listings beautifully. It provides search filters, property grids, carousels, detailed property pages, and many more features to create a professional property website.
+                    </div>
+                </div>
+            </div>
+
+            <div class="faq-item" data-category="general">
+                <button class="faq-question">
+                    How do I get started with Smart Property Widget?
+                    <span class="faq-icon">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="m6 9 6 6 6-6"/>
+                        </svg>
+                    </span>
+                </button>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        Getting started is simple:
+                        <ul>
+                            <li><strong>WordPress users:</strong> Install and activate the Smart Property Widget plugin from your WordPress admin panel</li>
+                            <li><strong>Other platforms:</strong> Add a small script to your website and start using the widget components</li>
+                        </ul>
+                        Once set up, your properties will automatically sync and display on your website.
+                    </div>
+                </div>
+            </div>
+
+            <div class="faq-item" data-category="general">
+                <button class="faq-question">
+                    Do I need technical knowledge to use the widget?
+                    <span class="faq-icon">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="m6 9 6 6 6-6"/>
+                        </svg>
+                    </span>
+                </button>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        No technical knowledge is required for basic usage. The widget comes with ready-made templates that you can simply add to your pages. For WordPress users, you can use page builders like Elementor or Divi to drag and drop components. Advanced customization options are available for those who want more control.
+                    </div>
+                </div>
+            </div>
+
+            <div class="faq-item" data-category="general">
+                <button class="faq-question">
+                    Is my data secure with Smart Property Widget?
+                    <span class="faq-icon">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="m6 9 6 6 6-6"/>
+                        </svg>
+                    </span>
+                </button>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        Yes, your data is secure. All data transfers are encrypted using HTTPS. Your property data is synced from your existing property management system and displayed securely on your website. We do not store sensitive client information and follow industry-standard security practices.
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Features -->
+        <section class="faq-section" data-category="features">
+            <h2 class="faq-section-title">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                </svg>
+                Features
+            </h2>
+
+            <div class="faq-item" data-category="features">
+                <button class="faq-question">
+                    What search filters are available?
+                    <span class="faq-icon">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="m6 9 6 6 6-6"/>
+                        </svg>
+                    </span>
+                </button>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        Smart Property Widget offers comprehensive search filters including:
+                        <ul>
+                            <li><strong>Location:</strong> Search by area, city, or region</li>
+                            <li><strong>Property Type:</strong> Villa, apartment, townhouse, penthouse, etc.</li>
+                            <li><strong>Listing Type:</strong> For sale, long-term rental, short-term rental</li>
+                            <li><strong>Price Range:</strong> Minimum and maximum price</li>
+                            <li><strong>Bedrooms & Bathrooms:</strong> Filter by number of rooms</li>
+                            <li><strong>Size:</strong> Built area and plot size</li>
+                            <li><strong>Features:</strong> Pool, garden, garage, sea views, etc.</li>
+                            <li><strong>Reference Number:</strong> Direct property lookup</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="faq-item" data-category="features">
+                <button class="faq-question">
+                    Can visitors save their favorite properties?
+                    <span class="faq-icon">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="m6 9 6 6 6-6"/>
+                        </svg>
+                    </span>
+                </button>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        Yes! The widget includes a wishlist feature that allows visitors to save properties they're interested in. Saved properties are stored in the browser, so visitors can return later to view their favorites. You can also add a wishlist page to your website where visitors can see all their saved properties at once.
+                    </div>
+                </div>
+            </div>
+
+            <div class="faq-item" data-category="features">
+                <button class="faq-question">
+                    Does the widget support multiple languages?
+                    <span class="faq-icon">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="m6 9 6 6 6-6"/>
+                        </svg>
+                    </span>
+                </button>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        Yes, Smart Property Widget supports 16 languages including English, Spanish, German, French, Dutch, Portuguese, Italian, Russian, Swedish, Danish, Norwegian, Finnish, Polish, Czech, Romanian, and Arabic. The widget automatically detects the visitor's language or you can set a specific language for your website.
+                    </div>
+                </div>
+            </div>
+
+            <div class="faq-item" data-category="features">
+                <button class="faq-question">
+                    Can I display properties on a map?
+                    <span class="faq-icon">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="m6 9 6 6 6-6"/>
+                        </svg>
+                    </span>
+                </button>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        Yes, the widget includes an interactive map view feature. Visitors can browse properties on a map, see property markers with price tags, and click on markers to view property details. The map integrates with Google Maps to show property locations accurately.
+                    </div>
+                </div>
+            </div>
+
+            <div class="faq-item" data-category="features">
+                <button class="faq-question">
+                    Are there different display layouts available?
+                    <span class="faq-icon">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="m6 9 6 6 6-6"/>
+                        </svg>
+                    </span>
+                </button>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        Yes, the widget offers multiple display options:
+                        <ul>
+                            <li><strong>Grid View:</strong> Display properties in a responsive grid (1-4 columns)</li>
+                            <li><strong>List View:</strong> Show properties in a detailed list format</li>
+                            <li><strong>Carousel:</strong> Sliding property showcase for featured listings</li>
+                            <li><strong>Map View:</strong> Interactive map with property markers</li>
+                        </ul>
+                        There are also 12 different card templates to choose from, each with a unique design style.
+                    </div>
+                </div>
+            </div>
+
+            <div class="faq-item" data-category="features">
+                <button class="faq-question">
+                    Can I show video tours and virtual tours?
+                    <span class="faq-icon">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="m6 9 6 6 6-6"/>
+                        </svg>
+                    </span>
+                </button>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        Yes! If your properties have video tours (YouTube, Vimeo) or virtual tours (Matterport, etc.), these will automatically display on the property detail page. Visitors can watch videos and explore virtual tours directly on your website without leaving the page.
+                    </div>
+                </div>
+            </div>
+
+            <div class="faq-item" data-category="features">
+                <button class="faq-question">
+                    Is there an inquiry/contact form for properties?
+                    <span class="faq-icon">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="m6 9 6 6 6-6"/>
+                        </svg>
+                    </span>
+                </button>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        Yes, each property detail page includes an inquiry form. When visitors submit an inquiry, it is sent directly to your email address. You can customize the thank you message shown after submission or redirect visitors to a custom thank you page.
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Compatibility -->
+        <section class="faq-section" data-category="compatibility">
+            <h2 class="faq-section-title">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/>
+                </svg>
+                Compatibility
+            </h2>
+
+            <div class="faq-item" data-category="compatibility">
+                <button class="faq-question">
+                    Which platforms is Smart Property Widget compatible with?
+                    <span class="faq-icon">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="m6 9 6 6 6-6"/>
+                        </svg>
+                    </span>
+                </button>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        Smart Property Widget works with virtually any website platform:
+                        <ul>
+                            <li><strong>WordPress:</strong> Dedicated plugin with easy setup</li>
+                            <li><strong>Wix:</strong> Add via custom code embed</li>
+                            <li><strong>Squarespace:</strong> Add via code injection</li>
+                            <li><strong>Webflow:</strong> Add via custom code</li>
+                            <li><strong>Custom HTML:</strong> Works with any HTML website</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="faq-item" data-category="compatibility">
+                <button class="faq-question">
+                    Does it work with WordPress page builders?
+                    <span class="faq-icon">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="m6 9 6 6 6-6"/>
+                        </svg>
+                    </span>
+                </button>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        Yes! Smart Property Widget is fully compatible with popular WordPress page builders including:
+                        <ul>
+                            <li>Elementor</li>
+                            <li>Divi Builder</li>
+                            <li>WPBakery Page Builder</li>
+                            <li>Beaver Builder</li>
+                            <li>Gutenberg (WordPress Block Editor)</li>
+                        </ul>
+                        Simply add an HTML block and paste the widget code.
+                    </div>
+                </div>
+            </div>
+
+            <div class="faq-item" data-category="compatibility">
+                <button class="faq-question">
+                    Is the widget mobile-friendly?
+                    <span class="faq-icon">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="m6 9 6 6 6-6"/>
+                        </svg>
+                    </span>
+                </button>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        Absolutely! Smart Property Widget is fully responsive and works perfectly on all devices including smartphones, tablets, laptops, and desktop computers. The layout automatically adjusts to provide the best viewing experience on any screen size.
+                    </div>
+                </div>
+            </div>
+
+            <div class="faq-item" data-category="compatibility">
+                <button class="faq-question">
+                    Which browsers are supported?
+                    <span class="faq-icon">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="m6 9 6 6 6-6"/>
+                        </svg>
+                    </span>
+                </button>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        Smart Property Widget supports all modern browsers including:
+                        <ul>
+                            <li>Google Chrome</li>
+                            <li>Mozilla Firefox</li>
+                            <li>Safari</li>
+                            <li>Microsoft Edge</li>
+                            <li>Opera</li>
+                        </ul>
+                        The widget is built with modern web standards to ensure consistent performance across all browsers.
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Properties -->
+        <section class="faq-section" data-category="properties">
+            <h2 class="faq-section-title">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+                </svg>
+                Properties
+            </h2>
+
+            <div class="faq-item" data-category="properties">
+                <button class="faq-question">
+                    How are properties synced to my website?
+                    <span class="faq-icon">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="m6 9 6 6 6-6"/>
+                        </svg>
+                    </span>
+                </button>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        Properties are automatically synced from your property management system (like Resales Online, Infocasa, or other CRM systems). When you add, update, or remove a property in your CRM, the changes are automatically reflected on your website. No manual updates required!
+                    </div>
+                </div>
+            </div>
+
+            <div class="faq-item" data-category="properties">
+                <button class="faq-question">
+                    Can I feature specific properties on my homepage?
+                    <span class="faq-icon">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="m6 9 6 6 6-6"/>
+                        </svg>
+                    </span>
+                </button>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        Yes! You can display specific properties by filtering based on various criteria like location, property type, price range, or by marking properties as "featured" in your CRM. You can also create dedicated pages for specific property categories (e.g., "Luxury Villas in Marbella").
+                    </div>
+                </div>
+            </div>
+
+            <div class="faq-item" data-category="properties">
+                <button class="faq-question">
+                    How many properties can I display?
+                    <span class="faq-icon">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="m6 9 6 6 6-6"/>
+                        </svg>
+                    </span>
+                </button>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        There is no limit to the number of properties you can display. Whether you have 10 properties or 10,000, the widget handles them efficiently with pagination and lazy loading to ensure fast page performance.
+                    </div>
+                </div>
+            </div>
+
+            <div class="faq-item" data-category="properties">
+                <button class="faq-question">
+                    Can visitors share properties on social media?
+                    <span class="faq-icon">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="m6 9 6 6 6-6"/>
+                        </svg>
+                    </span>
+                </button>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        Yes, property detail pages include social sharing buttons that allow visitors to share properties on Facebook, Twitter, WhatsApp, LinkedIn, and via email. This helps increase exposure for your listings through word-of-mouth sharing.
+                    </div>
+                </div>
+            </div>
+
+            <div class="faq-item" data-category="properties">
+                <button class="faq-question">
+                    What property information is displayed?
+                    <span class="faq-icon">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="m6 9 6 6 6-6"/>
+                        </svg>
+                    </span>
+                </button>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        Property detail pages can display comprehensive information including:
+                        <ul>
+                            <li>Photo gallery with fullscreen view</li>
+                            <li>Price and property reference</li>
+                            <li>Location with interactive map</li>
+                            <li>Bedrooms, bathrooms, and size details</li>
+                            <li>Full property description</li>
+                            <li>Features and amenities list</li>
+                            <li>Video tour and virtual tour</li>
+                            <li>PDF brochure download</li>
+                            <li>Similar/related properties</li>
+                            <li>Contact/inquiry form</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Support -->
+        <section class="faq-section" data-category="support">
+            <h2 class="faq-section-title">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                </svg>
+                Support
+            </h2>
+
+            <div class="faq-item" data-category="support">
+                <button class="faq-question">
+                    How do I get help if I have issues?
+                    <span class="faq-icon">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="m6 9 6 6 6-6"/>
+                        </svg>
+                    </span>
+                </button>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        If you encounter any issues or have questions, you can:
+                        <ul>
+                            <li>Check our <a href="https://smartpropertywidget.com/spw/Documentation.html" target="_blank">Documentation</a> for detailed guides</li>
+                            <li>Contact our support team via email</li>
+                            <li>Reach out through your CRM provider's support channel</li>
+                        </ul>
+                        We're here to help you get the most out of Smart Property Widget!
+                    </div>
+                </div>
+            </div>
+
+            <div class="faq-item" data-category="support">
+                <button class="faq-question">
+                    Is there documentation available?
+                    <span class="faq-icon">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="m6 9 6 6 6-6"/>
+                        </svg>
+                    </span>
+                </button>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        Yes, we provide comprehensive documentation covering all aspects of the widget. Visit our <a href="https://smartpropertywidget.com/spw/Documentation.html" target="_blank">Documentation page</a> for detailed guides on components, templates, configuration options, and more.
+                    </div>
+                </div>
+            </div>
+
+            <div class="faq-item" data-category="support">
+                <button class="faq-question">
+                    Can I request new features?
+                    <span class="faq-icon">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="m6 9 6 6 6-6"/>
+                        </svg>
+                    </span>
+                </button>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        Absolutely! We're always looking to improve Smart Property Widget based on user feedback. If you have a feature request or suggestion, please contact our support team. We review all requests and prioritize based on user demand and feasibility.
+                    </div>
+                </div>
+            </div>
+
+            <div class="faq-item" data-category="support">
+                <button class="faq-question">
+                    My properties are not showing. What should I do?
+                    <span class="faq-icon">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="m6 9 6 6 6-6"/>
+                        </svg>
+                    </span>
+                </button>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        If properties are not displaying, try these steps:
+                        <ul>
+                            <li><strong>Check your connection:</strong> Ensure your website is properly connected to your property management system</li>
+                            <li><strong>Verify property status:</strong> Make sure properties are marked as "active" or "published" in your CRM</li>
+                            <li><strong>Clear cache:</strong> Clear your browser cache and any website caching plugins</li>
+                            <li><strong>Check filters:</strong> Ensure no filters are accidentally limiting the results</li>
+                        </ul>
+                        If the issue persists, contact our support team for assistance.
+                    </div>
+                </div>
+            </div>
+
+            <div class="faq-item" data-category="support">
+                <button class="faq-question">
+                    How often is the widget updated?
+                    <span class="faq-icon">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="m6 9 6 6 6-6"/>
+                        </svg>
+                    </span>
+                </button>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        We regularly update Smart Property Widget with new features, improvements, and bug fixes. Updates are deployed automatically, so you always have access to the latest version without needing to do anything. Major updates are announced through our communication channels.
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Contact CTA -->
+        <div class="contact-cta">
+            <h2>Still have questions?</h2>
+            <p>Can't find what you're looking for? Our support team is here to help.</p>
+            <a href="mailto:support@smartpropertywidget.com" class="contact-btn">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                    <polyline points="22,6 12,13 2,6"/>
+                </svg>
+                Contact Support
+            </a>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p>
+            <a href="https://smartpropertywidget.com" target="_blank">Smart Property Widget</a> ·
+            <a href="https://smartpropertywidget.com/spw/Documentation.html" target="_blank">Documentation</a>
+        </p>
+    </footer>
+
+    <!-- Back to Top Button -->
+    <button class="back-to-top" id="backToTop" title="Back to top">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="m18 15-6-6-6 6"/>
+        </svg>
+    </button>
+
+    <script>
+        // FAQ Accordion
+        document.querySelectorAll('.faq-question').forEach(button => {
+            button.addEventListener('click', () => {
+                const item = button.parentElement;
+                const wasOpen = item.classList.contains('open');
+
+                // Close all items
+                document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('open'));
+
+                // Open clicked item if it wasn't open
+                if (!wasOpen) {
+                    item.classList.add('open');
+                }
+            });
+        });
+
+        // Category Filter
+        document.querySelectorAll('.category-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const category = btn.dataset.category;
+
+                // Update active button
+                document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+
+                // Filter sections and items
+                if (category === 'all') {
+                    document.querySelectorAll('.faq-section').forEach(s => s.style.display = 'block');
+                    document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('hidden'));
+                } else {
+                    document.querySelectorAll('.faq-section').forEach(section => {
+                        if (section.dataset.category === category) {
+                            section.style.display = 'block';
+                        } else {
+                            section.style.display = 'none';
+                        }
+                    });
+                }
+
+                // Clear search
+                document.getElementById('faqSearch').value = '';
+                document.getElementById('noResults').classList.remove('show');
+            });
+        });
+
+        // Search Functionality
+        const searchInput = document.getElementById('faqSearch');
+        const noResults = document.getElementById('noResults');
+
+        searchInput.addEventListener('input', () => {
+            const query = searchInput.value.toLowerCase().trim();
+
+            // Reset category filter
+            document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
+            document.querySelector('[data-category="all"]').classList.add('active');
+            document.querySelectorAll('.faq-section').forEach(s => s.style.display = 'block');
+
+            if (!query) {
+                document.querySelectorAll('.faq-item').forEach(item => {
+                    item.classList.remove('hidden');
+                });
+                noResults.classList.remove('show');
+                return;
+            }
+
+            let hasResults = false;
+
+            document.querySelectorAll('.faq-item').forEach(item => {
+                const question = item.querySelector('.faq-question').textContent.toLowerCase();
+                const answer = item.querySelector('.faq-answer-content').textContent.toLowerCase();
+
+                if (question.includes(query) || answer.includes(query)) {
+                    item.classList.remove('hidden');
+                    hasResults = true;
+                } else {
+                    item.classList.add('hidden');
+                }
+            });
+
+            // Show/hide no results message
+            noResults.classList.toggle('show', !hasResults);
+
+            // Hide empty sections
+            document.querySelectorAll('.faq-section').forEach(section => {
+                const visibleItems = section.querySelectorAll('.faq-item:not(.hidden)').length;
+                section.style.display = visibleItems > 0 ? 'block' : 'none';
+            });
+        });
+
+        // Back to Top Button
+        const backToTop = document.getElementById('backToTop');
+
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 300) {
+                backToTop.classList.add('visible');
+            } else {
+                backToTop.classList.remove('visible');
+            }
+        });
+
+        backToTop.addEventListener('click', () => {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+
+        // Keyboard shortcut for search
+        document.addEventListener('keydown', (e) => {
+            if (e.key === '/' && document.activeElement !== searchInput) {
+                e.preventDefault();
+                searchInput.focus();
+            }
+            if (e.key === 'Escape') {
+                searchInput.blur();
+            }
+        });
+    </script>
+</body>
+</html>

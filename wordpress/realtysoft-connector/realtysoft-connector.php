@@ -790,6 +790,36 @@ class RealtySoft_Connector {
         ?>
         <div class="wrap">
             <h1>RealtySoft Settings</h1>
+
+            <?php
+            $current_domain = preg_replace('/^www\./', '', parse_url(home_url(), PHP_URL_HOST));
+            $analytics_url = 'https://smartpropertywidget.com/spw/analytics/client.php?client=' . urlencode($current_domain);
+            ?>
+            <div style="margin: 15px 0 20px; padding: 15px 20px; background: #f0f6fc; border-left: 4px solid #2271b1; border-radius: 4px; display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+                <div style="flex: 1; min-width: 200px;">
+                    <strong style="font-size: 14px;">Quick Links</strong>
+                    <p style="margin: 5px 0 0; color: #50575e;">
+                        Access documentation and view analytics for <strong><?php echo esc_html($current_domain); ?></strong>
+                    </p>
+                </div>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <a href="https://smartpropertywidget.com/spw/Documentation.html"
+                       target="_blank"
+                       class="button button-secondary"
+                       style="display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;">
+                        <span class="dashicons dashicons-book" style="margin-top: 3px;"></span>
+                        Documentation
+                    </a>
+                    <a href="<?php echo esc_url($analytics_url); ?>"
+                       target="_blank"
+                       class="button button-primary"
+                       style="display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;">
+                        <span class="dashicons dashicons-chart-bar" style="margin-top: 3px;"></span>
+                        View Analytics
+                    </a>
+                </div>
+            </div>
+
             <form method="post" action="options.php">
                 <?php settings_fields('realtysoft_settings'); ?>
 
