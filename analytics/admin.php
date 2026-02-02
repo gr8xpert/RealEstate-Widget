@@ -1,11 +1,11 @@
 <?php
 /**
- * RealtySoft Widget v2 - Admin Analytics Dashboard
+ * Smart Property Widget - Admin Analytics Dashboard
  * Master view for all clients with charts and data visualization
  */
 
 // Simple admin authentication (you can enhance this)
-$adminPassword = 'RealtySoftAdmin2024'; // Change this in production
+$adminPassword = 'SPW_Admin_2026'; // Change this in production
 session_start();
 
 // Handle logout
@@ -33,7 +33,7 @@ if (!isset($_SESSION['admin_auth']) || $_SESSION['admin_auth'] !== true) {
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Admin Login - RealtySoft Analytics</title>
+        <title>Admin Login - Smart Property Widget Analytics</title>
         <style>
             * { margin: 0; padding: 0; box-sizing: border-box; }
             body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); display: flex; justify-content: center; align-items: center; min-height: 100vh; }
@@ -71,7 +71,7 @@ $apiBase = '../php/analytics-api.php';
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Analytics Dashboard - RealtySoft</title>
+    <title>Admin Analytics Dashboard - Smart Property Widget</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }

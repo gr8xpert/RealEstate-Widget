@@ -1,6 +1,6 @@
 <?php
 /**
- * RealtySoft Widget v2 - Client Analytics Dashboard
+ * Smart Property Widget - Client Analytics Dashboard
  * Each client can view their own analytics data
  *
  * Access: /analytics/client.php?client=domain.com
@@ -129,7 +129,7 @@ if (!$isLoggedIn) {
             </form>
 
             <div class="footer">
-                Powered by RealtySoft Widget
+                Powered by Smart Property Widget
             </div>
         </div>
     </body>

@@ -1,6 +1,6 @@
 <?php
 /**
- * RealtySoft Widget v2 - Analytics Dashboard Index
+ * Smart Property Widget - Analytics Dashboard Index
  * Routes to admin or client dashboards
  */
 
@@ -15,7 +15,7 @@ if (isset($_GET['client']) && !empty($_GET['client'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RealtySoft Analytics</title>
+    <title>Smart Property Widget Analytics</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -96,7 +96,7 @@ if (isset($_GET['client']) && !empty($_GET['client'])) {
 <body>
     <div class="container">
         <h1>Analytics</h1>
-        <p class="subtitle">RealtySoft Widget v2 Analytics Dashboard</p>
+        <p class="subtitle">Smart Property Widget Analytics Dashboard</p>
 
         <div class="cards">
             <a href="admin.php" class="card admin">
@@ -121,7 +121,7 @@ if (isset($_GET['client']) && !empty($_GET['client'])) {
         </div>
 
         <div class="footer">
-            RealtySoft Widget v2 &copy; <?php echo date('Y'); ?>
+            Smart Property Widget &copy; <?php echo date('Y'); ?>
         </div>
     </div>
 
