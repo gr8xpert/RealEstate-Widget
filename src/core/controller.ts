@@ -2344,6 +2344,11 @@ const RealtySoft = (function () {
         RealtySoftState.set('config.resultsPage', globalConfig.resultsPage || '/properties');
         RealtySoftState.set('config.enableMapView', globalConfig.enableMapView !== false);
 
+        // Branding config for emails and PDF
+        if (globalConfig.branding) {
+          RealtySoftState.set('config.branding', globalConfig.branding);
+        }
+
         // Pagination settings
         const defaultPerPage = globalConfig.perPage || 12;
         const defaultMapPerPage = globalConfig.mapPerPage || 50;
