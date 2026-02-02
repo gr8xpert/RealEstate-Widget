@@ -1,11 +1,11 @@
 <?php
 /**
- * Plugin Name: RealtySoft Connector
- * Plugin URI: https://realtysoft.ai
- * Description: Connects your WordPress site with RealtySoft property widget.
+ * Plugin Name: Smart Property Widget
+ * Plugin URI: https://smartpropertywidget.com
+ * Description: Connects your WordPress site with Smart Property Widget for real estate listings.
  *              Auto-injects the widget loader and enables SEO-friendly property detail URLs.
- * Version: 1.1.0
- * Author: RealtySoft
+ * Version: 1.2.0
+ * Author: Smart Property Widget
  * License: GPL v2 or later
  * Text Domain: realtysoft-connector
  */
@@ -126,7 +126,7 @@ class RealtySoft_Connector {
     // ─── Widget Script Injection ─────────────────────────────────
 
     /**
-     * Inject RealtySoftConfig + loader script into <head> on all frontend pages.
+     * Inject widget config + loader script into <head> on all frontend pages.
      * The loader is lightweight — it only activates the widget on pages
      * that contain widget HTML elements or match a property detail URL.
      */
@@ -190,8 +190,8 @@ class RealtySoft_Connector {
         }
 
         // Preconnect + DNS prefetch for faster API calls and asset loading
-        echo '<link rel="preconnect" href="https://realtysoft.ai">' . "\n";
-        echo '<link rel="dns-prefetch" href="https://realtysoft.ai">' . "\n";
+        echo '<link rel="preconnect" href="https://smartpropertywidget.com">' . "\n";
+        echo '<link rel="dns-prefetch" href="https://smartpropertywidget.com">' . "\n";
 
         // Property detail pages: SSR preview OR early-hide fallback
         $ref = $this->extract_property_ref_from_url();
@@ -363,7 +363,7 @@ class RealtySoft_Connector {
         $image    = $data['image'] ?? '';
         $siteName = $data['site_name'] ?? get_bloginfo('name');
 
-        echo "\n<!-- RealtySoft OG Tags -->\n";
+        echo "\n<!-- Smart Property Widget OG Tags -->\n";
         echo '<meta property="og:type" content="website">' . "\n";
         echo '<meta property="og:url" content="' . esc_url($canonical) . '">' . "\n";
         echo '<meta property="og:title" content="' . esc_attr($title) . '">' . "\n";
@@ -384,7 +384,7 @@ class RealtySoft_Connector {
         if ($image) {
             echo '<meta name="twitter:image" content="' . esc_url($image) . '">' . "\n";
         }
-        echo "<!-- /RealtySoft OG Tags -->\n\n";
+        echo "<!-- /Smart Property Widget OG Tags -->\n\n";
     }
 
     /**
@@ -429,7 +429,7 @@ class RealtySoft_Connector {
     }
 
     /**
-     * Fetch property data from the RealtySoft API (server-side).
+     * Fetch property data from the Smart Property Widget API (server-side).
      * Returns both OG fields and SSR preview fields from a single API call.
      * Used when the WordPress transient cache is cold.
      */
@@ -703,8 +703,8 @@ class RealtySoft_Connector {
 
     public function add_settings_page() {
         add_options_page(
-            'RealtySoft Settings',
-            'RealtySoft',
+            'Smart Property Widget Settings',
+            'Smart Property Widget',
             'manage_options',
             'realtysoft-settings',
             [$this, 'render_settings_page']
@@ -789,7 +789,7 @@ class RealtySoft_Connector {
         $config = get_option('realtysoft_widget_config', []);
         ?>
         <div class="wrap">
-            <h1>RealtySoft Settings</h1>
+            <h1>Smart Property Widget Settings</h1>
 
             <?php
             $current_domain = preg_replace('/^www\./', '', parse_url(home_url(), PHP_URL_HOST));
