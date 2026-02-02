@@ -715,6 +715,7 @@ class RSWishlistModals extends RSBaseComponent {
       // Get branding config
       const branding = RealtySoftState.get<Record<string, string>>('config.branding') || {};
       const companyName = branding.companyName || '';
+      const logoUrl = branding.logoUrl || '';
       const websiteUrl = branding.websiteUrl || '';
       const brandColor = branding.primaryColor || '#0066cc';
 
@@ -729,7 +730,40 @@ class RSWishlistModals extends RSBaseComponent {
       const lightGray = [248, 249, 250];
       const successColor = [5, 150, 105];
 
-      let yPos = 25;
+      let yPos = 20;
+
+      // Try to add logo (if provided)
+      if (logoUrl && logoUrl.startsWith('http')) {
+        try {
+          const logoImg = await this.loadImageForPDF(logoUrl);
+          if (logoImg) {
+            // Calculate logo dimensions (max height 20mm, maintain aspect ratio)
+            const maxLogoHeight = 20;
+            const maxLogoWidth = 60;
+            const aspectRatio = logoImg.width / logoImg.height;
+            let logoWidth = maxLogoHeight * aspectRatio;
+            let logoHeight = maxLogoHeight;
+            if (logoWidth > maxLogoWidth) {
+              logoWidth = maxLogoWidth;
+              logoHeight = maxLogoWidth / aspectRatio;
+            }
+
+            // Create canvas for logo
+            const canvas = document.createElement('canvas');
+            canvas.width = logoImg.width;
+            canvas.height = logoImg.height;
+            const ctx = canvas.getContext('2d');
+            if (ctx) {
+              ctx.drawImage(logoImg, 0, 0);
+              const logoX = (pageWidth - logoWidth) / 2;
+              pdf.addImage(canvas.toDataURL('image/png'), 'PNG', logoX, yPos, logoWidth, logoHeight);
+              yPos += logoHeight + 8;
+            }
+          }
+        } catch (logoError) {
+          console.log('[PDF] Could not load logo:', (logoError as Error).message);
+        }
+      }
 
       // Company name (if provided)
       if (companyName) {
@@ -737,8 +771,11 @@ class RSWishlistModals extends RSBaseComponent {
         pdf.setTextColor(128, 128, 128);
         pdf.setFont(undefined, 'normal');
         pdf.text(companyName, pageWidth / 2, yPos, { align: 'center' });
-        yPos += 15;
-      } else {
+        yPos += 12;
+      }
+
+      // Adjust yPos if no logo and no company name
+      if (!logoUrl && !companyName) {
         yPos = 40;
       }
 
