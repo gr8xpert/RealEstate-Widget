@@ -100,6 +100,14 @@ export interface CacheConfig {
 // Label overrides can be flat { key: value } or per-language { _default: {...}, es_ES: {...} }
 export type LabelOverrides = Record<string, string> | Record<string, Record<string, string>>;
 
+// Branding configuration for emails and PDF
+export interface BrandingConfig {
+  companyName?: string;      // Company/website name shown in email headers
+  logoUrl?: string;          // URL to logo image (recommended: 200x60px)
+  websiteUrl?: string;       // Website URL shown in email footer
+  primaryColor?: string;     // Primary brand color (hex, e.g., '#0066cc')
+}
+
 export interface WidgetConfig {
   apiKey: string | null;
   apiUrl: string | null;
@@ -128,6 +136,7 @@ export interface WidgetConfig {
   enableMapView?: boolean;
   perPage?: number;      // Items per page for grid/list view (default: 12)
   mapPerPage?: number;   // Items per page for map view (default: 50)
+  branding?: BrandingConfig;  // Branding for emails and PDF
 }
 
 // ============================================================

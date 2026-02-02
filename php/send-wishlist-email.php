@@ -28,6 +28,20 @@ function wishlistLog($msg) {
     file_put_contents($logDir . '/wishlist-debug.log', $entry, FILE_APPEND | LOCK_EX);
 }
 
+// Helper: adjust color brightness
+function adjustBrightness($hex, $percent) {
+    $hex = ltrim($hex, '#');
+    $r = hexdec(substr($hex, 0, 2));
+    $g = hexdec(substr($hex, 2, 2));
+    $b = hexdec(substr($hex, 4, 2));
+
+    $r = max(0, min(255, $r + ($r * $percent / 100)));
+    $g = max(0, min(255, $g + ($g * $percent / 100)));
+    $b = max(0, min(255, $b + ($b * $percent / 100)));
+
+    return sprintf('#%02x%02x%02x', $r, $g, $b);
+}
+
 // Get POST data
 $data = json_decode(file_get_contents('php://input'), true);
 wishlistLog("=== REQUEST RECEIVED (v3) === method=" . $_SERVER['REQUEST_METHOD'] . " data=" . ($data ? 'valid' : 'null'));
@@ -44,6 +58,13 @@ $emailFrom = $data['emailFrom'] ?? 'noreply@smartpropertywidget.com';
 $message = $data['message'] ?? '';
 $properties = $data['wishlist'] ?? [];
 $ownerEmail = $data['ownerEmail'] ?? '';
+
+// Get branding config
+$branding = $data['branding'] ?? [];
+$companyName = htmlspecialchars($branding['companyName'] ?? '');
+$logoUrl = filter_var($branding['logoUrl'] ?? '', FILTER_SANITIZE_URL);
+$websiteUrl = filter_var($branding['websiteUrl'] ?? '', FILTER_SANITIZE_URL);
+$primaryColor = preg_match('/^#[0-9A-Fa-f]{6}$/', $branding['primaryColor'] ?? '') ? $branding['primaryColor'] : '#667eea';
 
 // Validate required fields
 if (empty($emailTo)) {
@@ -69,6 +90,10 @@ if (!filter_var($emailTo, FILTER_VALIDATE_EMAIL)) {
 }
 
 // Build HTML email (same structure as send-inquiry.php)
+// Use branding color for gradient
+$gradientStart = $primaryColor;
+$gradientEnd = adjustBrightness($primaryColor, -30);
+
 $emailHtml = '
 <!DOCTYPE html>
 <html>
@@ -77,23 +102,27 @@ $emailHtml = '
     <style>
         body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
         .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 8px 8px 0 0; }
+        .header { background: linear-gradient(135deg, ' . $gradientStart . ' 0%, ' . $gradientEnd . ' 100%); color: white; padding: 20px; border-radius: 8px 8px 0 0; }
         .content { background: #f9f9f9; padding: 20px; border: 1px solid #ddd; }
-        .property-card { background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #667eea; }
+        .property-card { background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid ' . $primaryColor . '; }
         .property-title { margin: 0 0 10px; color: #333; }
         .property-price { color: #059669; font-size: 20px; font-weight: bold; margin: 0 0 10px; }
         .property-details { color: #666; font-size: 14px; margin: 5px 0; }
         .property-ref { color: #999; font-size: 12px; }
         .property-note { background: #fff9e6; padding: 10px; margin-top: 10px; border-left: 3px solid #f39c12; font-size: 14px; }
         .message-box { background: #f0f9ff; padding: 15px; border-left: 4px solid #3498db; border-radius: 4px; margin-bottom: 20px; }
-        .view-btn { display: inline-block; background: #667eea; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-size: 14px; margin-top: 10px; }
+        .view-btn { display: inline-block; background: ' . $primaryColor . '; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-size: 14px; margin-top: 10px; }
         .footer { background: #f0f0f0; padding: 15px; text-align: center; font-size: 12px; color: #777; border-radius: 0 0 8px 8px; }
-        a { color: #667eea; }
+        a { color: ' . $primaryColor . '; }
+        .branding-logo { max-width: 180px; max-height: 60px; margin-bottom: 10px; }
+        .branding-name { font-size: 14px; opacity: 0.9; margin-bottom: 5px; }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
+            ' . ($logoUrl ? '<img src="' . $logoUrl . '" alt="' . $companyName . '" class="branding-logo"><br>' : '') . '
+            ' . ($companyName ? '<div class="branding-name">' . $companyName . '</div>' : '') . '
             <h2 style="margin:0;">Property Wishlist Shared With You</h2>
             <p style="margin:10px 0 0;opacity:0.9;">Someone shared their favorite properties</p>
         </div>
@@ -157,8 +186,8 @@ foreach ($properties as $property) {
 $emailHtml .= '
         </div>
         <div class="footer">
-            This wishlist was shared via RealtySoft Property Widget<br>
-            <a href="https://realtysoft.ai">realtysoft.ai</a>
+            ' . ($companyName ? 'This wishlist was shared via ' . $companyName : 'This wishlist was shared via RealtySoft Property Widget') . '<br>
+            ' . ($websiteUrl ? '<a href="' . $websiteUrl . '">' . preg_replace('/^https?:\/\//', '', $websiteUrl) . '</a>' : '<a href="https://realtysoft.ai">realtysoft.ai</a>') . '
         </div>
     </div>
 </body>

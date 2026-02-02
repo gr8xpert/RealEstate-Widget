@@ -623,9 +623,10 @@ class RSDetailInquiryForm extends RSBaseComponent {
     const countryCode = (formData.get('country_code') as string) || '';
     const phone = (formData.get('phone') as string) || '';
 
-    // Get owner email from config
+    // Get owner email and branding from config
     const config = (RealtySoftState.get<Partial<WidgetConfig>>('config') || {}) as Record<string, unknown>;
     const ownerEmail = (config.ownerEmail as string) || this.property.agent?.email || '';
+    const branding = (config.branding as Record<string, string>) || {};
 
     // Send data in camelCase format (compatible with old widget PHP)
     const data = {
@@ -643,7 +644,13 @@ class RSDetailInquiryForm extends RSBaseComponent {
       ownerEmail: ownerEmail,
       sendConfirmation: (config.sendConfirmationEmail as boolean) !== false,
       language: RealtySoftLabels.getLanguage(),
-      privacyAccepted: true
+      privacyAccepted: true,
+      branding: {
+        companyName: branding.companyName || '',
+        logoUrl: branding.logoUrl || '',
+        websiteUrl: branding.websiteUrl || window.location.origin,
+        primaryColor: branding.primaryColor || '#667eea'
+      }
     };
 
     try {
