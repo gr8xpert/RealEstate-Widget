@@ -206,21 +206,6 @@
             font-weight: normal;
         }
 
-        .copy-all-btn {
-            background: #27ae60;
-            color: white;
-            border: none;
-            padding: 8px 15px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 13px;
-            transition: background 0.2s;
-        }
-
-        .copy-all-btn:hover {
-            background: #219a52;
-        }
-
         .items-list {
             display: flex;
             flex-direction: column;
@@ -448,7 +433,6 @@
                 <div class="section" id="locationsSection">
                     <div class="section-header">
                         <h2>Locations <span class="count" id="locationsCount">0</span></h2>
-                        <button class="copy-all-btn" onclick="copyAllIds('locations')">Copy All IDs</button>
                     </div>
                     <div class="items-list" id="locationsList"></div>
                 </div>
@@ -457,7 +441,6 @@
                 <div class="section" id="propertyTypesSection">
                     <div class="section-header">
                         <h2>Property Types <span class="count" id="propertyTypesCount">0</span></h2>
-                        <button class="copy-all-btn" onclick="copyAllIds('propertyTypes')">Copy All IDs</button>
                     </div>
                     <div class="items-list" id="propertyTypesList"></div>
                 </div>
@@ -466,7 +449,6 @@
                 <div class="section" id="featuresSection">
                     <div class="section-header">
                         <h2>Features <span class="count" id="featuresCount">0</span></h2>
-                        <button class="copy-all-btn" onclick="copyAllIds('features')">Copy All IDs</button>
                     </div>
                     <div class="items-list" id="featuresList"></div>
                 </div>
@@ -805,31 +787,14 @@
         }
 
         function copyId(id, dataAttr, button) {
-            const text = `${dataAttr}="${id}"`;
-            navigator.clipboard.writeText(text).then(() => {
+            // Copy just the ID number for easy use with multiple values
+            navigator.clipboard.writeText(String(id)).then(() => {
                 button.textContent = 'Copied!';
                 button.classList.add('copied');
                 setTimeout(() => {
                     button.textContent = 'Copy';
                     button.classList.remove('copied');
                 }, 1500);
-            });
-        }
-
-        function copyAllIds(type) {
-            let ids = [];
-
-            if (type === 'locations') {
-                ids = allData.locations.map(l => l.id);
-            } else if (type === 'propertyTypes') {
-                ids = allData.propertyTypes.map(t => t.id);
-            } else if (type === 'features') {
-                ids = allData.features.map(f => f.id);
-            }
-
-            const json = JSON.stringify(ids);
-            navigator.clipboard.writeText(json).then(() => {
-                alert('All IDs copied to clipboard:\n' + json);
             });
         }
 
