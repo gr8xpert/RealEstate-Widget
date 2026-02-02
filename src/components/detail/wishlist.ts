@@ -14,12 +14,23 @@ import type {
 // Declare globals
 declare const RealtySoftState: RealtySoftStateModule;
 declare const RealtySoftAnalytics: RealtySoftAnalyticsModule;
-declare const RealtySoftToast: { success: (msg: string) => void; error: (msg: string) => void } | undefined;
 declare const WishlistManager: {
   has: (refNo: string | number) => boolean;
   add: (data: Record<string, unknown>) => void;
   remove: (refNo: string | number) => void;
 } | undefined;
+
+// Toast interface (available via window)
+interface ToastModule {
+  success: (msg: string) => void;
+  error: (msg: string) => void;
+  info?: (msg: string) => void;
+}
+
+// Get toast module from window for reliability
+function getToast(): ToastModule | null {
+  return (window as any).RealtySoftToast || null;
+}
 
 class RSDetailWishlist extends RSBaseComponent {
   private property: Property | null = null;
@@ -117,8 +128,9 @@ class RSDetailWishlist extends RSBaseComponent {
         // Note: WishlistManager.remove already syncs with RealtySoftState via notifyChange()
         try { RealtySoftAnalytics.trackWishlistRemove(p.id); } catch (_) { /* analytics non-critical */ }
 
-        if (typeof RealtySoftToast !== 'undefined' && RealtySoftToast) {
-          RealtySoftToast.success(this.label('wishlist_removed') || 'Removed from wishlist');
+        const toast = getToast();
+        if (toast) {
+          toast.success(this.label('wishlist_removed') || 'Removed from wishlist');
         }
       } else {
         // Add to WishlistManager with full property data
@@ -147,8 +159,9 @@ class RSDetailWishlist extends RSBaseComponent {
         // Note: WishlistManager.add already syncs with RealtySoftState via notifyChange()
         try { RealtySoftAnalytics.trackWishlistAdd(p.id); } catch (_) { /* analytics non-critical */ }
 
-        if (typeof RealtySoftToast !== 'undefined' && RealtySoftToast) {
-          RealtySoftToast.success(this.label('wishlist_add') || 'Added to wishlist!');
+        const toastAdd = getToast();
+        if (toastAdd) {
+          toastAdd.success(this.label('wishlist_added') || 'Added to wishlist!');
         }
       }
     } catch (err) {

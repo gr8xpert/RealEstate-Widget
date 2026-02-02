@@ -16672,6 +16672,7 @@ a[class*=" rs-"]:focus-visible {
     vertical-align: middle !important;
     flex-shrink: 0 !important;
     margin-right: 4px !important;
+    margin-left: 0px !important;
 }
 
 /* ========== WISHLIST HEART ICON ========== */
@@ -16888,6 +16889,76 @@ a[class*=" rs-"]:focus-visible {
 
 .rs-template__features-check {
     stroke: #22c55e !important;
+}
+
+/* ========== TOAST NOTIFICATIONS - PAGE BUILDER COMPATIBILITY ========== */
+/* Ensure toast container is visible above all page builder elements */
+.rs-toast-container {
+    position: fixed !important;
+    z-index: 999999 !important;
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: none !important;
+}
+
+.rs-toast {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 0 !important;
+    pointer-events: auto !important;
+    background: #ffffff !important;
+    border-radius: 8px !important;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.15) !important;
+}
+
+.rs-toast--visible {
+    opacity: 1 !important;
+    transform: translateX(0) translateY(0) !important;
+}
+
+.rs-toast__icon {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    width: 24px !important;
+    height: 24px !important;
+}
+
+.rs-toast__icon svg {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    width: 24px !important;
+    height: 24px !important;
+    stroke: currentColor !important;
+}
+
+.rs-toast__message {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    color: #1f2937 !important;
+}
+
+.rs-toast__close {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 0.6 !important;
+}
+
+.rs-toast__close svg {
+    display: block !important;
+    visibility: visible !important;
+    width: 16px !important;
+    height: 16px !important;
+    stroke: currentColor !important;
+}
+
+.rs-toast__progress {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
 }
 
 /* ========== PREVENT PAGE BUILDERS FROM HIDING SVG ========== */
