@@ -4336,6 +4336,95 @@ a[class*=" rs-"]:focus-visible {
     color: var(--rs-primary);
 }
 
+/* Currency Selector */
+.rs-currency-selector {
+    display: inline-block;
+}
+
+.rs-currency-selector__wrapper {
+    display: flex;
+    align-items: center;
+    position: relative;
+    background: var(--rs-bg-primary);
+    border: 1px solid var(--rs-border-color);
+    border-radius: var(--rs-border-radius);
+    padding: 0;
+    overflow: hidden;
+    transition: border-color var(--rs-transition), box-shadow var(--rs-transition);
+}
+
+.rs-currency-selector__wrapper:hover {
+    border-color: var(--rs-primary);
+}
+
+.rs-currency-selector__wrapper:focus-within {
+    border-color: var(--rs-primary);
+    box-shadow: 0 0 0 3px var(--rs-primary-alpha-10);
+}
+
+.rs-currency-selector__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 8px 8px 12px;
+    color: var(--rs-text-secondary);
+}
+
+.rs-currency-selector__select {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    border: none;
+    background: transparent;
+    padding: 8px 32px 8px 4px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--rs-text-primary);
+    cursor: pointer;
+    outline: none;
+    min-width: 80px;
+}
+
+.rs-currency-selector__select option {
+    padding: 8px;
+}
+
+.rs-currency-selector__arrow {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+    color: var(--rs-text-secondary);
+    display: flex;
+    align-items: center;
+}
+
+/* Dark theme support */
+.rs-theme-dark .rs-currency-selector__wrapper {
+    background: var(--rs-bg-secondary);
+    border-color: var(--rs-border-color);
+}
+
+.rs-theme-dark .rs-currency-selector__select {
+    color: var(--rs-text-primary);
+}
+
+/* Compact variation */
+.rs-currency-selector--compact .rs-currency-selector__wrapper {
+    padding: 0;
+}
+
+.rs-currency-selector--compact .rs-currency-selector__icon {
+    padding: 6px 6px 6px 10px;
+}
+
+.rs-currency-selector--compact .rs-currency-selector__select {
+    padding: 6px 28px 6px 2px;
+    font-size: 13px;
+    min-width: 70px;
+}
+
 /* Share Buttons */
 .rs-share-btn {
     width: 40px;

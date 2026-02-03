@@ -16,3 +16,4 @@ import './wishlist-modals';
 import './wishlist-list';
 import './language-selector';
 import './share-buttons';
+import './currency-selector';

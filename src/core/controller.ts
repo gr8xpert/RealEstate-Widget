@@ -2618,6 +2618,7 @@ const RealtySoft = (function () {
     'rs_wishlist_button',
     'rs_language_selector',
     'rs_share_buttons',
+    'rs_currency_selector',
   ];
 
   /**
