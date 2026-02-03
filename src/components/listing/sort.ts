@@ -54,8 +54,7 @@ class RSSort extends RSBaseComponent {
       { value: 'list_price', label: this.label('sort_price_asc') || 'Price: Low to High' },
       { value: 'list_price_desc', label: this.label('sort_price_desc') || 'Price: High to Low' },
       { value: 'is_featured_desc', label: this.label('sort_featured') || 'Featured First' },
-      { value: 'location_id', label: this.label('sort_location') || 'By Location' },
-      { value: 'is_own_desc', label: this.label('sort_own') || 'Own Properties First' }
+      { value: 'location_id', label: this.label('sort_location') || 'By Location' }
     ];
   }
 

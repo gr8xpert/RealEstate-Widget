@@ -814,6 +814,9 @@ const RealtySoft = (function () {
           <div class="rs-template-search-03__field rs-template-search-03__field--search">
             <div class="rs_search_button"></div>
           </div>
+          <div class="rs-template-search-03__field rs-template-search-03__field--reset">
+            <div class="rs_reset_button"></div>
+          </div>
         </div>
       </div>
     `,
@@ -861,6 +864,9 @@ const RealtySoft = (function () {
         <div class="rs-template-search-04__field rs-template-search-04__field--search">
           <div class="rs_search_button"></div>
         </div>
+        <div class="rs-template-search-04__field rs-template-search-04__field--reset">
+          <div class="rs_reset_button"></div>
+        </div>
       </div>
     `,
 
@@ -894,8 +900,13 @@ const RealtySoft = (function () {
           <div class="rs_price" data-rs-variation="1" data-rs-type="max" data-rs-placeholder="Max Price"></div>
         </div>
       </div>
-      <div class="rs-template-search-05__field rs-template-search-05__field--search">
-        <div class="rs_search_button" data-rs-label="Submit"></div>
+      <div class="rs-template-search-05__buttons">
+        <div class="rs-template-search-05__field rs-template-search-05__field--search">
+          <div class="rs_search_button" data-rs-label="Submit"></div>
+        </div>
+        <div class="rs-template-search-05__field rs-template-search-05__field--reset">
+          <div class="rs_reset_button"></div>
+        </div>
       </div>
       <div class="rs-template-search-05__links">
         <div class="rs-template-search-05__features">
