@@ -68,6 +68,12 @@ class RSAISearchToggle extends RSBaseComponent {
   }
 
   async init(): Promise<void> {
+    // Check if AI search is enabled via config (default: false - must explicitly enable)
+    const globalConfig = (window as any).RealtySoftConfig || {};
+    if (globalConfig.enableAISearch !== true) {
+      return; // AI search disabled by config
+    }
+
     // Find parent search container
     this.searchContainer = this.element.closest('#rs_search') ||
                            this.element.closest('.rs-search') ||
@@ -490,12 +496,18 @@ RealtySoft.registerComponent('rs_ai_search_toggle', RSAISearchToggle as unknown 
  * This runs automatically when the module loads - no placeholder needed
  */
 async function autoInitAISearch(): Promise<void> {
-  // Check if feature is enabled first (avoid unnecessary DOM queries)
+  // Check if AI search is enabled via config (default: false - must explicitly enable)
+  const globalConfig = (window as any).RealtySoftConfig || {};
+  if (globalConfig.enableAISearch !== true) {
+    return; // AI search disabled by config
+  }
+
+  // Check if feature is enabled on backend (premium check)
   try {
     const response = await fetch(`${PHP_BASE_URL}/ai-search.php?action=check`);
     const data = await response.json();
     if (!data.enabled) {
-      return; // Feature not enabled, skip initialization
+      return; // Feature not enabled on backend, skip initialization
     }
   } catch (e) {
     return; // Can't check, skip initialization

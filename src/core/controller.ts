@@ -1479,6 +1479,7 @@ const RealtySoft = (function () {
         <div class="rs_results_count"></div>
         <div class="rs-template-listing-09__controls">
           <div class="rs_sort"></div>
+          <div class="rs_view_toggle" data-rs-hide-list="true"></div>
         </div>
       </div>
       <div class="rs_active_filters" style="margin-bottom: 20px;"></div>
@@ -1549,12 +1550,13 @@ const RealtySoft = (function () {
       <div class="rs_pagination" style="margin-top: 30px;"></div>
     `,
 
-    // Template 10: Development/Large Card (single row, no view toggle)
+    // Template 10: Development/Large Card (single row)
     'rs-listing-template-10': `
       <div class="rs-template-listing-10__header">
         <div class="rs_results_count"></div>
         <div class="rs-template-listing-10__controls">
           <div class="rs_sort"></div>
+          <div class="rs_view_toggle" data-rs-hide-list="true"></div>
         </div>
       </div>
       <div class="rs_active_filters" style="margin-bottom: 20px;"></div>
@@ -1631,6 +1633,7 @@ const RealtySoft = (function () {
         <div class="rs_results_count"></div>
         <div class="rs-template-listing-11__controls">
           <div class="rs_sort"></div>
+          <div class="rs_view_toggle" data-rs-hide-list="true"></div>
         </div>
       </div>
       <div class="rs_active_filters" style="margin-bottom: 20px;"></div>

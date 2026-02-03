@@ -13,6 +13,7 @@ declare const RealtySoftState: RealtySoftStateModule;
 class RSViewToggle extends RSBaseComponent {
   private currentView: string = 'grid';
   private enableMapView: boolean = true;
+  private enableListView: boolean = true;
 
   constructor(element: HTMLElement, options: ComponentOptions = {}) {
     super(element, options);
@@ -22,9 +23,13 @@ class RSViewToggle extends RSBaseComponent {
   init(): void {
     this.currentView = RealtySoftState.get<string>('ui.view') || 'grid';
 
-    // Check if map view is enabled (default: true)
+    // Check if map view is enabled (default: false - must explicitly enable)
     const globalConfig = (window as any).RealtySoftConfig || {};
-    this.enableMapView = globalConfig.enableMapView !== false;
+    this.enableMapView = globalConfig.enableMapView === true;
+
+    // Check if list view should be hidden (via data attribute on element)
+    // Used for templates that are already 1-per-row (list style)
+    this.enableListView = this.element.dataset.rsHideList !== 'true';
 
     this.render();
     this.bindEvents();
@@ -52,20 +57,7 @@ class RSViewToggle extends RSBaseComponent {
         </button>
     ` : '';
 
-    this.element.innerHTML = `
-      <div class="rs-view-toggle__wrapper">
-        <button type="button"
-                class="rs-view-toggle__btn rs-view-toggle__btn--grid ${this.currentView === 'grid' ? 'rs-view-toggle__btn--active' : ''}"
-                data-view="grid"
-                aria-label="${this.label('results_view_grid')}"
-                title="${this.label('results_view_grid')}">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <rect x="3" y="3" width="7" height="7"></rect>
-            <rect x="14" y="3" width="7" height="7"></rect>
-            <rect x="14" y="14" width="7" height="7"></rect>
-            <rect x="3" y="14" width="7" height="7"></rect>
-          </svg>
-        </button>
+    const listButton = this.enableListView ? `
         <button type="button"
                 class="rs-view-toggle__btn rs-view-toggle__btn--list ${this.currentView === 'list' ? 'rs-view-toggle__btn--active' : ''}"
                 data-view="list"
@@ -80,6 +72,23 @@ class RSViewToggle extends RSBaseComponent {
             <line x1="3" y1="18" x2="3.01" y2="18"></line>
           </svg>
         </button>
+    ` : '';
+
+    this.element.innerHTML = `
+      <div class="rs-view-toggle__wrapper">
+        <button type="button"
+                class="rs-view-toggle__btn rs-view-toggle__btn--grid ${this.currentView === 'grid' ? 'rs-view-toggle__btn--active' : ''}"
+                data-view="grid"
+                aria-label="${this.label('results_view_grid')}"
+                title="${this.label('results_view_grid')}">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="7" height="7"></rect>
+            <rect x="14" y="3" width="7" height="7"></rect>
+            <rect x="14" y="14" width="7" height="7"></rect>
+            <rect x="3" y="14" width="7" height="7"></rect>
+          </svg>
+        </button>
+        ${listButton}
         ${mapButton}
       </div>
     `;
