@@ -170,6 +170,13 @@ class RSMapView extends RSBaseComponent {
         (resetBtn as HTMLElement).style.display = 'none';
       });
     }
+
+    // Listen for currency changes to refresh marker prices
+    window.addEventListener('rs-currency-change', () => {
+      if (this.isMapReady && this.map) {
+        this.updateMarkers();
+      }
+    });
   }
 
   private showMap(): void {
@@ -435,7 +442,10 @@ class RSMapView extends RSBaseComponent {
     container.className = 'rs-map-popup__content';
 
     const image = property.images?.[0] || '/realtysoft/assets/placeholder.jpg';
-    const price = RealtySoftLabels.formatPrice(property.price);
+    // Apply currency conversion to popup price
+    const currencyInfo = this.getCurrencyInfo();
+    const convertedPrice = (property.price || 0) * currencyInfo.rate;
+    const price = `${currencyInfo.symbol} ${Math.round(convertedPrice).toLocaleString()}`;
     const url = this.generatePropertyUrl(property);
 
     container.innerHTML = `
@@ -507,12 +517,47 @@ class RSMapView extends RSBaseComponent {
   private formatShortPrice(price: number | null | undefined): string {
     if (!price) return '-';
 
-    if (price >= 1000000) {
-      return `${(price / 1000000).toFixed(1)}M`;
-    } else if (price >= 1000) {
-      return `${Math.round(price / 1000)}K`;
+    // Apply currency conversion
+    const currencyInfo = this.getCurrencyInfo();
+    const convertedPrice = price * currencyInfo.rate;
+
+    // Format as short price (K, M) with currency symbol
+    if (convertedPrice >= 1000000) {
+      return `${currencyInfo.symbol} ${(convertedPrice / 1000000).toFixed(1)}M`;
+    } else if (convertedPrice >= 1000) {
+      return `${currencyInfo.symbol} ${Math.round(convertedPrice / 1000)}K`;
     }
-    return String(price);
+    return `${currencyInfo.symbol} ${Math.round(convertedPrice)}`;
+  }
+
+  private getCurrencyInfo(): { currency: string; rate: number; symbol: string } {
+    try {
+      const selectedCurrency = localStorage.getItem('rs_selected_currency');
+      const cachedRates = localStorage.getItem('rs_exchange_rates');
+
+      if (!selectedCurrency || !cachedRates) {
+        return { currency: 'EUR', rate: 1, symbol: '€' };
+      }
+
+      const ratesData = JSON.parse(cachedRates);
+      const rate = ratesData.rates?.[selectedCurrency] || 1;
+
+      const symbols: Record<string, string> = {
+        EUR: '€', GBP: '£', USD: '$', CHF: 'CHF', SEK: 'kr', NOK: 'kr', DKK: 'kr',
+        PLN: 'zł', CZK: 'Kč', AED: 'AED', SAR: 'SAR', RUB: '₽', CNY: '¥', JPY: '¥',
+        AUD: 'A$', CAD: 'C$', INR: '₹', ZAR: 'R', BRL: 'R$', MXN: '$', TRY: '₺',
+        MAD: 'MAD', QAR: 'QAR', KWD: 'KWD', BHD: 'BHD', OMR: 'OMR', SGD: 'S$',
+        HKD: 'HK$', NZD: 'NZ$', THB: '฿'
+      };
+
+      return {
+        currency: selectedCurrency,
+        rate: rate,
+        symbol: symbols[selectedCurrency] || selectedCurrency
+      };
+    } catch {
+      return { currency: 'EUR', rate: 1, symbol: '€' };
+    }
   }
 
   private onMapMoveEnd(): void {

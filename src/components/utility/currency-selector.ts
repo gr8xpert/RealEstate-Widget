@@ -52,7 +52,7 @@ const CACHE_TTL = 6 * 60 * 60 * 1000; // 6 hours in milliseconds
 // Free API endpoint (no API key needed)
 const API_URL = 'https://api.frankfurter.app/latest';
 
-// All price selectors across the widget (listing, detail, wishlist, etc.)
+// All price selectors across the widget (listing, detail, wishlist, map, etc.)
 const PRICE_SELECTOR = [
   '.rs_card_price',              // Listing card price
   '.rs-detail__price',           // Detail price (standalone component)
@@ -61,6 +61,8 @@ const PRICE_SELECTOR = [
   '.rs-detail-related__card-price', // Related properties on detail page
   '.rs-wishlist-card__price',    // Wishlist grid card price
   '.rs-compare-card__price',     // Wishlist compare modal price
+  '.rs-map-marker__price',       // Map view marker price
+  '.rs-map-popup__price',        // Map view popup price
   '[data-rs-price]'              // Any element with data-rs-price attribute
 ].join(', ');
 
@@ -256,6 +258,15 @@ class RSCurrencySelector extends RSBaseComponent {
         this.selectedCurrency = target.value;
         this.saveCurrency(this.selectedCurrency);
         this.applyConversion();
+
+        // Dispatch custom event so other components (like map) can refresh
+        window.dispatchEvent(new CustomEvent('rs-currency-change', {
+          detail: {
+            currency: this.selectedCurrency,
+            rate: this.rates[this.selectedCurrency] || 1,
+            symbol: CURRENCY_INFO[this.selectedCurrency]?.symbol || this.selectedCurrency
+          }
+        }));
       });
     }
   }
