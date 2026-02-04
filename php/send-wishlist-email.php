@@ -59,6 +59,11 @@ $message = $data['message'] ?? '';
 $properties = $data['wishlist'] ?? [];
 $ownerEmail = $data['ownerEmail'] ?? '';
 
+// Get currency info for conversion
+$currencyData = $data['currency'] ?? [];
+$currencySymbol = $currencyData['symbol'] ?? '€';
+$currencyRate = floatval($currencyData['rate'] ?? 1);
+
 // Get branding config
 $branding = $data['branding'] ?? [];
 $companyName = htmlspecialchars($branding['companyName'] ?? '');
@@ -144,7 +149,10 @@ $emailHtml .= '
 // Add each property using table layout
 foreach ($properties as $property) {
     $name = htmlspecialchars($property['name'] ?? $property['title'] ?? 'Property');
-    $price = number_format($property['list_price'] ?? $property['price'] ?? 0);
+    // Apply currency conversion
+    $rawPrice = floatval($property['list_price'] ?? $property['price'] ?? 0);
+    $convertedPrice = round($rawPrice * $currencyRate);
+    $price = number_format($convertedPrice);
     $location = htmlspecialchars($property['location'] ?? 'N/A');
     $type = htmlspecialchars($property['type'] ?? 'N/A');
     $beds = $property['bedrooms'] ?? $property['beds'] ?? 0;
@@ -169,7 +177,7 @@ foreach ($properties as $property) {
     }
 
     $emailHtml .= '
-                                        <p style="margin:0 0 8px;font-size:18px;color:' . $primaryColor . ';font-weight:bold;font-family:Arial,sans-serif;">&euro;' . $price . '</p>
+                                        <p style="margin:0 0 8px;font-size:18px;color:' . $primaryColor . ';font-weight:bold;font-family:Arial,sans-serif;">' . htmlspecialchars($currencySymbol) . ' ' . $price . '</p>
                                         <p style="margin:0 0 5px;font-size:13px;color:#666666;font-family:Arial,sans-serif;">&#128205; ' . $location . ' | &#127968; ' . $type . '</p>
                                         <p style="margin:0 0 5px;font-size:13px;color:#666666;font-family:Arial,sans-serif;">&#128716; ' . $beds . ' beds | &#128703; ' . $baths . ' baths | &#128208; ' . $size . 'm&sup2;</p>
                                         <p style="margin:0 0 8px;font-size:11px;color:#999999;font-family:Arial,sans-serif;">Ref: ' . $ref . '</p>';

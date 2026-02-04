@@ -30,6 +30,10 @@ $logoUrl = isset($_GET['logoUrl']) ? filter_var(urldecode($_GET['logoUrl']), FIL
 $websiteUrl = isset($_GET['websiteUrl']) ? filter_var(urldecode($_GET['websiteUrl']), FILTER_SANITIZE_URL) : '';
 $primaryColor = isset($_GET['primaryColor']) && preg_match('/^#[0-9A-Fa-f]{6}$/', $_GET['primaryColor']) ? $_GET['primaryColor'] : '#0066cc';
 
+// Get currency info from URL params
+$currencySymbol = isset($_GET['currencySymbol']) ? htmlspecialchars(urldecode($_GET['currencySymbol'])) : '€';
+$currencyRate = isset($_GET['currencyRate']) ? floatval($_GET['currencyRate']) : 1;
+
 // Load client configuration
 $configFile = __DIR__ . '/../config/clients.php';
 $clients = file_exists($configFile) ? require $configFile : [];
@@ -196,7 +200,9 @@ foreach ($properties as $property) {
         $image = is_array($firstImg) ? ($firstImg['image_256'] ?? $firstImg['src'] ?? '') : $firstImg;
     }
     $title = htmlspecialchars($property['name'] ?? $property['title'] ?? '');
-    $price = number_format($property['list_price'] ?? $property['price'] ?? 0);
+    $rawPrice = floatval($property['list_price'] ?? $property['price'] ?? 0);
+    $convertedPrice = round($rawPrice * $currencyRate);
+    $price = number_format($convertedPrice);
     $location = htmlspecialchars(is_array($property['location_id'] ?? null) ? ($property['location_id']['name'] ?? '') : ($property['location'] ?? ''));
     $beds = $property['bedrooms'] ?? $property['beds'] ?? '';
     $baths = $property['bathrooms'] ?? $property['baths'] ?? '';
@@ -209,7 +215,7 @@ foreach ($properties as $property) {
         ' . ($image ? '<img src="' . $image . '" alt="" class="property-image">' : '') . '
         <div class="property-content">
             <h2 class="property-title">' . $title . '</h2>
-            <p class="property-price">&euro;' . $price . '</p>
+            <p class="property-price">' . $currencySymbol . ' ' . $price . '</p>
             <p class="property-location">' . $location . '</p>
             <p class="property-specs">
                 ' . ($beds ? "<span>{$beds} beds</span>" : '') . '

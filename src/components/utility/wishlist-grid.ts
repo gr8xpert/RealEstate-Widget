@@ -386,13 +386,51 @@ class RSWishlistGrid extends RSBaseComponent {
   }
 
   private formatPrice(property: GridProperty): string {
-    const price1 = Number(property.list_price || property.price || 0);
-    const price2 = Number(property.list_price_2 || 0);
+    let price1 = Number(property.list_price || property.price || 0);
+    let price2 = Number(property.list_price_2 || 0);
 
-    if (price2 && price1 !== price2) {
-      return `\u20AC${price1.toLocaleString()} - \u20AC${price2.toLocaleString()}`;
+    // Check if currency converter is active
+    const currencyInfo = this.getCurrencyInfo();
+    if (currencyInfo.rate !== 1) {
+      price1 = price1 * currencyInfo.rate;
+      if (price2) price2 = price2 * currencyInfo.rate;
     }
-    return `\u20AC${price1.toLocaleString()}`;
+
+    const symbol = currencyInfo.symbol;
+    if (price2 && Math.round(price1) !== Math.round(price2)) {
+      return `${symbol} ${Math.round(price1).toLocaleString()} - ${symbol} ${Math.round(price2).toLocaleString()}`;
+    }
+    return `${symbol} ${Math.round(price1).toLocaleString()}`;
+  }
+
+  private getCurrencyInfo(): { currency: string; rate: number; symbol: string } {
+    try {
+      const selectedCurrency = localStorage.getItem('rs_selected_currency');
+      const cachedRates = localStorage.getItem('rs_exchange_rates');
+
+      if (!selectedCurrency || !cachedRates) {
+        return { currency: 'EUR', rate: 1, symbol: '€' };
+      }
+
+      const ratesData = JSON.parse(cachedRates);
+      const rate = ratesData.rates?.[selectedCurrency] || 1;
+
+      const symbols: Record<string, string> = {
+        EUR: '€', GBP: '£', USD: '$', CHF: 'CHF', SEK: 'kr', NOK: 'kr', DKK: 'kr',
+        PLN: 'zł', CZK: 'Kč', AED: 'AED', SAR: 'SAR', RUB: '₽', CNY: '¥', JPY: '¥',
+        AUD: 'A$', CAD: 'C$', INR: '₹', ZAR: 'R', BRL: 'R$', MXN: '$', TRY: '₺',
+        MAD: 'MAD', QAR: 'QAR', KWD: 'KWD', BHD: 'BHD', OMR: 'OMR', SGD: 'S$',
+        HKD: 'HK$', NZD: 'NZ$', THB: '฿'
+      };
+
+      return {
+        currency: selectedCurrency,
+        rate: rate,
+        symbol: symbols[selectedCurrency] || selectedCurrency
+      };
+    } catch {
+      return { currency: 'EUR', rate: 1, symbol: '€' };
+    }
   }
 
   private generatePropertyUrl(property: GridProperty): string {

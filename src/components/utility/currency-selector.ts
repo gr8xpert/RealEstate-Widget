@@ -52,6 +52,18 @@ const CACHE_TTL = 6 * 60 * 60 * 1000; // 6 hours in milliseconds
 // Free API endpoint (no API key needed)
 const API_URL = 'https://api.frankfurter.app/latest';
 
+// All price selectors across the widget (listing, detail, wishlist, etc.)
+const PRICE_SELECTOR = [
+  '.rs_card_price',              // Listing card price
+  '.rs-detail__price',           // Detail price (standalone component)
+  '.rs-property-price',          // Generic property price
+  '.rs-template__price',         // Detail page template price
+  '.rs-detail-related__card-price', // Related properties on detail page
+  '.rs-wishlist-card__price',    // Wishlist grid card price
+  '.rs-compare-card__price',     // Wishlist compare modal price
+  '[data-rs-price]'              // Any element with data-rs-price attribute
+].join(', ');
+
 interface CachedRates {
   rates: Record<string, number>;
   base: string;
@@ -249,10 +261,8 @@ class RSCurrencySelector extends RSBaseComponent {
   }
 
   private applyConversion(): void {
-    // Find all price elements
-    const priceElements = document.querySelectorAll<HTMLElement>(
-      '.rs_card_price, .rs-detail__price, .rs-property-price, [data-rs-price]'
-    );
+    // Find all price elements across listing, detail, and wishlist pages
+    const priceElements = document.querySelectorAll<HTMLElement>(PRICE_SELECTOR);
 
     priceElements.forEach(el => {
       this.convertPrice(el);
@@ -381,9 +391,9 @@ class RSCurrencySelector extends RSBaseComponent {
       mutations.forEach(mutation => {
         mutation.addedNodes.forEach(node => {
           if (node instanceof HTMLElement) {
-            if (node.matches('.rs_card_price, .rs-detail__price, .rs-property-price, [data-rs-price]')) {
+            if (node.matches(PRICE_SELECTOR)) {
               hasNewPrices = true;
-            } else if (node.querySelector('.rs_card_price, .rs-detail__price, .rs-property-price, [data-rs-price]')) {
+            } else if (node.querySelector(PRICE_SELECTOR)) {
               hasNewPrices = true;
             }
           }
@@ -400,6 +410,26 @@ class RSCurrencySelector extends RSBaseComponent {
       childList: true,
       subtree: true
     });
+  }
+
+  // Public method to get current currency and rate (for PDF/email)
+  public getCurrentCurrency(): { currency: string; rate: number; symbol: string } {
+    const info = CURRENCY_INFO[this.selectedCurrency] || { symbol: this.selectedCurrency };
+    return {
+      currency: this.selectedCurrency,
+      rate: this.rates[this.selectedCurrency] || 1,
+      symbol: info.symbol
+    };
+  }
+
+  // Public method to convert a price value
+  public convertValue(value: number): { value: number; formatted: string } {
+    const rate = this.rates[this.selectedCurrency] || 1;
+    const convertedValue = value * rate;
+    return {
+      value: convertedValue,
+      formatted: this.formatPrice(convertedValue, this.selectedCurrency)
+    };
   }
 }
 
