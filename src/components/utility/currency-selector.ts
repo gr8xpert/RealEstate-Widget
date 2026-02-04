@@ -296,22 +296,56 @@ class RSCurrencySelector extends RSBaseComponent {
   private extractPrice(text: string): number | null {
     // Remove currency symbols and text, keep numbers and separators
     const cleaned = text
-      .replace(/[€£$CHF\s]/gi, '')
+      .replace(/[€£$]/g, '')
+      .replace(/CHF|EUR|GBP|USD/gi, '')
       .replace(/[^\d.,]/g, '')
       .trim();
 
     if (!cleaned) return null;
 
-    // Handle European format (1.234.567,89) vs US format (1,234,567.89)
+    // Determine format by analyzing the separators
     let normalized: string;
 
-    // Check if comma is decimal separator (European)
-    if (cleaned.includes(',') && cleaned.lastIndexOf(',') > cleaned.lastIndexOf('.')) {
-      // European: 1.234.567,89 -> 1234567.89
-      normalized = cleaned.replace(/\./g, '').replace(',', '.');
+    const hasComma = cleaned.includes(',');
+    const hasPeriod = cleaned.includes('.');
+    const lastCommaPos = cleaned.lastIndexOf(',');
+    const lastPeriodPos = cleaned.lastIndexOf('.');
+
+    if (hasComma && hasPeriod) {
+      // Both separators present - determine which is decimal
+      if (lastCommaPos > lastPeriodPos) {
+        // European: 1.234.567,89 -> comma is decimal
+        normalized = cleaned.replace(/\./g, '').replace(',', '.');
+      } else {
+        // US/UK: 1,234,567.89 -> period is decimal
+        normalized = cleaned.replace(/,/g, '');
+      }
+    } else if (hasComma) {
+      // Only comma - check if it's decimal or thousand separator
+      const afterComma = cleaned.substring(lastCommaPos + 1);
+      if (afterComma.length === 2) {
+        // Likely decimal (e.g., "668,99" = 668.99)
+        normalized = cleaned.replace(',', '.');
+      } else {
+        // Likely thousand separator (e.g., "668,000" = 668000)
+        normalized = cleaned.replace(/,/g, '');
+      }
+    } else if (hasPeriod) {
+      // Only period - check if it's decimal or thousand separator
+      const afterPeriod = cleaned.substring(lastPeriodPos + 1);
+      if (afterPeriod.length === 3 && cleaned.indexOf('.') !== lastPeriodPos) {
+        // Multiple periods = thousand separator (e.g., "1.234.567")
+        normalized = cleaned.replace(/\./g, '');
+      } else if (afterPeriod.length === 2) {
+        // Likely decimal (e.g., "668.99")
+        normalized = cleaned;
+      } else {
+        // Thousand separator (e.g., "668.000" = 668000)
+        normalized = cleaned.replace(/\./g, '');
+      }
     } else {
-      // US/UK: 1,234,567.89 -> 1234567.89
-      normalized = cleaned.replace(/,/g, '');
+      // No separators
+      normalized = cleaned;
     }
 
     const value = parseFloat(normalized);
