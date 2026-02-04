@@ -1,6 +1,6 @@
 # RealtySoft Widget v3 - Complete Documentation
 
-> Version 3.7.0 | Last Updated: February 2, 2026
+> Version 3.8.0 | Last Updated: February 4, 2026
 
 ---
 
@@ -532,10 +532,19 @@ window.RealtySoftConfig = {
     propertyPageSlug: 'property',   // URL slug for property pages
     resultsPage: '/properties',     // Redirect URL for search-only mode (default: /properties)
 
+    // Optional Features (all disabled by default)
+    enableMapView: true,            // Enable map view toggle (default: false)
+    enableAISearch: true,           // Enable AI search toggle (default: false)
+    enableCurrencyConverter: true,  // Enable currency converter (default: false)
+    enableMortgageCalculator: true, // Enable mortgage calculator (default: false)
+
     // Map View Settings
-    enableMapView: true,            // Enable/disable map view toggle (default: true)
     perPage: 12,                    // Items per page for grid/list view (default: 12)
     mapPerPage: 50,                 // Items per page for map view (default: 50)
+
+    // Currency Converter Settings
+    baseCurrency: 'EUR',            // Base currency (what your prices are in)
+    availableCurrencies: ['EUR', 'GBP', 'USD', 'CHF', 'AED', 'SAR'], // Currencies to offer
 
     // Branding for emails and PDF exports
     branding: {
@@ -1980,6 +1989,39 @@ Social share buttons.
 ```html
 <div class="rs_share_buttons" data-property-id="R123456"></div>
 ```
+
+### Currency Selector (`rs_currency_selector`)
+
+Converts property prices to user's preferred currency using real-time exchange rates from the Frankfurter API.
+
+**Note:** Must be enabled via `enableCurrencyConverter: true` in config.
+
+```html
+<!-- Place anywhere on the page - header, footer, sidebar, etc. -->
+<div class="rs_currency_selector"></div>
+```
+
+**Features:**
+- Real-time exchange rates from free Frankfurter API (no API key needed)
+- 45+ currencies supported
+- Rates cached in localStorage for 6 hours
+- User's currency preference persists across sessions
+- Converts all property prices on page automatically
+- MutationObserver handles dynamically loaded prices
+
+**Configuration:**
+
+```javascript
+window.RealtySoftConfig = {
+    enableCurrencyConverter: true,  // Enable the currency selector (required)
+    baseCurrency: 'EUR',            // Base currency (what your prices are in)
+    availableCurrencies: ['EUR', 'GBP', 'USD', 'CHF', 'AED', 'SAR'] // Currencies to offer
+};
+```
+
+**Supported Currencies:**
+
+EUR, GBP, USD, CHF, SEK, NOK, DKK, PLN, CZK, AED, SAR, RUB, CNY, JPY, AUD, CAD, INR, ZAR, BRL, MXN, TRY, MAD, QAR, KWD, BHD, OMR, SGD, HKD, NZD, THB, and more.
 
 ---
 

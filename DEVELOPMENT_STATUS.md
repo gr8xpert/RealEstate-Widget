@@ -1,6 +1,6 @@
 # RealtySoft Widget v3 - Development Status
 
-> **Version:** 3.7.0 | **Last Updated:** February 2, 2026
+> **Version:** 3.8.0 | **Last Updated:** February 4, 2026
 
 ---
 
@@ -35,6 +35,7 @@
 | Phase 15: Map Search Feature | Complete | 100% |
 | Phase 16: Mortgage Calculator & Documentation | Complete | 100% |
 | Phase 17: Email & PDF Branding | Complete | 100% |
+| Phase 18: Currency Converter & Config Options | Complete | 100% |
 
 ---
 
@@ -76,6 +77,81 @@ window.RealtySoftConfig = {
 - Removed CSS gradients (stripped by email clients)
 - Added MSO conditional comments for Outlook-specific fixes
 - All styles inline (no CSS classes or `<style>` blocks)
+
+---
+
+### Phase 18: Currency Converter & Config Options (v3.8.0)
+
+Added currency converter utility and improved configuration defaults for optional features.
+
+#### Currency Converter
+
+| Feature | Description |
+|---------|-------------|
+| **Real-time Exchange Rates** | Uses free Frankfurter API (no API key needed) |
+| **45+ Currencies Supported** | EUR, GBP, USD, CHF, SEK, NOK, DKK, PLN, CZK, AED, SAR, RUB, CNY, JPY, AUD, CAD, INR, ZAR, BRL, MXN, TRY, MAD, QAR, KWD, BHD, OMR, SGD, HKD, NZD, THB, etc. |
+| **localStorage Caching** | Rates cached for 6 hours to minimize API calls |
+| **Configurable Currencies** | Choose which currencies to offer via config |
+| **Dynamic Price Conversion** | Converts all property prices on page automatically |
+| **Persistent Selection** | User's currency preference saved across sessions |
+| **MutationObserver** | Handles dynamically loaded prices (SPA navigation, AJAX) |
+| **Smart Number Parsing** | Handles both US (1,234.56) and European (1.234,56) formats |
+
+#### Configuration
+
+```javascript
+window.RealtySoftConfig = {
+    // Enable currency converter (default: false)
+    enableCurrencyConverter: true,
+
+    // Base currency (what your prices are in)
+    baseCurrency: 'EUR',
+
+    // Available currencies for user selection
+    availableCurrencies: ['EUR', 'GBP', 'USD', 'CHF', 'AED', 'SAR'],
+
+    // Enable map view toggle (default: false, was true)
+    enableMapView: true,
+
+    // Enable AI search (default: false, was true)
+    enableAISearch: true
+};
+```
+
+#### HTML Usage
+
+```html
+<!-- Place anywhere on the page - header, footer, sidebar, etc. -->
+<div class="rs_currency_selector"></div>
+```
+
+#### Config Defaults Changed
+
+| Option | Old Default | New Default | Reason |
+|--------|-------------|-------------|--------|
+| `enableMapView` | `true` | `false` | Must explicitly enable to show Map toggle |
+| `enableAISearch` | `true` | `false` | Must explicitly enable to show AI Search |
+| `enableCurrencyConverter` | N/A | `false` | New feature, opt-in |
+
+#### View Toggle Enhancement
+
+Listing templates 09, 10, 11 (which show 1 property per row) now have view toggle restored with only Grid and Map options (List view hidden since these are already list-style layouts).
+
+#### Sort Dropdown Change
+
+Removed "Own Properties First" option from the sort dropdown as it's more appropriate as a carousel filter than a sort option.
+
+#### Files Created/Modified
+
+| File | Change |
+|------|--------|
+| `src/components/utility/currency-selector.ts` | **NEW** - Currency converter component |
+| `src/components/utility/index.ts` | Added currency-selector import |
+| `src/core/controller.ts` | Added `rs_currency_selector` to global utility components |
+| `src/components/listing/view-toggle.ts` | Changed `enableMapView` default to `false`, added `data-rs-hide-list` support |
+| `src/components/search/ai-search-toggle.ts` | Changed `enableAISearch` default to `false` |
+| `src/components/listing/sort.ts` | Removed "Own Properties First" option |
+| `src/styles/realtysoft.css` | Added currency selector styles |
 
 ---
 

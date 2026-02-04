@@ -1203,6 +1203,7 @@
             <a href="#wishlist" class="nav-link">Wishlist System</a>
             <a href="#language-selector" class="nav-link">Language Selector</a>
             <a href="#share-buttons" class="nav-link">Share Buttons</a>
+            <a href="#currency-selector" class="nav-link">Currency Selector</a>
         </div>
 
         <div class="nav-section">
@@ -3185,6 +3186,64 @@ window.RealtySoftConfig = {
                 </div>
                 <pre><code>&lt;div class="rs_share_buttons" data-property-id="R123456"&gt;&lt;/div&gt;</code></pre>
             </div>
+        </section>
+
+        <!-- Currency Selector -->
+        <section id="currency-selector">
+            <h3>Currency Selector</h3>
+            <p>Converts property prices to user's preferred currency using real-time exchange rates.</p>
+
+            <div class="callout" style="background: linear-gradient(135deg, #fef3c7 0%, #fef9c3 100%); border-left: 4px solid #f59e0b; padding: 20px 24px; border-radius: 8px; margin: 24px 0;">
+                <h4 style="margin: 0 0 8px; color: #b45309; font-size: 16px; display: flex; align-items: center; gap: 8px;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                    Requires Configuration
+                </h4>
+                <p style="margin: 0; color: #92400e;">
+                    Currency converter must be enabled via <code style="background: rgba(180, 83, 9, 0.1); padding: 2px 6px; border-radius: 4px;">enableCurrencyConverter: true</code> in your config.
+                </p>
+            </div>
+
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">HTML</span>
+                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code>&lt;!-- Place anywhere on the page - header, footer, sidebar --&gt;
+&lt;div class="rs_currency_selector"&gt;&lt;/div&gt;</code></pre>
+            </div>
+
+            <h4>Configuration</h4>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">JavaScript</span>
+                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code>window.RealtySoftConfig = {
+    // Enable currency converter (required)
+    enableCurrencyConverter: true,
+
+    // Base currency (what your prices are in)
+    baseCurrency: 'EUR',
+
+    // Currencies to show in dropdown
+    availableCurrencies: ['EUR', 'GBP', 'USD', 'CHF', 'AED', 'SAR']
+};</code></pre>
+            </div>
+
+            <h4>Features</h4>
+            <ul style="margin: 16px 0; padding-left: 24px; color: var(--text);">
+                <li style="margin-bottom: 8px;">Real-time exchange rates from free Frankfurter API (no API key needed)</li>
+                <li style="margin-bottom: 8px;">45+ currencies supported</li>
+                <li style="margin-bottom: 8px;">Rates cached for 6 hours to minimize API calls</li>
+                <li style="margin-bottom: 8px;">User's currency preference saved across sessions</li>
+                <li style="margin-bottom: 8px;">Automatically converts all property prices on page</li>
+                <li style="margin-bottom: 8px;">Handles dynamically loaded prices (AJAX, SPA navigation)</li>
+            </ul>
+
+            <h4>Supported Currencies</h4>
+            <p style="font-size: 0.875rem; color: var(--text-muted);">
+                EUR, GBP, USD, CHF, SEK, NOK, DKK, PLN, CZK, AED, SAR, RUB, CNY, JPY, AUD, CAD, INR, ZAR, BRL, MXN, TRY, MAD, QAR, KWD, BHD, OMR, SGD, HKD, NZD, THB, and more.
+            </p>
         </section>
 
         <!-- Filter Locking -->
