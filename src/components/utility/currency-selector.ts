@@ -84,8 +84,6 @@ class RSCurrencySelector extends RSBaseComponent {
       return;
     }
 
-    console.log('[RealtySoft] Currency selector initializing...');
-
     this.baseCurrency = globalConfig.baseCurrency || 'EUR';
     this.availableCurrencies = globalConfig.availableCurrencies || ['EUR', 'GBP', 'USD', 'CHF'];
 
@@ -102,13 +100,6 @@ class RSCurrencySelector extends RSBaseComponent {
 
     this.render();
     this.bindEvents();
-
-    console.log('[RealtySoft] Currency selector ready:', {
-      base: this.baseCurrency,
-      selected: this.selectedCurrency,
-      currencies: this.availableCurrencies,
-      rates: this.rates
-    });
 
     // Apply conversion if not base currency
     if (this.selectedCurrency !== this.baseCurrency) {
