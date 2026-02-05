@@ -1,6 +1,6 @@
 # RealtySoft Widget v3 - Complete Documentation
 
-> Version 3.8.0 | Last Updated: February 4, 2026
+> Version 3.9.0 | Last Updated: February 5, 2026
 
 ---
 
@@ -1479,6 +1479,34 @@ Badge showing wishlist count.
 <div class="rs_wishlist_counter"></div>
 ```
 
+#### Wishlist Counter - Multilingual Support
+
+The wishlist counter component supports multilingual URLs. When placed inside a WordPress menu item:
+
+```html
+<!-- In WordPress menu: set Navigation Label to this HTML -->
+<span class="rs_wishlist_counter"></span>
+```
+
+**Smart Link Detection:** If the element is already inside an `<a>` tag (e.g., in a WordPress menu), the counter renders only the heart icon and badge without wrapping in another link. The parent menu link handles navigation.
+
+**Language-Specific URLs:** When used standalone (not in a menu), the counter automatically navigates to the correct wishlist page based on the current language:
+- English: `/wishlist/`
+- Spanish: `/lista-de-deseos/`
+- German: `/wunschliste/`
+- French: `/liste-de-souhaits/`
+
+Custom slugs can be configured via:
+```javascript
+window.RealtySoftConfig = {
+    wishlistPageSlugs: {
+        en: 'wishlist',
+        es: 'lista-de-deseos',
+        de: 'wunschliste'
+    }
+};
+```
+
 ---
 
 ## Wishlist System
@@ -2022,6 +2050,20 @@ window.RealtySoftConfig = {
 **Supported Currencies:**
 
 EUR, GBP, USD, CHF, SEK, NOK, DKK, PLN, CZK, AED, SAR, RUB, CNY, JPY, AUD, CAD, INR, ZAR, BRL, MXN, TRY, MAD, QAR, KWD, BHD, OMR, SGD, HKD, NZD, THB, and more.
+
+#### Currency Converter - Map View Integration
+
+The currency converter automatically updates map view property markers when the currency changes. Map markers show compact prices with K/M suffixes (e.g., "£ 377K") that correctly scale when converting between currencies.
+
+**Note:** Map markers (`.rs-map-marker__price`, `.rs-map-popup__price`) handle their own conversion independently via the `rs-currency-change` event, ensuring K/M suffixes are preserved.
+
+#### Currency Converter - Mortgage Calculator Integration
+
+When the currency converter is enabled, the mortgage calculator automatically:
+- Opens with the property price converted to the user's selected currency
+- Shows the correct currency symbol (€, £, $, etc.)
+- Updates values if the currency changes while the modal is open
+- Displays all results (monthly payment, total interest, total payment) in the selected currency
 
 ---
 
@@ -3023,6 +3065,30 @@ location ~ ^/property/.+ {
 
 This gives you SEO-friendly URLs (`/property/villa-name-REF123`) with HTTP 200.
 
+### Multilingual URL Routing (v3.9.0)
+
+The widget now handles multilingual URLs automatically:
+
+1. **WordPress rewrite rules simplified** - One rule per slug, no Polylang/WPML conflicts
+2. **JavaScript handles language detection** - Extracts language from URL path, page slug, or config
+3. **Central URL helper** - All components use `RealtySoftGetPropertyUrl()` for correct language-specific property links
+4. **Works with all translation plugins** - Polylang, WPML, Weglot, TranslatePress, GTranslate
+
+#### How Property URLs Work
+
+When a user is on a Spanish page (`/propiedades/`), clicking a property generates the correct Spanish URL:
+- `/property-es/villa-name-R123` (instead of `/property/villa-name-R123`)
+
+The language is detected from:
+1. Translation plugin config (`currentLang`)
+2. URL path prefix (`/es/...`)
+3. Current page slug matching `propertyPageSlugs`
+4. Widget language config
+
+#### Email & Wishlist URLs
+
+Property URLs in inquiry emails and wishlist pages automatically use the correct language-specific slug based on the page the user was viewing.
+
 ### Social Sharing Configuration
 
 The widget generates share links that pass through `share.php` to provide proper Open Graph meta tags for social media crawlers (Facebook, WhatsApp, LinkedIn, Twitter/X).
@@ -3065,4 +3131,4 @@ For issues and feature requests:
 
 ---
 
-*Documentation for v3.0.0 - Updated January 27, 2026*
+*Documentation for v3.9.0 - Updated February 5, 2026*

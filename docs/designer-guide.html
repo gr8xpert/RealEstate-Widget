@@ -1129,7 +1129,7 @@
     <nav class="sidebar" id="sidebar">
         <div class="sidebar-header">
             <div class="sidebar-logo">Smart Property Widget</div>
-            <div class="sidebar-version">Guide</div>
+            <div class="sidebar-version">v3.9.0</div>
         </div>
 
         <div class="sidebar-search">
@@ -2903,6 +2903,10 @@ window.RealtySoftConfig = {
 
             <p><strong>Auto-included:</strong> When using <code class="inline-code">&lt;div class="property-detail-container"&gt;&lt;/div&gt;</code>, the mortgage calculator is automatically added below the social share section (if enabled in config).</p>
 
+            <div class="callout">
+                <strong>Currency Support:</strong> When the currency converter is enabled, the mortgage calculator opens with the property price converted to the user's selected currency. Currency symbols and values update automatically.
+            </div>
+
             <h4>Map Variations</h4>
             <div class="code-block">
                 <div class="code-header">
@@ -3158,6 +3162,10 @@ window.RealtySoftConfig = {
                 </div>
                 <pre><code>&lt;div class="rs_wishlist_counter"&gt;&lt;/div&gt;</code></pre>
             </div>
+
+            <div class="callout">
+                <strong>Wishlist Counter in Menus:</strong> When placed inside a WordPress menu item (set the Navigation Label to <code>&lt;span class="rs_wishlist_counter"&gt;&lt;/span&gt;</code>), the counter detects the parent link and only renders the heart icon — the menu link handles navigation to the correct language-specific wishlist page.
+            </div>
         </section>
 
         <!-- Language Selector -->
@@ -3244,6 +3252,14 @@ window.RealtySoftConfig = {
             <p style="font-size: 0.875rem; color: var(--text-muted);">
                 EUR, GBP, USD, CHF, SEK, NOK, DKK, PLN, CZK, AED, SAR, RUB, CNY, JPY, AUD, CAD, INR, ZAR, BRL, MXN, TRY, MAD, QAR, KWD, BHD, OMR, SGD, HKD, NZD, THB, and more.
             </p>
+
+            <div class="callout">
+                <strong>Map View Integration:</strong> Map markers automatically update with K/M suffixes when currency changes (e.g., "£ 377K"). No extra configuration needed.
+            </div>
+
+            <div class="callout">
+                <strong>Mortgage Calculator:</strong> When both currency converter and mortgage calculator are enabled, the mortgage modal automatically opens with the converted price in the selected currency.
+            </div>
         </section>
 
         <!-- Filter Locking -->

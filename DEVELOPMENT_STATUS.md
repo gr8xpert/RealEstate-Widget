@@ -1,6 +1,6 @@
 # RealtySoft Widget v3 - Development Status
 
-> **Version:** 3.8.0 | **Last Updated:** February 4, 2026
+> **Version:** 3.9.0 | **Last Updated:** February 5, 2026
 
 ---
 
@@ -36,10 +36,97 @@
 | Phase 16: Mortgage Calculator & Documentation | Complete | 100% |
 | Phase 17: Email & PDF Branding | Complete | 100% |
 | Phase 18: Currency Converter & Config Options | Complete | 100% |
+| Phase 19: Multilingual URL Routing & Currency Enhancements | Complete | 100% |
 
 ---
 
 ## What Has Been Done (Completed)
+
+### Phase 19: Multilingual URL Routing & Currency Enhancements (v3.9.0)
+
+Platform-agnostic multilingual URL routing and currency conversion improvements across all widget components.
+
+#### Multilingual URL Routing
+
+| Feature | Description |
+|---------|-------------|
+| **Simplified WordPress Rewrite Rules** | Removed Polylang-conflicting hooks, simplified to one rule per slug |
+| **Language-Prefixed Rules** | Added rewrite rules for `/es/propiedad/R123` style URLs without `&lang=` injection |
+| **JS Property Ref Extraction** | Updated to handle multilingual URLs by stripping language prefix and checking all configured slugs |
+| **Central URL Helper** | `RealtySoftGetPropertyUrl()` function generates correct language-specific property URLs |
+| **Language Detection from URL** | `getCurrentLanguageCode()` detects language from URL path (e.g., `/es/...` → Spanish) |
+| **Component URL Updates** | Property carousel, wishlist grid, wishlist modals, and related properties all use central URL helper |
+
+#### Wishlist Counter Multilingual Support
+
+| Feature | Description |
+|---------|-------------|
+| **Menu Link Detection** | Detects if placed inside a `<a>` tag (e.g., WordPress menu) and doesn't render its own link |
+| **Language-Specific Wishlist URLs** | Uses `wishlistPageSlugs` config for correct URLs per language |
+| **Default Wishlist Slugs** | Built-in slugs for 13 languages (en: wishlist, es: lista-de-deseos, de: wunschliste, etc.) |
+| **Config Override** | Custom wishlist slugs via `wishlistPageSlugs` in config or Advanced Config |
+
+#### Currency Converter Fixes
+
+| Feature | Description |
+|---------|-------------|
+| **Map Marker K/M Fix** | Fixed map markers losing K/M suffixes when currency changed |
+| **Separated Map Conversion** | Map view handles its own currency conversion independently from currency selector |
+| **K/M Suffix Parsing** | `extractPrice()` now correctly handles K (×1000) and M (×1000000) suffixes |
+
+#### Mortgage Calculator Currency Support
+
+| Feature | Description |
+|---------|-------------|
+| **Selected Currency Integration** | Mortgage calculator uses the user's selected currency from currency converter |
+| **Price Conversion** | Property price automatically converted using exchange rate when opening modal |
+| **Currency Symbol Update** | All currency symbols in modal update to match selected currency |
+| **Live Currency Switching** | If currency changes while modal is open, values update automatically |
+| **Open-Time Sync** | Modal always syncs with current currency when opened |
+
+#### Files Modified
+
+| File | Change |
+|------|--------|
+| `wordpress/realtysoft-connector/realtysoft-connector.php` | Simplified rewrite rules, removed Polylang hooks, added wishlistPageSlugs |
+| `src/core/controller.ts` | Added `getCurrentLanguageCode()` URL detection, `RealtySoftGetPropertyUrl` helper, wishlistPageSlugs config |
+| `src/core/state.ts` | Added `wishlistPageSlugs` config default |
+| `src/types/index.ts` | Added `wishlistPageSlugs` type |
+| `src/components/detail/property-detail-template.ts` | Fixed multilingual property ref extraction |
+| `src/components/detail/detail.ts` | Updated property page detection for multilingual slugs |
+| `src/components/detail/mortgage-calculator.ts` | Added currency conversion support |
+| `src/components/listing/property-carousel.ts` | Updated to use central URL helper |
+| `src/components/listing/map-view.ts` | Currency conversion handles K/M correctly |
+| `src/components/utility/currency-selector.ts` | Fixed K/M parsing, excluded map markers |
+| `src/components/utility/wishlist-counter.ts` | Added menu detection, multilingual URLs |
+| `src/components/utility/wishlist-grid.ts` | Updated to use central URL helper |
+| `src/components/utility/wishlist-modals.ts` | Updated to use central URL helper |
+
+#### Configuration
+
+```javascript
+window.RealtySoftConfig = {
+    // Wishlist page slugs per language (auto-detected defaults available)
+    wishlistPageSlugs: {
+        en: 'wishlist',
+        es: 'lista-de-deseos',
+        de: 'wunschliste'
+    }
+};
+```
+
+#### WordPress Plugin Changes
+
+Removed from constructor (no longer needed):
+- `pll_check_canonical_url` filter
+- `set_polylang_language_from_url` action
+
+Simplified `add_rewrite_rules()`:
+- One rule per slug: `^slug/[^/]+/?$` → `pagename=slug`
+- No `&lang=` query var injection
+- Language-prefixed rules added separately
+
+---
 
 ### Phase 17: Email & PDF Branding (v3.7.0)
 
@@ -1116,6 +1203,12 @@ The loader script:
 | 45 | Features popup going behind map | Added `isolation: isolate` to map container, reset leaflet z-index |
 | 46 | Widget appearing 3 times (header, content, footer) | Added container-scoped initialization with main content priority detection |
 | 47 | Widget rendering in header instead of main content | Added `findBestElement()` with `isInMainContent()` and `isInHeaderFooter()` detection |
+| 48 | Spanish property detail blank | Simplified WP rewrite rules, removed Polylang conflict hooks |
+| 49 | Spanish results page redirect loop | Removed `&lang=` query var from rewrite rules |
+| 50 | Property URLs using English slug on ES pages | Added central `RealtySoftGetPropertyUrl` helper with language detection |
+| 51 | Wishlist heart icon going to /wishlist/ in menu | Wishlist counter detects parent `<a>` tag, uses parent link |
+| 52 | Map marker prices missing K/M on currency change | Separated map currency conversion from currency selector DOM manipulation |
+| 53 | Mortgage calculator always showing EUR | Added selected currency integration with rate conversion |
 
 ---
 
