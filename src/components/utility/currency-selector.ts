@@ -52,7 +52,9 @@ const CACHE_TTL = 6 * 60 * 60 * 1000; // 6 hours in milliseconds
 // Free API endpoint (no API key needed)
 const API_URL = 'https://api.frankfurter.app/latest';
 
-// All price selectors across the widget (listing, detail, wishlist, map, etc.)
+// All price selectors across the widget (listing, detail, wishlist, etc.)
+// Note: Map markers (.rs-map-marker__price, .rs-map-popup__price) are handled
+// by map-view.ts which has its own currency conversion on rs-currency-change event
 const PRICE_SELECTOR = [
   '.rs_card_price',              // Listing card price
   '.rs-detail__price',           // Detail price (standalone component)
@@ -61,8 +63,6 @@ const PRICE_SELECTOR = [
   '.rs-detail-related__card-price', // Related properties on detail page
   '.rs-wishlist-card__price',    // Wishlist grid card price
   '.rs-compare-card__price',     // Wishlist compare modal price
-  '.rs-map-marker__price',       // Map view marker price
-  '.rs-map-popup__price',        // Map view popup price
   '[data-rs-price]'              // Any element with data-rs-price attribute
 ].join(', ');
 
@@ -315,10 +315,20 @@ class RSCurrencySelector extends RSBaseComponent {
   }
 
   private extractPrice(text: string): number | null {
+    // Check for K (thousands) or M (millions) suffix before cleaning
+    const upperText = text.toUpperCase();
+    let multiplier = 1;
+    if (upperText.includes('M')) {
+      multiplier = 1000000;
+    } else if (upperText.includes('K')) {
+      multiplier = 1000;
+    }
+
     // Remove currency symbols and text, keep numbers and separators
     const cleaned = text
       .replace(/[€£$]/g, '')
       .replace(/CHF|EUR|GBP|USD/gi, '')
+      .replace(/[KkMm]/g, '') // Remove K/M suffixes (already captured multiplier)
       .replace(/[^\d.,]/g, '')
       .trim();
 
@@ -370,7 +380,10 @@ class RSCurrencySelector extends RSBaseComponent {
     }
 
     const value = parseFloat(normalized);
-    return isNaN(value) ? null : value;
+    if (isNaN(value)) return null;
+
+    // Apply multiplier for K/M suffixes
+    return value * multiplier;
   }
 
   private formatPrice(value: number, currency: string): string {

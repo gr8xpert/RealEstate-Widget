@@ -1,6 +1,7 @@
 /**
  * RealtySoft Widget v3 - Mortgage Calculator Component
  * Button that opens a popup modal with mortgage calculation form
+ * Supports currency conversion based on user's selected currency
  */
 
 import { RSBaseComponent } from '../base';
@@ -15,6 +16,15 @@ import type {
 declare const RealtySoftState: RealtySoftStateModule;
 declare const RealtySoftLabels: RealtySoftLabelsModule;
 
+// Currency symbols map
+const CURRENCY_SYMBOLS: Record<string, string> = {
+  EUR: '€', GBP: '£', USD: '$', CHF: 'CHF', SEK: 'kr', NOK: 'kr', DKK: 'kr',
+  PLN: 'zł', CZK: 'Kč', AED: 'AED', SAR: 'SAR', RUB: '₽', CNY: '¥', JPY: '¥',
+  AUD: 'A$', CAD: 'C$', INR: '₹', ZAR: 'R', BRL: 'R$', MXN: '$', TRY: '₺',
+  MAD: 'MAD', QAR: 'QAR', KWD: 'KWD', BHD: 'BHD', OMR: 'OMR', SGD: 'S$',
+  HKD: 'HK$', NZD: 'NZ$', THB: '฿'
+};
+
 interface MortgageResult {
   monthlyPayment: number;
   totalPayment: number;
@@ -22,10 +32,17 @@ interface MortgageResult {
   loanAmount: number;
 }
 
+interface CurrencyInfo {
+  currency: string;
+  rate: number;
+  symbol: string;
+}
+
 class RSMortgageCalculator extends RSBaseComponent {
   private property: Property | null = null;
   private modal: HTMLElement | null = null;
   private isOpen: boolean = false;
+  private currencyChangeHandler: (() => void) | null = null;
 
   constructor(element: HTMLElement, options: ComponentOptions = {}) {
     super(element, options);
@@ -74,10 +91,13 @@ class RSMortgageCalculator extends RSBaseComponent {
       existingModal.remove();
     }
 
-    const price = this.property?.price || 0;
-    const priceFormatted = this.formatNumber(price);
-    const defaultDownPayment = Math.round(price * 0.2); // 20% default
-    const currencySymbol = this.getCurrencySymbol();
+    // Get currency info and convert price
+    const currencyInfo = this.getCurrencyInfo();
+    const basePrice = this.property?.price || 0;
+    const convertedPrice = Math.round(basePrice * currencyInfo.rate);
+    const priceFormatted = this.formatNumber(convertedPrice);
+    const defaultDownPayment = Math.round(convertedPrice * 0.2); // 20% default
+    const currencySymbol = currencyInfo.symbol;
 
     this.modal = document.createElement('div');
     this.modal.id = 'rs-mortgage-modal';
@@ -231,6 +251,54 @@ class RSMortgageCalculator extends RSBaseComponent {
         }
       });
     }
+
+    // Listen for currency changes to update the modal
+    this.currencyChangeHandler = () => {
+      if (this.isOpen) {
+        // Update the modal with new currency
+        this.updateModalCurrency();
+      }
+    };
+    window.addEventListener('rs-currency-change', this.currencyChangeHandler);
+  }
+
+  /**
+   * Update the modal when currency changes
+   */
+  private updateModalCurrency(): void {
+    if (!this.modal) return;
+
+    const currencyInfo = this.getCurrencyInfo();
+    const basePrice = this.property?.price || 0;
+    const convertedPrice = Math.round(basePrice * currencyInfo.rate);
+    const downPaymentPercent = parseFloat(
+      (this.modal.querySelector('#rs-mortgage-down-percent') as HTMLInputElement)?.value || '20'
+    );
+    const convertedDownPayment = Math.round(convertedPrice * (downPaymentPercent / 100));
+
+    // Update all currency symbols in the modal
+    const currencySymbols = this.modal.querySelectorAll('.rs-mortgage-form__currency, .rs-mortgage-results__currency');
+    currencySymbols.forEach(el => {
+      el.textContent = currencyInfo.symbol;
+    });
+
+    // Update price input
+    const priceInput = this.modal.querySelector('#rs-mortgage-price') as HTMLInputElement;
+    if (priceInput) {
+      priceInput.value = this.formatNumber(convertedPrice);
+    }
+
+    // Update down payment input
+    const downInput = this.modal.querySelector('#rs-mortgage-down') as HTMLInputElement;
+    if (downInput) {
+      downInput.value = this.formatNumber(convertedDownPayment);
+    }
+
+    // Hide results (user needs to recalculate with new currency)
+    const resultsDiv = this.modal.querySelector('#rs-mortgage-results') as HTMLElement;
+    if (resultsDiv) {
+      resultsDiv.style.display = 'none';
+    }
   }
 
   private openModal(): void {
@@ -240,6 +308,9 @@ class RSMortgageCalculator extends RSBaseComponent {
     this.modal.classList.add('rs-mortgage-modal--open');
     this.modal.setAttribute('aria-hidden', 'false');
     document.body.style.overflow = 'hidden';
+
+    // Update modal with current currency (in case currency changed while modal was closed)
+    this.updateModalCurrency();
 
     // Focus first input
     setTimeout(() => {
@@ -317,7 +388,13 @@ class RSMortgageCalculator extends RSBaseComponent {
     const loanEl = this.modal.querySelector('#rs-mortgage-loan');
     const interestEl = this.modal.querySelector('#rs-mortgage-interest');
     const totalEl = this.modal.querySelector('#rs-mortgage-total');
-    const currency = this.getCurrencySymbol();
+    const currency = this.getCurrencyInfo().symbol;
+
+    // Update the currency symbol in results header
+    const resultsCurrency = this.modal.querySelector('.rs-mortgage-results__currency');
+    if (resultsCurrency) {
+      resultsCurrency.textContent = currency;
+    }
 
     if (resultsDiv) {
       resultsDiv.style.display = 'block';
@@ -351,29 +428,35 @@ class RSMortgageCalculator extends RSBaseComponent {
     return parseInt(str.replace(/[^0-9]/g, '')) || 0;
   }
 
-  private getCurrencySymbol(): string {
-    // Check property currency first
-    if (this.property?.currency) {
-      const symbols: Record<string, string> = {
-        'EUR': '€',
-        'USD': '$',
-        'GBP': '£',
-        'CHF': 'CHF',
-        'AED': 'AED',
-        'PLN': 'zł',
-      };
-      if (symbols[this.property.currency]) {
-        return symbols[this.property.currency];
+  /**
+   * Get the current currency info including symbol and conversion rate
+   */
+  private getCurrencyInfo(): CurrencyInfo {
+    try {
+      const selectedCurrency = localStorage.getItem('rs_selected_currency');
+      const cachedRates = localStorage.getItem('rs_exchange_rates');
+
+      if (!selectedCurrency || !cachedRates) {
+        // No currency selected, use base currency (EUR)
+        return { currency: 'EUR', rate: 1, symbol: '€' };
       }
-    }
 
-    // Try to get from labels (validate it's a real symbol, not the key)
-    const symbol = RealtySoftLabels?.get?.('currency_symbol');
-    if (symbol && symbol.length <= 4 && !symbol.includes('_')) {
-      return symbol;
-    }
+      const ratesData = JSON.parse(cachedRates);
+      const rate = ratesData.rates?.[selectedCurrency] || 1;
+      const symbol = CURRENCY_SYMBOLS[selectedCurrency] || selectedCurrency;
 
-    return '€';
+      return {
+        currency: selectedCurrency,
+        rate: rate,
+        symbol: symbol
+      };
+    } catch {
+      return { currency: 'EUR', rate: 1, symbol: '€' };
+    }
+  }
+
+  private getCurrencySymbol(): string {
+    return this.getCurrencyInfo().symbol;
   }
 
   private label(key: string): string {
@@ -381,6 +464,12 @@ class RSMortgageCalculator extends RSBaseComponent {
   }
 
   destroy(): void {
+    // Remove currency change listener
+    if (this.currencyChangeHandler) {
+      window.removeEventListener('rs-currency-change', this.currencyChangeHandler);
+      this.currencyChangeHandler = null;
+    }
+
     if (this.modal) {
       this.modal.remove();
       this.modal = null;

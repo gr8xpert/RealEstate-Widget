@@ -103,6 +103,13 @@ const RealtySoftState: RealtySoftStateModule = (function () {
       privacyPolicyUrl: null,
       features: [],
       propertyPageSlug: 'property',
+      propertyPageSlugs: {}, // { 'en': 'property', 'es': 'propiedad', ... }
+      resultsPageSlugs: {}, // { 'en': 'properties', 'es': 'propiedades', ... }
+      wishlistPageSlugs: {}, // { 'en': 'wishlist', 'es': 'lista-de-deseos', ... }
+      translationPlugin: 'none', // 'polylang', 'wpml', 'weglot', 'translatepress', 'gtranslate', 'none'
+      currentLang: '', // Current language code (e.g., 'es')
+      defaultLang: '', // Default language code (e.g., 'en')
+      languagePrefix: '', // URL prefix (e.g., '/es' or '')
       useWidgetPropertyTemplate: true,
       useQueryParamUrls: false,
       propertyUrlFormat: 'seo',

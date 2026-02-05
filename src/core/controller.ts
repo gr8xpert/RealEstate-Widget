@@ -483,16 +483,166 @@ const RealtySoft = (function () {
     return null;
   }
 
+  // Default fallback slugs for common languages (used if not configured)
+  const DEFAULT_PROPERTY_SLUGS: Record<string, string> = {
+    en: 'property',
+    es: 'propiedad',
+    de: 'immobilie',
+    fr: 'propriete',
+    nl: 'eigendom',
+    pt: 'propriedade',
+    it: 'proprieta',
+    ru: 'nedvizhimost',
+    pl: 'nieruchomosc',
+    sv: 'fastighet',
+    no: 'eiendom',
+    da: 'ejendom',
+    fi: 'kiinteisto',
+  };
+
+  const DEFAULT_RESULTS_SLUGS: Record<string, string> = {
+    en: 'properties',
+    es: 'propiedades',
+    de: 'immobilien',
+    fr: 'proprietes',
+    nl: 'eigendommen',
+    pt: 'propriedades',
+    it: 'proprieta',
+    ru: 'nedvizhimost',
+    pl: 'nieruchomosci',
+    sv: 'fastigheter',
+    no: 'eiendommer',
+    da: 'ejendomme',
+    fi: 'kiinteistot',
+  };
+
+  /**
+   * Get the current effective language code (2-letter code like 'es', 'de')
+   */
+  function getCurrentLanguageCode(): string {
+    // Priority 1: Translation plugin's current language (from PHP)
+    const currentLang = RealtySoftState.get<string>('config.currentLang');
+    if (currentLang) return currentLang.toLowerCase();
+
+    // Priority 2: Detect from URL path (e.g., /es/propiedad/... → 'es')
+    const path = window.location.pathname;
+    const langMatch = path.match(/^\/([a-z]{2})(?:\/|$)/i);
+    if (langMatch) {
+      const urlLang = langMatch[1].toLowerCase();
+      // Verify it's a known language by checking if we have slugs for it
+      const propertySlugs = RealtySoftState.get<Record<string, string>>('config.propertyPageSlugs') || {};
+      if (propertySlugs[urlLang] || DEFAULT_PROPERTY_SLUGS[urlLang]) {
+        return urlLang;
+      }
+    }
+
+    // Priority 3: Detect language from current page slug
+    // If current URL contains a language-specific slug, detect that language
+    const propertySlugs = RealtySoftState.get<Record<string, string>>('config.propertyPageSlugs') || {};
+    for (const [lang, slug] of Object.entries(propertySlugs)) {
+      if (lang !== 'default' && slug && path.includes(`/${slug}/`)) {
+        return lang.toLowerCase();
+      }
+    }
+
+    // Priority 4: Widget language config (extract 2-letter code from locale like 'es_ES')
+    const widgetLanguage = RealtySoftState.get<string>('config.language') || 'en_US';
+    return widgetLanguage.split('_')[0].toLowerCase();
+  }
+
   /**
    * Get results page URL for redirect in search-only mode
+   * Respects language prefix and language-specific results page slug
    */
   function getResultsPageURL(): string {
-    const globalConfig = (window.RealtySoftConfig || {}) as ControllerConfig;
-    if (globalConfig.resultsPage) {
-      return globalConfig.resultsPage;
+    const langCode = getCurrentLanguageCode();
+    const defaultLang = (RealtySoftState.get<string>('config.defaultLang') || 'en').toLowerCase();
+
+    // Get results page slug for current language
+    const resultsSlugs = RealtySoftState.get<Record<string, string>>('config.resultsPageSlugs') || {};
+
+    // Try: 1. User config for this lang, 2. Default fallback for this lang, 3. 'default' key, 4. 'properties'
+    const resultsSlug = resultsSlugs[langCode] ||
+                        DEFAULT_RESULTS_SLUGS[langCode] ||
+                        resultsSlugs['default'] ||
+                        resultsSlugs[defaultLang] ||
+                        'properties';
+
+    // Get language prefix (only for non-default language with translation plugin)
+    let languagePrefix = '';
+    const translationPlugin = RealtySoftState.get<string>('config.translationPlugin');
+
+    if (translationPlugin && translationPlugin !== 'none') {
+      languagePrefix = RealtySoftState.get<string>('config.languagePrefix') || '';
     }
-    return '/properties';
+
+    return `${languagePrefix}/${resultsSlug}`;
   }
+
+  /**
+   * Universal property URL generator
+   * Works with: Polylang, WPML, Weglot, TranslatePress, GTranslate, Widget Selector
+   *
+   * @param property - The property object containing ref, title, etc.
+   * @returns The full URL path for the property detail page
+   */
+  function getPropertyUrl(property: Property): string {
+    // If property already has a URL, use it
+    if (property.url) return property.url;
+
+    const langCode = getCurrentLanguageCode();
+    const defaultLang = (RealtySoftState.get<string>('config.defaultLang') || 'en').toLowerCase();
+
+    // Get property page slug for current language
+    const propertySlugs = RealtySoftState.get<Record<string, string>>('config.propertyPageSlugs') || {};
+
+    // Try: 1. User config for this lang, 2. Default fallback for this lang, 3. 'default' key, 4. Legacy single slug, 5. 'property'
+    const slug = propertySlugs[langCode] ||
+                 DEFAULT_PROPERTY_SLUGS[langCode] ||
+                 propertySlugs['default'] ||
+                 propertySlugs[defaultLang] ||
+                 RealtySoftState.get<string>('config.propertyPageSlug') ||
+                 'property';
+
+    // Get language prefix (only for non-default language with translation plugin)
+    let languagePrefix = '';
+    const translationPlugin = RealtySoftState.get<string>('config.translationPlugin');
+
+    if (translationPlugin && translationPlugin !== 'none') {
+      languagePrefix = RealtySoftState.get<string>('config.languagePrefix') || '';
+    }
+
+    // Build URL based on format
+    const urlFormat = RealtySoftState.get<string>('config.propertyUrlFormat') || 'seo';
+    const ref = property.ref || property.id;
+
+    if (urlFormat === 'query') {
+      return `${languagePrefix}/${slug}?ref=${ref}`;
+    }
+
+    if (urlFormat === 'ref') {
+      return `${languagePrefix}/${slug}/${ref}`;
+    }
+
+    // SEO format (default) - include title slug
+    const title = property.title || property.name || '';
+    const titleSlug = title
+      .toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // Remove accents
+      .replace(/[^a-z0-9\s-]/g, '') // Remove special chars
+      .replace(/\s+/g, '-') // Replace spaces with dashes
+      .replace(/-+/g, '-') // Replace multiple dashes with single
+      .replace(/^-|-$/g, '') // Remove leading/trailing dashes
+      .substring(0, 80); // Limit length
+
+    if (titleSlug) {
+      return `${languagePrefix}/${slug}/${titleSlug}-${ref}`;
+    }
+    return `${languagePrefix}/${slug}/${ref}`;
+  }
+
+  // Export getPropertyUrl for use by components
+  (window as any).RealtySoftGetPropertyUrl = getPropertyUrl;
 
   /**
    * Build search URL with filter parameters
@@ -2349,6 +2499,14 @@ const RealtySoft = (function () {
         );
         RealtySoftState.set('config.inquiryThankYouUrl', globalConfig.inquiryThankYouUrl || null);
         RealtySoftState.set('config.propertyPageSlug', globalConfig.propertyPageSlug || 'property');
+        // Translation plugin support - multilingual URL generation
+        RealtySoftState.set('config.propertyPageSlugs', (globalConfig as any).propertyPageSlugs || {});
+        RealtySoftState.set('config.resultsPageSlugs', (globalConfig as any).resultsPageSlugs || {});
+        RealtySoftState.set('config.wishlistPageSlugs', (globalConfig as any).wishlistPageSlugs || {});
+        RealtySoftState.set('config.translationPlugin', (globalConfig as any).translationPlugin || 'none');
+        RealtySoftState.set('config.currentLang', (globalConfig as any).currentLang || '');
+        RealtySoftState.set('config.defaultLang', (globalConfig as any).defaultLang || '');
+        RealtySoftState.set('config.languagePrefix', (globalConfig as any).languagePrefix || '');
         RealtySoftState.set(
           'config.useWidgetPropertyTemplate',
           globalConfig.useWidgetPropertyTemplate !== false
@@ -3679,6 +3837,7 @@ const RealtySoft = (function () {
     isReady,
     getMode,
     setLanguage,
+    getPropertyUrl, // Universal property URL generator for multilingual support
 
     // Expose sub-modules
     State: RealtySoftState as RealtySoftStateModule,

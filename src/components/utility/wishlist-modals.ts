@@ -480,6 +480,20 @@ class RSWishlistModals extends RSBaseComponent {
 
   private generatePropertyUrl(property: WishlistItem | Record<string, unknown>): string {
     const p = property as Record<string, unknown>;
+
+    // Use central helper if available (supports multilingual URLs)
+    if (typeof (window as any).RealtySoftGetPropertyUrl === 'function') {
+      const adapted = {
+        url: p.url,
+        ref: p.ref_no || p.ref,
+        id: p.id,
+        title: p.name || p.title,
+        name: p.name || p.title
+      };
+      return (window as any).RealtySoftGetPropertyUrl(adapted);
+    }
+
+    // Fallback for older setups
     if (p.url) return p.url as string;
 
     const pageSlug = RealtySoftState.get<string>('config.propertyPageSlug') || 'property';

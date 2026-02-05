@@ -145,8 +145,15 @@ class RSPropertyCarousel extends RSBaseComponent {
 
   /**
    * Generate URL for property detail page
+   * Uses central helper for multilingual URL support
    */
   private generatePropertyUrl(property: Property): string {
+    // Use central helper if available (supports multilingual URLs)
+    if (typeof (window as any).RealtySoftGetPropertyUrl === 'function') {
+      return (window as any).RealtySoftGetPropertyUrl(property);
+    }
+
+    // Fallback for older setups
     if (property.url) return property.url;
 
     const pageSlug = (typeof RealtySoftState !== 'undefined' && RealtySoftState.get<string>('config.propertyPageSlug')) || 'property';

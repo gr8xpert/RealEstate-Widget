@@ -434,6 +434,20 @@ class RSWishlistGrid extends RSBaseComponent {
   }
 
   private generatePropertyUrl(property: GridProperty): string {
+    // Use central helper if available (supports multilingual URLs)
+    if (typeof (window as any).RealtySoftGetPropertyUrl === 'function') {
+      // Adapt GridProperty to Property-like object for the helper
+      const adapted = {
+        url: property.url,
+        ref: property.ref_no || property.ref,
+        id: property.id,
+        title: property.name || property.title,
+        name: property.name || property.title
+      };
+      return (window as any).RealtySoftGetPropertyUrl(adapted);
+    }
+
+    // Fallback for older setups
     if (property.url) return property.url;
 
     const pageSlug = RealtySoftState.get<string>('config.propertyPageSlug') || 'property';

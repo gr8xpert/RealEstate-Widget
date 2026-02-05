@@ -9,7 +9,8 @@ import type {
   ComponentConstructor,
   Property,
   RealtySoftModule,
-  RealtySoftLabelsModule
+  RealtySoftLabelsModule,
+  RealtySoftStateModule
 } from '../../types/index';
 import { RSDetailBackButton } from './back-button';
 import { RSDetailGallery } from './gallery';
@@ -32,6 +33,7 @@ import { RSMortgageCalculator } from './mortgage-calculator';
 // Declare globals
 declare const RealtySoft: RealtySoftModule;
 declare const RealtySoftLabels: RealtySoftLabelsModule;
+declare const RealtySoftState: RealtySoftStateModule;
 
 // Extended HTMLElement with component reference
 interface RSHTMLElement extends HTMLElement {
@@ -52,6 +54,13 @@ class RSDetail extends RSBaseComponent {
     this.property = null;
     this.propertyId = null;
     this.propertyRef = null;
+
+    // Debug: Log current URL and config
+    console.log('[RealtySoft] Detail init - URL:', window.location.href);
+    console.log('[RealtySoft] Detail init - pathname:', window.location.pathname);
+    console.log('[RealtySoft] Detail init - propertyPageSlugs:', RealtySoftState.get('config.propertyPageSlugs'));
+    console.log('[RealtySoft] Detail init - translationPlugin:', RealtySoftState.get('config.translationPlugin'));
+    console.log('[RealtySoft] Detail init - languagePrefix:', RealtySoftState.get('config.languagePrefix'));
 
     // Clear stale PHP prefetch if it doesn't match the current URL
     this.clearStalePrefetch();
@@ -86,6 +95,16 @@ class RSDetail extends RSBaseComponent {
       this.propertyRef = window._rsAutoInjectedRef;
     }
 
+    // Priority 4: Use PHP prefetch ref as ultimate fallback
+    // This handles cases where JS URL extraction fails but PHP extracted correctly
+    if (!this.propertyId && !this.propertyRef) {
+      const prefetch = (window as unknown as { __rsPrefetch?: { ref?: string } }).__rsPrefetch;
+      if (prefetch?.ref) {
+        console.log('[RealtySoft] Using prefetch ref as fallback:', prefetch.ref);
+        this.propertyRef = prefetch.ref;
+      }
+    }
+
     this.element.classList.add('rs-detail');
 
     if (this.propertyId || this.propertyRef) {
@@ -118,12 +137,20 @@ class RSDetail extends RSBaseComponent {
   }
 
   private getPropertyIdFromUrl(): string | null {
-    // Try different URL patterns
-    const patterns = [
-      /\/property\/(\d+)/,
-      /[?&]id=(\d+)/,
-      /[?&]property_id=(\d+)/
-    ];
+    // Get all possible property page slugs for pattern matching
+    const slugs = RealtySoftState.get<Record<string, string>>('config.propertyPageSlugs') || {};
+    const defaultSlug = RealtySoftState.get<string>('config.propertyPageSlug') || 'property';
+    const allSlugs = [...new Set([...Object.values(slugs), defaultSlug, 'property'])];
+
+    // Build patterns that handle language prefixes and all slug variants
+    const patterns: RegExp[] = [];
+    for (const slug of allSlugs) {
+      // With optional language prefix: /es/propiedad/123 or /propiedad/123
+      patterns.push(new RegExp(`(?:/[a-z]{2}(?:-[a-z]{2})?)?/${slug}/(\\d+)`, 'i'));
+    }
+    // Query parameter patterns
+    patterns.push(/[?&]id=(\d+)/);
+    patterns.push(/[?&]property_id=(\d+)/);
 
     for (const pattern of patterns) {
       const match = window.location.href.match(pattern);
@@ -139,36 +166,53 @@ class RSDetail extends RSBaseComponent {
     if (queryRef) return queryRef.trim();
 
     // Extract from SEO-friendly URL path
-    const path = window.location.pathname;
+    let path = window.location.pathname;
+    const originalPath = path;
+
+    // Remove language prefix if present (e.g., /es/propiedad/villa → /propiedad/villa)
+    // Handles 2-letter codes and locale codes like "es-es" or "en-gb"
+    path = path.replace(/^\/[a-z]{2}(-[a-z]{2})?\//i, '/');
+
+    console.log('[RealtySoft] URL extraction - original:', originalPath, 'cleaned:', path);
+
     const pathParts = path.split('/').filter(p => p);
     const lastPart = pathParts[pathParts.length - 1];
+
+    console.log('[RealtySoft] URL extraction - pathParts:', pathParts, 'lastPart:', lastPart);
 
     if (lastPart) {
       const cleanPart = lastPart.replace('.html', '');
 
       // Patterns to extract reference from URL slug
-      const patterns = [
-        /([A-Z]{1,4}\d+)/i,
-        /(\d{6,})/,
-        /([A-Z]{2,}\d*-\d+)/i,
-        /-([A-Z0-9]+)$/i
+      const patterns: [RegExp, string][] = [
+        [/([A-Z]{1,4}\d+)/i, '1-4 letters + digits'],
+        [/(\d{6,})/, '6+ digits'],
+        [/([A-Z]{2,}\d*-\d+)/i, 'letters-digits format'],
+        [/-([A-Z0-9]+)$/i, 'suffix after dash']
       ];
 
-      for (const pattern of patterns) {
+      for (const [pattern, desc] of patterns) {
         const match = cleanPart.match(pattern);
-        if (match) return match[1];
+        if (match) {
+          console.log('[RealtySoft] URL extraction - matched pattern:', desc, 'result:', match[1]);
+          return match[1];
+        }
       }
 
       // If no pattern matched but it's a simple string without dashes
-      if (!cleanPart.includes('-')) return cleanPart;
+      if (!cleanPart.includes('-')) {
+        console.log('[RealtySoft] URL extraction - no pattern matched, using cleanPart:', cleanPart);
+        return cleanPart;
+      }
     }
 
+    console.log('[RealtySoft] URL extraction - no ref found');
     return null;
   }
 
   /**
    * Clear stale PHP prefetch data that doesn't match current URL
-   * RACE CONDITION FIX: Be aggressive - if we can't verify match, clear it
+   * Only clear if we can positively determine there's a mismatch
    */
   private clearStalePrefetch(): void {
     const prefetch = (window as any).__rsPrefetch;
@@ -177,15 +221,17 @@ class RSDetail extends RSBaseComponent {
     const urlRef = this.getPropertyRefFromUrl();
     const prefetchRef = prefetch.ref;
 
-    if (urlRef) {
-      if (!prefetchRef || urlRef.toLowerCase() !== prefetchRef.toLowerCase()) {
-        console.log('[RealtySoft] Clearing stale prefetch - URL ref:', urlRef, 'prefetch ref:', prefetchRef);
-        delete (window as any).__rsPrefetch;
-      }
-    } else {
-      console.log('[RealtySoft] Clearing prefetch - could not determine URL ref');
+    // Only clear if we extracted a URL ref AND it doesn't match the prefetch
+    // If we couldn't extract from URL, trust the PHP-extracted ref
+    if (urlRef && prefetchRef && urlRef.toLowerCase() !== prefetchRef.toLowerCase()) {
+      console.log('[RealtySoft] Clearing stale prefetch - URL ref:', urlRef, 'prefetch ref:', prefetchRef);
+      delete (window as any).__rsPrefetch;
+    } else if (urlRef && !prefetchRef) {
+      // URL has ref but prefetch doesn't - clear it
+      console.log('[RealtySoft] Clearing prefetch - no prefetch ref');
       delete (window as any).__rsPrefetch;
     }
+    // If urlRef is null, don't clear - PHP might have extracted it correctly
   }
 
   private async loadProperty(): Promise<Property | null> {

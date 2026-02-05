@@ -142,41 +142,16 @@ class RSPropertyGrid extends RSBaseComponent {
 
   /**
    * Generate URL for property detail page
-   * Stays on client's website with SEO-friendly format
-   * Format: /{propertyPageSlug}/{title-slug}-{REFERENCE}
+   * Uses the universal URL helper that supports translation plugins
    */
   private generatePropertyUrl(property: Property): string {
-    // If property already has a URL, use it
-    if (property.url) return property.url;
-
-    // Get config from state
+    // Use central helper if available (supports multilingual URLs)
+    if (typeof (window as any).RealtySoftGetPropertyUrl === 'function') {
+      return (window as any).RealtySoftGetPropertyUrl(property);
+    }
+    // Fallback for older setups
     const pageSlug = RealtySoftState.get<string>('config.propertyPageSlug') || 'property';
-    const ref = property.ref || property.id;
-    const urlFormat = RealtySoftState.get<string>('config.propertyUrlFormat') || 'seo';
-
-    if (urlFormat === 'query') {
-      // /property?ref=V12345
-      return `/${pageSlug}?ref=${ref}`;
-    }
-
-    if (urlFormat === 'ref') {
-      // /property/V12345
-      return `/${pageSlug}/${ref}`;
-    }
-
-    // Default 'seo': /property/luxury-villa-marbella-V12345
-    const title = property.title || '';
-    const titleSlug = title
-      .toLowerCase()
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '') // Remove accents
-      .replace(/[^a-z0-9\s-]/g, '') // Remove special chars
-      .replace(/\s+/g, '-') // Replace spaces with dashes
-      .replace(/-+/g, '-') // Replace multiple dashes with single
-      .replace(/^-|-$/g, '') // Remove leading/trailing dashes
-      .substring(0, 80); // Limit length
-
-    return `/${pageSlug}/${titleSlug}-${ref}`;
+    return `/${pageSlug}/${property.ref || property.id}`;
   }
 
   render(): void {

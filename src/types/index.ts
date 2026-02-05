@@ -117,6 +117,13 @@ export interface WidgetConfig {
   privacyPolicyUrl: string | null;
   features: string[];
   propertyPageSlug: string;
+  propertyPageSlugs?: Record<string, string>; // { 'en': 'property', 'es': 'propiedad', ... }
+  resultsPageSlugs?: Record<string, string>; // { 'en': 'properties', 'es': 'propiedades', ... }
+  wishlistPageSlugs?: Record<string, string>; // { 'en': 'wishlist', 'es': 'lista-de-deseos', ... }
+  translationPlugin?: string; // 'polylang', 'wpml', 'weglot', 'translatepress', 'gtranslate', 'none'
+  currentLang?: string; // Current language code (e.g., 'es')
+  defaultLang?: string; // Default language code (e.g., 'en')
+  languagePrefix?: string; // URL prefix (e.g., '/es' or '')
   useWidgetPropertyTemplate: boolean;
   useQueryParamUrls: boolean;
   propertyUrlFormat: 'seo' | 'ref' | 'query';
@@ -489,6 +496,7 @@ export interface RealtySoftModule {
   setView(view: string): void;
   setFilter(name: string, value: unknown): void;
   setLanguage(newLanguage: string): Promise<void>;
+  getPropertyUrl(property: Property): string; // Universal multilingual property URL generator
   getState(): Record<string, unknown>;
   subscribe(path: string, callback: (value: unknown, oldValue: unknown, path: string) => void): UnsubscribeFunction;
   isReady(): boolean;

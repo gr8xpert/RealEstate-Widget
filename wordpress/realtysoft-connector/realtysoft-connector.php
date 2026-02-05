@@ -17,9 +17,10 @@ class RealtySoft_Connector {
     private $cached_property_data = [];
 
     public function __construct() {
-        // Rewrite rules
+        // Rewrite rules - simplified to avoid conflicts with translation plugins
         add_action('init', [$this, 'add_rewrite_rules']);
         add_action('init', [$this, 'maybe_flush_rules'], 99);
+        add_filter('query_vars', [$this, 'add_query_vars']);
         register_activation_hook(__FILE__, [$this, 'activate']);
         register_deactivation_hook(__FILE__, 'flush_rewrite_rules');
 
@@ -38,7 +39,6 @@ class RealtySoft_Connector {
         // Settings page
         add_action('admin_menu', [$this, 'add_settings_page']);
         add_action('admin_init', [$this, 'register_settings']);
-
     }
 
     // ─── Activation ──────────────────────────────────────────────
@@ -48,19 +48,84 @@ class RealtySoft_Connector {
         flush_rewrite_rules();
     }
 
+    /**
+     * Register custom query vars.
+     * Note: We don't inject 'lang' anymore - let translation plugins handle language detection.
+     * JavaScript handles language detection from URL patterns and plugin config.
+     */
+    public function add_query_vars($vars) {
+        $vars[] = 'rs_property_ref';
+        return $vars;
+    }
+
     // ─── Rewrite Rules ───────────────────────────────────────────
+    //
+    // Simplified approach: Rules for each slug, with optional language prefix.
+    // We do NOT inject lang query var - let Polylang handle language detection.
+    // JavaScript handles property ref extraction and content loading.
+    //
+    // This prevents redirect conflicts while still matching language-prefixed URLs.
 
     public function add_rewrite_rules() {
         $slugs = $this->get_slugs();
+        $translation = $this->detect_translation_plugin();
+
         foreach ($slugs as $entry) {
             $slug = sanitize_title($entry['slug'] ?? $this->default_slug);
-            add_rewrite_rule(
-                '^' . preg_quote($slug, '/') . '/(.+)/?$',
-                'index.php?pagename=' . $slug,
-                'top'
-            );
+            $results_slug = sanitize_title($entry['results_slug'] ?? '');
+
+            // Property detail page: /slug/anything → serve page with pagename=slug
+            // The "anything" part (property ref/title) is handled by JavaScript, not WordPress
+            if (!empty($slug)) {
+                // Rule WITHOUT language prefix (e.g., /property/R123)
+                add_rewrite_rule(
+                    '^' . preg_quote($slug, '/') . '/[^/]+/?$',
+                    'index.php?pagename=' . $slug,
+                    'top'
+                );
+            }
+
+            // Results page: /results_slug → serve page with pagename=results_slug
+            if (!empty($results_slug)) {
+                // Rule WITHOUT language prefix (e.g., /properties)
+                add_rewrite_rule(
+                    '^' . preg_quote($results_slug, '/') . '/?$',
+                    'index.php?pagename=' . $results_slug,
+                    'top'
+                );
+            }
         }
 
+        // Add rules WITH language prefix for translation plugin compatibility
+        // Key: We do NOT add &lang= query var - Polylang detects language from prefix
+        if ($translation['plugin'] !== 'none' && !empty($translation['all_languages'])) {
+            foreach ($translation['all_languages'] as $lang_code) {
+                $lang_code = strtolower($lang_code);
+
+                foreach ($slugs as $entry) {
+                    $slug = sanitize_title($entry['slug'] ?? $this->default_slug);
+                    $results_slug = sanitize_title($entry['results_slug'] ?? '');
+
+                    // Property detail with language prefix (e.g., /es/propiedad/R123)
+                    if (!empty($slug)) {
+                        add_rewrite_rule(
+                            '^' . preg_quote($lang_code, '/') . '/' . preg_quote($slug, '/') . '/[^/]+/?$',
+                            'index.php?pagename=' . $slug,
+                            'top'
+                        );
+                    }
+
+                    // Results page with language prefix (e.g., /es/propiedades)
+                    if (!empty($results_slug)) {
+                        add_rewrite_rule(
+                            '^' . preg_quote($lang_code, '/') . '/' . preg_quote($results_slug, '/') . '/?$',
+                            'index.php?pagename=' . $results_slug,
+                            'top'
+                        );
+                    }
+                }
+            }
+        }
     }
 
     public function maybe_flush_rules() {
@@ -68,12 +133,29 @@ class RealtySoft_Connector {
         $rules = get_option('rewrite_rules');
         if (!is_array($rules)) return;
 
+        // Check that base rules exist for each slug
         foreach ($slugs as $entry) {
             $slug = sanitize_title($entry['slug'] ?? $this->default_slug);
-            $rule_key = '^' . preg_quote($slug, '/') . '/(.+)/?$';
-            if (!isset($rules[$rule_key])) {
-                flush_rewrite_rules(false);
-                return;
+            if (!empty($slug)) {
+                $rule_key = '^' . preg_quote($slug, '/') . '/[^/]+/?$';
+                if (!isset($rules[$rule_key])) {
+                    flush_rewrite_rules(false);
+                    return;
+                }
+            }
+        }
+
+        // Check that language-prefixed rules exist if translation plugin is active
+        $translation = $this->detect_translation_plugin();
+        if ($translation['plugin'] !== 'none' && !empty($translation['all_languages'])) {
+            $first_lang = strtolower($translation['all_languages'][0] ?? '');
+            $first_slug = sanitize_title($slugs[0]['slug'] ?? $this->default_slug);
+            if ($first_lang && $first_slug) {
+                $lang_rule_key = '^' . preg_quote($first_lang, '/') . '/' . preg_quote($first_slug, '/') . '/[^/]+/?$';
+                if (!isset($rules[$lang_rule_key])) {
+                    flush_rewrite_rules(false);
+                    return;
+                }
             }
         }
     }
@@ -159,6 +241,94 @@ class RealtySoft_Connector {
 
         if (!empty($config['propertyUrlFormat'])) {
             $js_config['propertyUrlFormat'] = $config['propertyUrlFormat'];
+        }
+
+        // ── Translation Plugin Detection ──
+        // Pass all language slugs and translation info to JavaScript
+        $translation = $this->detect_translation_plugin();
+        $js_config['translationPlugin'] = $translation['plugin'];
+        $js_config['currentLang'] = $translation['current_lang'];
+        $js_config['defaultLang'] = $translation['default_lang'];
+        $js_config['languagePrefix'] = $translation['language_prefix'];
+
+        // Default fallback slugs for common languages
+        $default_property_slugs = [
+            'en' => 'property',
+            'es' => 'propiedad',
+            'de' => 'immobilie',
+            'fr' => 'propriete',
+            'nl' => 'eigendom',
+            'pt' => 'propriedade',
+            'it' => 'proprieta',
+            'ru' => 'nedvizhimost',
+            'pl' => 'nieruchomosc',
+            'sv' => 'fastighet',
+            'no' => 'eiendom',
+            'da' => 'ejendom',
+            'fi' => 'kiinteisto',
+        ];
+        $default_results_slugs = [
+            'en' => 'properties',
+            'es' => 'propiedades',
+            'de' => 'immobilien',
+            'fr' => 'proprietes',
+            'nl' => 'eigendommen',
+            'pt' => 'propriedades',
+            'it' => 'proprieta',
+            'ru' => 'nedvizhimost',
+            'pl' => 'nieruchomosci',
+            'sv' => 'fastigheter',
+            'no' => 'eiendommer',
+            'da' => 'ejendomme',
+            'fi' => 'kiinteistot',
+        ];
+        $default_wishlist_slugs = [
+            'en' => 'wishlist',
+            'es' => 'lista-de-deseos',
+            'de' => 'wunschliste',
+            'fr' => 'liste-de-souhaits',
+            'nl' => 'verlanglijst',
+            'pt' => 'lista-de-desejos',
+            'it' => 'lista-dei-desideri',
+            'ru' => 'spisok-zhelaniy',
+            'pl' => 'lista-zyczen',
+            'sv' => 'onskelista',
+            'no' => 'onskeliste',
+            'da' => 'onskeliste',
+            'fi' => 'toivelista',
+        ];
+
+        // Build propertyPageSlugs, resultsPageSlugs, and wishlistPageSlugs from user config
+        $js_config['propertyPageSlugs'] = $default_property_slugs;
+        $js_config['resultsPageSlugs'] = $default_results_slugs;
+        $js_config['wishlistPageSlugs'] = $default_wishlist_slugs;
+
+        // Override with user-configured slugs (user config takes priority)
+        foreach ($slugs as $entry) {
+            $lang = strtolower($entry['language'] ?? 'default');
+            $slug = $entry['slug'] ?? '';
+            $results_slug = $entry['results_slug'] ?? '';
+
+            // Map "Default" to actual default language code if known
+            if ($lang === 'default' && !empty($translation['default_lang'])) {
+                $lang = strtolower($translation['default_lang']);
+            }
+
+            // Only override if user provided a value
+            if (!empty($slug)) {
+                $js_config['propertyPageSlugs'][$lang] = $slug;
+            }
+            if (!empty($results_slug)) {
+                $js_config['resultsPageSlugs'][$lang] = $results_slug;
+            }
+        }
+
+        // Always include a 'default' fallback entry
+        if (!isset($js_config['propertyPageSlugs']['default'])) {
+            $js_config['propertyPageSlugs']['default'] = $slugs[0]['slug'] ?? 'property';
+        }
+        if (!isset($js_config['resultsPageSlugs']['default'])) {
+            $js_config['resultsPageSlugs']['default'] = $slugs[0]['results_slug'] ?? 'properties';
         }
 
         // WordPress REST API endpoint for OG cache (widget pushes data here)
@@ -390,6 +560,7 @@ class RealtySoft_Connector {
     /**
      * Extract property reference from the current URL.
      * Supports all 3 URL formats: SEO, ref-only, and query param.
+     * Handles language-prefixed URLs from translation plugins (e.g., /es/propiedad/villa-REF)
      */
     private function extract_property_ref_from_url() {
         $path = trim(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH), '/');
@@ -402,6 +573,10 @@ class RealtySoft_Connector {
         if (!empty($_GET['reference'])) {
             return preg_replace('/[^A-Za-z0-9\-]/', '', $_GET['reference']);
         }
+
+        // Remove any language prefix (e.g., "es/propiedad/villa" → "propiedad/villa")
+        // Handles 2-letter codes and locale codes like "es-es" or "en-gb"
+        $path = preg_replace('#^([a-z]{2}(-[a-z]{2})?)/+#i', '', $path);
 
         // Check if URL is under a property slug
         foreach ($slugs as $entry) {
@@ -692,6 +867,98 @@ class RealtySoft_Connector {
         return $html;
     }
 
+    // ─── Translation Plugin Detection ─────────────────────────────
+
+    /**
+     * Detect active translation plugin and get language info.
+     * Supports: Polylang, WPML, Weglot, TranslatePress, GTranslate
+     *
+     * @return array {
+     *   'plugin'          => string,  // 'polylang', 'wpml', 'weglot', 'translatepress', 'gtranslate', or 'none'
+     *   'current_lang'    => string,  // Current language code (e.g., 'es')
+     *   'default_lang'    => string,  // Default language code (e.g., 'en')
+     *   'language_prefix' => string,  // URL prefix (e.g., '/es' or '')
+     *   'all_languages'   => array    // List of all language codes
+     * }
+     */
+    private function detect_translation_plugin() {
+        $result = [
+            'plugin' => 'none',
+            'current_lang' => '',
+            'default_lang' => '',
+            'language_prefix' => '',
+            'all_languages' => []
+        ];
+
+        // 1. Check Polylang
+        if (function_exists('pll_current_language')) {
+            $result['plugin'] = 'polylang';
+            $result['current_lang'] = pll_current_language('slug') ?: '';
+            $result['default_lang'] = function_exists('pll_default_language') ? (pll_default_language('slug') ?: '') : '';
+            $result['all_languages'] = function_exists('pll_languages_list') ? pll_languages_list(['fields' => 'slug']) : [];
+
+            // Prefix only for non-default language
+            if ($result['current_lang'] && $result['current_lang'] !== $result['default_lang']) {
+                $result['language_prefix'] = '/' . $result['current_lang'];
+            }
+            return $result;
+        }
+
+        // 2. Check WPML
+        if (defined('ICL_LANGUAGE_CODE')) {
+            $result['plugin'] = 'wpml';
+            $result['current_lang'] = ICL_LANGUAGE_CODE;
+            $result['default_lang'] = apply_filters('wpml_default_language', null) ?: 'en';
+
+            if ($result['current_lang'] !== $result['default_lang']) {
+                $result['language_prefix'] = '/' . $result['current_lang'];
+            }
+            return $result;
+        }
+
+        // 3. Check Weglot
+        if (function_exists('weglot_get_current_language')) {
+            $result['plugin'] = 'weglot';
+            $result['current_lang'] = weglot_get_current_language();
+            $result['default_lang'] = function_exists('weglot_get_original_language') ? weglot_get_original_language() : '';
+
+            if ($result['current_lang'] && $result['current_lang'] !== $result['default_lang']) {
+                $result['language_prefix'] = '/' . $result['current_lang'];
+            }
+            return $result;
+        }
+
+        // 4. Check TranslatePress
+        if (class_exists('TRP_Translate_Press')) {
+            $result['plugin'] = 'translatepress';
+            global $TRP_LANGUAGE;
+            $result['current_lang'] = $TRP_LANGUAGE ?? '';
+            $trp_settings = get_option('trp_settings');
+            $result['default_lang'] = $trp_settings['default-language'] ?? '';
+
+            if ($result['current_lang'] && $result['current_lang'] !== $result['default_lang']) {
+                // TranslatePress uses locale codes like 'es_ES' - extract short code
+                $lang_code = substr($result['current_lang'], 0, 2);
+                $result['language_prefix'] = '/' . $lang_code;
+            }
+            return $result;
+        }
+
+        // 5. Check GTranslate (URL-based detection)
+        if (class_exists('GTranslate')) {
+            $result['plugin'] = 'gtranslate';
+            // GTranslate detection from URL or cookie
+            $path = isset($_SERVER['REQUEST_URI']) ? trim($_SERVER['REQUEST_URI'], '/') : '';
+            if (preg_match('#^([a-z]{2})/#i', $path, $m)) {
+                $result['current_lang'] = strtolower($m[1]);
+                $result['language_prefix'] = '/' . $result['current_lang'];
+            }
+            return $result;
+        }
+
+        return $result;
+    }
+
     // ─── Helpers ─────────────────────────────────────────────────
 
     private function get_slugs() {
@@ -727,17 +994,18 @@ class RealtySoft_Connector {
 
     public function sanitize_slugs($input) {
         if (!is_array($input)) {
-            return [['slug' => $this->default_slug, 'language' => 'Default']];
+            return [['slug' => $this->default_slug, 'language' => 'Default', 'results_slug' => 'properties']];
         }
         $sanitized = [];
         foreach ($input as $entry) {
             if (empty($entry['slug'])) continue;
             $sanitized[] = [
                 'slug' => sanitize_title($entry['slug']),
-                'language' => sanitize_text_field($entry['language'] ?? 'Default')
+                'language' => sanitize_text_field($entry['language'] ?? 'Default'),
+                'results_slug' => sanitize_title($entry['results_slug'] ?? '')
             ];
         }
-        return !empty($sanitized) ? $sanitized : [['slug' => $this->default_slug, 'language' => 'Default']];
+        return !empty($sanitized) ? $sanitized : [['slug' => $this->default_slug, 'language' => 'Default', 'results_slug' => 'properties']];
     }
 
     public function sanitize_widget_config($input) {
@@ -978,15 +1246,17 @@ labelOverrides: {
 
                 <hr />
 
-                <!-- ── Property Page Slugs ── -->
-                <h2>Property Page Slugs</h2>
-                <p>Each slug must match an existing WordPress page with the widget.
-                   The first slug is also used as <code>propertyPageSlug</code> in the widget config.</p>
+                <!-- ── Multilingual Page Slugs ── -->
+                <h2>Multilingual Page Slugs</h2>
+                <p>Configure page slugs for each language. These must match your actual WordPress page URLs.<br>
+                   <strong>Property Detail:</strong> The page that shows individual property details (e.g., <code>/property/villa-REF123</code>)<br>
+                   <strong>Results Page:</strong> The page that shows search results listing (e.g., <code>/properties/</code>)</p>
                 <table class="widefat" id="rs-slugs-table">
                     <thead>
                         <tr>
-                            <th>Language</th>
-                            <th>Page Slug</th>
+                            <th style="width: 120px;">Language Code</th>
+                            <th>Property Detail Slug</th>
+                            <th>Results Page Slug</th>
                             <th style="width: 50px;"></th>
                         </tr>
                     </thead>
@@ -997,14 +1267,22 @@ labelOverrides: {
                                 <input type="text"
                                        name="realtysoft_property_slugs[<?php echo $i; ?>][language]"
                                        value="<?php echo esc_attr($entry['language']); ?>"
-                                       placeholder="e.g. English"
-                                       class="regular-text" />
+                                       placeholder="e.g. en, es, de"
+                                       class="regular-text"
+                                       style="width: 100px;" />
                             </td>
                             <td>
                                 <input type="text"
                                        name="realtysoft_property_slugs[<?php echo $i; ?>][slug]"
                                        value="<?php echo esc_attr($entry['slug']); ?>"
                                        placeholder="e.g. property"
+                                       class="regular-text" />
+                            </td>
+                            <td>
+                                <input type="text"
+                                       name="realtysoft_property_slugs[<?php echo $i; ?>][results_slug]"
+                                       value="<?php echo esc_attr($entry['results_slug'] ?? ''); ?>"
+                                       placeholder="e.g. properties"
                                        class="regular-text" />
                             </td>
                             <td>
@@ -1018,6 +1296,10 @@ labelOverrides: {
                 </table>
                 <p>
                     <button type="button" class="button" id="rs-add-slug">+ Add Language</button>
+                </p>
+                <p class="description" style="margin-top: 10px;">
+                    <strong>Language Code:</strong> Use 2-letter codes like <code>en</code>, <code>es</code>, <code>de</code>, <code>fr</code>, <code>nl</code><br>
+                    <strong>Tip:</strong> Leave Results Page Slug empty to use the default (<code>/properties/</code> for English, auto-translated for others)
                 </p>
 
                 <?php submit_button('Save Settings'); ?>
@@ -1053,8 +1335,9 @@ labelOverrides: {
 
             addBtn.addEventListener('click', function() {
                 var row = document.createElement('tr');
-                row.innerHTML = '<td><input type="text" name="realtysoft_property_slugs[' + rowCount + '][language]" placeholder="e.g. Spanish" class="regular-text" /></td>' +
+                row.innerHTML = '<td><input type="text" name="realtysoft_property_slugs[' + rowCount + '][language]" placeholder="e.g. es, de, fr" class="regular-text" style="width: 100px;" /></td>' +
                     '<td><input type="text" name="realtysoft_property_slugs[' + rowCount + '][slug]" placeholder="e.g. propiedad" class="regular-text" /></td>' +
+                    '<td><input type="text" name="realtysoft_property_slugs[' + rowCount + '][results_slug]" placeholder="e.g. propiedades" class="regular-text" /></td>' +
                     '<td><button type="button" class="button rs-remove-slug">&times;</button></td>';
                 tbody.appendChild(row);
                 rowCount++;

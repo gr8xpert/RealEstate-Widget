@@ -155,11 +155,21 @@ class RSPropertyDetailTemplate extends RSBaseComponent {
   }
 
   private getPropertyIdFromUrl(): string | null {
-    const patterns = [
-      /\/property\/(\d+)/,
-      /[?&]id=(\d+)/,
-      /[?&]property_id=(\d+)/
-    ];
+    // Get all possible property page slugs for pattern matching
+    const slugs = RealtySoftState.get<Record<string, string>>('config.propertyPageSlugs') || {};
+    const defaultSlug = RealtySoftState.get<string>('config.propertyPageSlug') || 'property';
+    const allSlugs = [...new Set([...Object.values(slugs), defaultSlug, 'property'])];
+
+    // Build patterns that handle language prefixes and all slug variants
+    const patterns: RegExp[] = [];
+    for (const slug of allSlugs) {
+      // With optional language prefix: /es/propiedad/123 or /propiedad/123
+      patterns.push(new RegExp(`(?:/[a-z]{2}(?:-[a-z]{2})?)?/${slug}/(\\d+)`, 'i'));
+    }
+    // Query parameter patterns
+    patterns.push(/[?&]id=(\d+)/);
+    patterns.push(/[?&]property_id=(\d+)/);
+
     for (const pattern of patterns) {
       const match = window.location.href.match(pattern);
       if (match) return match[1];
@@ -168,29 +178,41 @@ class RSPropertyDetailTemplate extends RSBaseComponent {
   }
 
   private getPropertyRefFromUrl(): string | null {
-    const slug = RealtySoftState.get<string>('config.propertyPageSlug') || 'property';
-
-    // Query params
+    // Try query parameter first
     const urlParams = new URLSearchParams(window.location.search);
     const queryRef = urlParams.get('ref') || urlParams.get('reference');
     if (queryRef) return queryRef.trim();
 
-    // Check URL is under property slug
-    const slugRegex = new RegExp(`/${slug}/(.+?)/?$`, 'i');
-    const slugMatch = window.location.pathname.match(slugRegex);
-    if (!slugMatch) return null;
+    // Get all possible property page slugs for pattern matching
+    const slugs = RealtySoftState.get<Record<string, string>>('config.propertyPageSlugs') || {};
+    const defaultSlug = RealtySoftState.get<string>('config.propertyPageSlug') || 'property';
+    const allSlugs = [...new Set([...Object.values(slugs), defaultSlug, 'property'])];
 
-    const subpath = slugMatch[1];
+    // Extract from SEO-friendly URL path
+    let path = window.location.pathname;
 
-    // SEO URL: last hyphen-separated part
-    const parts = subpath.split('-');
-    if (parts.length > 1) {
-      const lastPart = parts[parts.length - 1];
-      if (/^[A-Z0-9]{3,}$/i.test(lastPart) && !/^\d+$/.test(lastPart)) return lastPart;
+    // Remove language prefix if present (e.g., /es/propiedad/villa → /propiedad/villa)
+    // Handles 2-letter codes and locale codes like "es-es" or "en-gb"
+    path = path.replace(/^\/[a-z]{2}(-[a-z]{2})?\//i, '/');
+
+    // Try each slug to find a match
+    for (const slug of allSlugs) {
+      const slugRegex = new RegExp(`^/${slug}/(.+?)/?$`, 'i');
+      const slugMatch = path.match(slugRegex);
+      if (!slugMatch) continue;
+
+      const subpath = slugMatch[1];
+
+      // SEO URL: last hyphen-separated part (e.g., villa-marbella-R123 → R123)
+      const parts = subpath.split('-');
+      if (parts.length > 1) {
+        const lastPart = parts[parts.length - 1];
+        if (/^[A-Z0-9]{3,}$/i.test(lastPart) && !/^\d+$/.test(lastPart)) return lastPart;
+      }
+
+      // Direct ref URL (e.g., /property/R123)
+      if (/^[A-Z0-9]{3,}$/i.test(subpath) && !/^\d+$/.test(subpath)) return subpath;
     }
-
-    // Direct ref
-    if (/^[A-Z0-9]{3,}$/i.test(subpath) && !/^\d+$/.test(subpath)) return subpath;
 
     return null;
   }

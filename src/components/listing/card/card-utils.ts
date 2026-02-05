@@ -120,38 +120,17 @@ export function escapeHtml(text: string): string {
 
 /**
  * Generate SEO-friendly property URL
- * Format: /{propertyPageSlug}/{title-slug}-{REFERENCE}
+ * Uses the universal URL helper that supports translation plugins
  */
 export function generatePropertyUrl(property: Property): string {
+  // Use central helper if available (supports multilingual URLs)
+  if (typeof (window as any).RealtySoftGetPropertyUrl === 'function') {
+    return (window as any).RealtySoftGetPropertyUrl(property);
+  }
+  // Fallback for older setups
   if (property.url) return property.url;
-
   const pageSlug = RealtySoftState.get<string>('config.propertyPageSlug') || 'property';
-  const ref = property.ref || property.id;
-  const urlFormat = RealtySoftState.get<string>('config.propertyUrlFormat') || 'seo';
-
-  if (urlFormat === 'query') {
-    // /property?ref=V12345
-    return `/${pageSlug}?ref=${ref}`;
-  }
-
-  if (urlFormat === 'ref') {
-    // /property/V12345
-    return `/${pageSlug}/${ref}`;
-  }
-
-  // Default 'seo': /property/luxury-villa-marbella-V12345
-  const title = property.title || '';
-  const titleSlug = title
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9\s-]/g, '')
-    .replace(/\s+/g, '-')
-    .replace(/-+/g, '-')
-    .replace(/^-|-$/g, '')
-    .substring(0, 80);
-
-  return `/${pageSlug}/${titleSlug}-${ref}`;
+  return `/${pageSlug}/${property.ref || property.id}`;
 }
 
 /**
