@@ -333,22 +333,65 @@ describe('RealtySoftAPI', () => {
   });
 
   describe('error handling', () => {
-    it('should throw on HTTP error', async () => {
-      globalThis.fetch = vi.fn().mockResolvedValueOnce({
+    it('should return empty data on HTTP error (graceful degradation)', async () => {
+      // Mock both v2 and v1 calls to fail (v2 -> v1 fallback)
+      globalThis.fetch = vi.fn().mockResolvedValue({
         ok: false,
         status: 500,
       });
 
-      await expect(API.getLocations()).rejects.toThrow('HTTP error');
+      // getLocations returns empty instead of throwing (graceful degradation)
+      const result = await API.getLocations();
+      expect(result.data).toEqual([]);
+      expect(result.count).toBe(0);
     });
 
-    it('should throw on API error response', async () => {
-      globalThis.fetch = vi.fn().mockResolvedValueOnce({
+    it('should return empty data on API error response (graceful degradation)', async () => {
+      // Mock both v2 and v1 calls to return error (v2 -> v1 fallback)
+      globalThis.fetch = vi.fn().mockResolvedValue({
         ok: true,
         json: () => Promise.resolve({ error: 'Invalid API key' }),
       });
 
-      await expect(API.getLocations()).rejects.toThrow('Invalid API key');
+      // getLocations returns empty instead of throwing (graceful degradation)
+      const result = await API.getLocations();
+      expect(result.data).toEqual([]);
+      expect(result.count).toBe(0);
+    });
+
+    it('should fallback to v1 when v2 returns empty data', async () => {
+      const emptyResponse = {
+        ok: true,
+        json: () => Promise.resolve({ data: [] }),
+      };
+      const validResponse = {
+        ok: true,
+        json: () => Promise.resolve({ data: [{ id: 1, name: 'Test' }] }),
+      };
+
+      // First call (v2) returns empty, second call (v1) returns valid data
+      globalThis.fetch = vi.fn()
+        .mockResolvedValueOnce(emptyResponse)
+        .mockResolvedValueOnce(validResponse);
+
+      const result = await API.getLocations();
+      expect(result.data).toHaveLength(1);
+      expect(globalThis.fetch).toHaveBeenCalledTimes(2);
+    });
+
+    it('should use v2 data when available', async () => {
+      const validResponse = {
+        ok: true,
+        json: () => Promise.resolve({ data: [{ id: 1, name: 'From V2' }] }),
+      };
+
+      globalThis.fetch = vi.fn().mockResolvedValueOnce(validResponse);
+
+      const result = await API.getLocations();
+      expect(result.data).toHaveLength(1);
+      expect(result.data[0].name).toBe('From V2');
+      // Should only call v2 since it returned valid data
+      expect(globalThis.fetch).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -366,15 +409,15 @@ describe('RealtySoftAPI', () => {
       await API.prefetchProperty(999);
 
       expect(globalThis.fetch).toHaveBeenCalled();
-      // Check localStorage for cached property directly
-      const cacheData = localStorage.getItem('rs_cache_property_999');
+      // Check localStorage for cached property directly (includes language prefix)
+      const cacheData = localStorage.getItem('rs_cache_property_en_US_999');
       expect(cacheData).not.toBeNull();
     });
 
     it('should skip prefetch if already cached', async () => {
-      // Set up cache directly
+      // Set up cache directly (includes language prefix)
       localStorage.setItem(
-        'rs_cache_property_999',
+        'rs_cache_property_en_US_999',
         JSON.stringify({
           data: { id: 999, title: 'Cached' },
           timestamp: Date.now(),

@@ -259,7 +259,7 @@
         async function loadAllData() {
             try {
                 const [locationsRes, typesRes, featuresRes] = await Promise.all([
-                    fetchFromProxy('v1/location'),
+                    fetchLocations(),  // Uses v2 -> v1 fallback
                     fetchFromProxy('v1/property_types'),
                     fetchFromProxy('v1/property_features')
                 ]);
@@ -280,6 +280,28 @@
             } catch (error) {
                 showError('Failed to load data: ' + error.message);
             }
+        }
+
+        // Fetch locations with v2 -> v1 fallback
+        async function fetchLocations() {
+            // Try v2/location first (newer APIs)
+            try {
+                const v2Url = `${PROXY_URL}?_endpoint=v2/location&_domain=${encodeURIComponent(DOMAIN)}&limit=1000`;
+                const v2Response = await fetch(v2Url);
+                if (v2Response.ok) {
+                    const v2Data = await v2Response.json();
+                    if (v2Data.data && v2Data.data.length > 0) {
+                        console.log('[Filter IDs] Loaded from v2/location:', v2Data.data.length);
+                        return v2Data;
+                    }
+                }
+            } catch (e) {
+                console.log('[Filter IDs] v2/location failed, trying v1...');
+            }
+
+            // Fallback to v1/location
+            console.log('[Filter IDs] Trying v1/location...');
+            return fetchFromProxy('v1/location');
         }
 
         async function fetchFromProxy(endpoint) {

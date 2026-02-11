@@ -601,10 +601,47 @@
         async function fetchFromProxy(endpoint, domain) {
             // Map short endpoint names to API paths
             const endpointMap = {
-                'location': 'v1/location',
+                'location': 'v2/location',  // Try v2 first (newer APIs)
+                'location_v1': 'v1/location', // Fallback
                 'type': 'v1/property_types',
                 'feature': 'v1/property_features'
             };
+
+            // Special handling for location endpoint - try v2 first, fallback to v1
+            if (endpoint === 'location') {
+                // Try v2/location first
+                const v2Endpoint = endpointMap['location'];
+                const v2Url = `${PROXY_URL}?_endpoint=${v2Endpoint}&_domain=${encodeURIComponent(domain)}&limit=1000`;
+
+                try {
+                    const v2Response = await fetch(v2Url);
+                    if (v2Response.ok) {
+                        const v2Data = await v2Response.json();
+                        if (v2Data.data && v2Data.data.length > 0) {
+                            console.log('[Filter IDs] Loaded locations from v2/location:', v2Data.data.length);
+                            return v2Data;
+                        }
+                    }
+                } catch (e) {
+                    console.log('[Filter IDs] v2/location failed, trying v1...');
+                }
+
+                // Fallback to v1/location
+                const v1Endpoint = endpointMap['location_v1'];
+                const v1Url = `${PROXY_URL}?_endpoint=${v1Endpoint}&_domain=${encodeURIComponent(domain)}&limit=1000`;
+                const v1Response = await fetch(v1Url);
+
+                if (!v1Response.ok) {
+                    const text = await v1Response.text();
+                    throw new Error(`API error: ${v1Response.status} - ${text}`);
+                }
+
+                const v1Data = await v1Response.json();
+                console.log('[Filter IDs] Loaded locations from v1/location:', v1Data.data?.length || 0);
+                return v1Data;
+            }
+
+            // For other endpoints, use standard fetch
             const apiEndpoint = endpointMap[endpoint] || endpoint;
             const url = `${PROXY_URL}?_endpoint=${apiEndpoint}&_domain=${encodeURIComponent(domain)}&limit=1000`;
 

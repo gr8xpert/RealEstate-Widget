@@ -486,7 +486,7 @@ const RealtySoftAPI: RealtySoftAPIModule = (function () {
   }
 
   /**
-   * Get locations (v1 endpoint, no language param)
+   * Get locations (tries v2 endpoint first, falls back to v1)
    */
   async function getLocations(parentId: number | null = null): Promise<APIResponse<Location[]>> {
     const cacheKey = 'locations' + (parentId ? '_' + parentId : '');
@@ -502,9 +502,41 @@ const RealtySoftAPI: RealtySoftAPIModule = (function () {
     const params: Record<string, unknown> = { page: 1, limit: 1000 };
     if (parentId) params.parent_id = parentId;
 
-    const response = await request<APIResponse<Location[]>>('v1/location', params, 'GET', {
-      skipLang: true,
-    });
+    let response: APIResponse<Location[]> | null = null;
+
+    // Try v2/location first (newer APIs like inmotechplugin.com use v2)
+    try {
+      Logger.debug('[RealtySoft] Trying v2/location endpoint...');
+      response = await request<APIResponse<Location[]>>('v2/location', params, 'GET', {
+        skipLang: true,
+      });
+
+      // Check if we got valid data
+      if (response && response.data && response.data.length > 0) {
+        Logger.debug('[RealtySoft] v2/location returned', response.data.length, 'locations');
+      } else {
+        Logger.debug('[RealtySoft] v2/location returned empty, trying v1...');
+        response = null;
+      }
+    } catch (e) {
+      Logger.debug('[RealtySoft] v2/location failed, trying v1/location...');
+      response = null;
+    }
+
+    // Fallback to v1/location if v2 failed or returned empty
+    if (!response || !response.data || response.data.length === 0) {
+      try {
+        Logger.debug('[RealtySoft] Trying v1/location endpoint...');
+        response = await request<APIResponse<Location[]>>('v1/location', params, 'GET', {
+          skipLang: true,
+        });
+        Logger.debug('[RealtySoft] v1/location returned', response?.data?.length || 0, 'locations');
+      } catch (e) {
+        Logger.debug('[RealtySoft] v1/location also failed');
+        // Return empty result if both fail
+        return { data: [], count: 0 };
+      }
+    }
 
     // Deduplicate by ID
     const seen = new Set<number>();
@@ -527,7 +559,7 @@ const RealtySoftAPI: RealtySoftAPIModule = (function () {
   }
 
   /**
-   * Get parent/top-level locations only
+   * Get parent/top-level locations only (tries v2 first, falls back to v1)
    */
   async function getParentLocations(): Promise<APIResponse<Location[]>> {
     const cacheKey = 'parentLocations';
@@ -539,12 +571,36 @@ const RealtySoftAPI: RealtySoftAPIModule = (function () {
       return cached;
     }
 
-    const result = await request<APIResponse<Location[]>>(
-      'v1/location',
-      { parent_id: 0 },
-      'GET',
-      { skipLang: true }
-    );
+    let result: APIResponse<Location[]> | null = null;
+
+    // Try v2/location first
+    try {
+      result = await request<APIResponse<Location[]>>(
+        'v2/location',
+        { parent_id: 0 },
+        'GET',
+        { skipLang: true }
+      );
+      if (!result || !result.data || result.data.length === 0) {
+        result = null;
+      }
+    } catch (e) {
+      result = null;
+    }
+
+    // Fallback to v1/location
+    if (!result) {
+      try {
+        result = await request<APIResponse<Location[]>>(
+          'v1/location',
+          { parent_id: 0 },
+          'GET',
+          { skipLang: true }
+        );
+      } catch (e) {
+        return { data: [], count: 0 };
+      }
+    }
 
     // Cache the result
     CacheManager.set(cacheKey, result);
@@ -554,7 +610,7 @@ const RealtySoftAPI: RealtySoftAPIModule = (function () {
   }
 
   /**
-   * Get child locations for a specific parent
+   * Get child locations for a specific parent (tries v2 first, falls back to v1)
    */
   async function getChildLocations(parentId: number): Promise<APIResponse<Location[]>> {
     const cacheKey = 'childLocations_' + parentId;
@@ -566,12 +622,36 @@ const RealtySoftAPI: RealtySoftAPIModule = (function () {
       return cached;
     }
 
-    const result = await request<APIResponse<Location[]>>(
-      'v1/location',
-      { parent_id: parentId },
-      'GET',
-      { skipLang: true }
-    );
+    let result: APIResponse<Location[]> | null = null;
+
+    // Try v2/location first
+    try {
+      result = await request<APIResponse<Location[]>>(
+        'v2/location',
+        { parent_id: parentId },
+        'GET',
+        { skipLang: true }
+      );
+      if (!result || !result.data || result.data.length === 0) {
+        result = null;
+      }
+    } catch (e) {
+      result = null;
+    }
+
+    // Fallback to v1/location
+    if (!result) {
+      try {
+        result = await request<APIResponse<Location[]>>(
+          'v1/location',
+          { parent_id: parentId },
+          'GET',
+          { skipLang: true }
+        );
+      } catch (e) {
+        return { data: [], count: 0 };
+      }
+    }
 
     // Cache the result
     CacheManager.set(cacheKey, result);
