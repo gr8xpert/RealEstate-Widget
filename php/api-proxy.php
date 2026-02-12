@@ -106,6 +106,20 @@ if (!file_exists($configFile)) {
 
 $clients = require $configFile;
 
+// ============================================
+// SUBSCRIPTION CHECK (Database-backed)
+// ============================================
+// Check subscription status from database before processing request
+// Falls back to config file if database unavailable
+
+$subscriptionServiceFile = __DIR__ . '/subscription/SubscriptionService.php';
+$subscriptionCheckEnabled = file_exists($subscriptionServiceFile);
+
+if ($subscriptionCheckEnabled) {
+    require_once __DIR__ . '/subscription/Database.php';
+    require_once $subscriptionServiceFile;
+}
+
 // Get requesting domain
 // Priority: 1. _domain parameter (for admin tools) 2. X-RS-Domain header 3. Origin/Referer
 $domain = null;
@@ -123,19 +137,61 @@ if (!empty($_GET['_domain'])) {
 // Remove www. prefix for matching
 $domain = preg_replace('/^www\./', '', $domain);
 
-// Find client config - exact match first
+// ============================================
+// CHECK SUBSCRIPTION STATUS
+// ============================================
+$subscriptionStatus = null;
 $clientConfig = null;
-foreach ($clients as $clientDomain => $config) {
-    $clientDomain = preg_replace('/^www\./', '', $clientDomain);
-    if ($clientDomain === $domain) {
-        $clientConfig = $config;
-        break;
+
+if ($subscriptionCheckEnabled) {
+    try {
+        $subscriptionService = new SubscriptionService();
+        $subscriptionStatus = $subscriptionService->checkSubscription($domain);
+
+        // Block if subscription expired and past grace period
+        if ($subscriptionStatus['status'] === 'blocked') {
+            http_response_code(403);
+            echo json_encode([
+                'error' => 'Subscription expired',
+                'subscription_status' => 'blocked',
+                'message' => $subscriptionStatus['message'] ?? 'Please renew your subscription to continue using the widget.'
+            ]);
+            exit;
+        }
+
+        // Add grace warning headers (widget can show warning banner)
+        if ($subscriptionStatus['status'] === 'grace_period') {
+            header('X-RS-Subscription-Warning: true');
+            header('X-RS-Grace-Days: ' . ($subscriptionStatus['grace_days_remaining'] ?? 0));
+        }
+
+        // Try to get client config from database first
+        $clientConfig = $subscriptionService->getClientConfig($domain);
+
+    } catch (Exception $e) {
+        // Database error - log and fall back to config file
+        error_log('Subscription check failed: ' . $e->getMessage());
+        // Continue with config file fallback
     }
 }
 
-// Fallback to localhost config for local development
-if (!$clientConfig && $domain === 'localhost' && isset($clients['localhost'])) {
-    $clientConfig = $clients['localhost'];
+// ============================================
+// FALLBACK TO CONFIG FILE
+// ============================================
+// If database lookup failed or returned null, check config file
+if (!$clientConfig) {
+    foreach ($clients as $clientDomain => $config) {
+        $clientDomain = preg_replace('/^www\./', '', $clientDomain);
+        if ($clientDomain === $domain) {
+            $clientConfig = $config;
+            break;
+        }
+    }
+
+    // Fallback to localhost config for local development
+    if (!$clientConfig && $domain === 'localhost' && isset($clients['localhost'])) {
+        $clientConfig = $clients['localhost'];
+    }
 }
 
 // Validate client

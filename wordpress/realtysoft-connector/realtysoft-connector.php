@@ -11,6 +11,11 @@
  */
 if (!defined('ABSPATH')) exit;
 
+// Include the installer wizard (admin only)
+if (is_admin()) {
+    require_once plugin_dir_path(__FILE__) . 'includes/class-installer.php';
+}
+
 class RealtySoft_Connector {
     private $default_slug = 'property';
     private $loader_url = 'https://smartpropertywidget.com/spw/dist/realtysoft-loader.js';

@@ -9,6 +9,7 @@ import { RealtySoftAPI } from './api';
 import { RealtySoftLabels } from './labels';
 import { RealtySoftAnalytics } from './analytics';
 import { RealtySoftRouter } from './router';
+import { RealtySoftSubscription } from './subscription';
 import type {
   RealtySoftModule,
   RealtySoftStateModule,
@@ -2453,6 +2454,28 @@ const RealtySoft = (function () {
 
     initPromise = (async () => {
       try {
+        // ── Subscription Check ─────────────────────────────────────
+        // Check subscription status before initializing the widget
+        // This runs early to block/warn before any heavy initialization
+        RealtySoftSubscription.init();
+        const subscriptionStatus = await RealtySoftSubscription.checkStatus();
+
+        // If subscription is blocked, show overlay and stop initialization
+        if (subscriptionStatus.status === 'blocked') {
+          RealtySoftSubscription.showBlockedOverlay();
+          Logger.warn('Widget blocked: subscription expired');
+          return false;
+        }
+
+        // If in grace period, show warning banner
+        if (subscriptionStatus.status === 'grace_period' && subscriptionStatus.showWarning) {
+          RealtySoftSubscription.showWarningBanner(subscriptionStatus.graceDaysRemaining || 0);
+        }
+
+        // Store subscription status in state
+        RealtySoftState.set('subscription.status', subscriptionStatus.status);
+        RealtySoftState.set('subscription.plan', subscriptionStatus.plan);
+
         showLoadingSkeletons();
         RealtySoftState.set('ui.loading', true);
 

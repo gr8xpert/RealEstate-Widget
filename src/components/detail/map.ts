@@ -87,16 +87,30 @@ class RSDetailMap extends RSBaseComponent {
     this.lng = p.longitude || (orig.longitude as string | number) || (orig.lng as string | number) || null;
     this.hasCoords = this.hasValidCoordinates();
 
-    // Get location info
+    // Get location info from various possible fields
     const locationId = orig.location_id as { name?: string } | undefined;
     const municipalityId = orig.municipality_id as { name?: string } | undefined;
     const provinceId = orig.province_id as { name?: string } | undefined;
+    const cityId = orig.city_id as { name?: string } | undefined;
 
-    this.locationName = locationId?.name || p.location || '';
-    this.municipality = municipalityId?.name || (orig.municipality as string) || '';
-    this.province = provinceId?.name || (orig.province as string) || '';
+    // Try to get location name from structured fields first
+    this.locationName = locationId?.name || cityId?.name || p.location || '';
+    this.municipality = municipalityId?.name || (orig.municipality as string) || (orig.city as string) || (orig.town as string) || '';
+    this.province = provinceId?.name || (orig.province as string) || (orig.region as string) || (orig.state as string) || '';
     this.zipcode = p.postal_code || (orig.zipcode as string) || (orig.postal_code as string) || '';
     this.country = (orig.country as string) || 'Spain';
+
+    // If location is a combined string like "Fuengirola, Málaga" and we don't have separate municipality/province,
+    // try to parse it
+    if (this.locationName && this.locationName.includes(',') && !this.municipality && !this.province) {
+      const parts = this.locationName.split(',').map(part => part.trim());
+      if (parts.length >= 2) {
+        // Assume format: "City/Town, Province" or "Area, City, Province"
+        // Take the first part as a potential city/municipality search term
+        this.municipality = parts[0];
+        this.province = parts[parts.length - 1]; // Last part is likely province
+      }
+    }
 
     // Build display location string
     this.displayLocation = this.buildDisplayLocation();
@@ -308,13 +322,15 @@ class RSDetailMap extends RSBaseComponent {
       const query = this.buildNominatimQuery();
       try {
         const response = await fetch(
-          `https://nominatim.openstreetmap.org/search?format=json&polygon_geojson=1&limit=1&q=${encodeURIComponent(query)}`,
+          `https://nominatim.openstreetmap.org/search?format=json&polygon_geojson=1&limit=5&q=${encodeURIComponent(query)}`,
           { headers: { 'Accept': 'application/json' } }
         );
         const data = await response.json();
 
-        if (data && data.length > 0 && data[0].geojson) {
-          const result = data[0];
+        // Select best result, filtering out natural features like mountains
+        const result = data && data.length > 0 ? this.selectBestNominatimResult(data, query) : null;
+
+        if (result && result.geojson) {
           const geojson = result.geojson;
           const geomType = geojson.type;
 
@@ -351,10 +367,10 @@ class RSDetailMap extends RSBaseComponent {
               weight: 2
             }).addTo(map);
           }
-        } else if (data && data.length > 0) {
+        } else if (result) {
           // No polygon, but have coordinates - center on point
-          const lat = parseFloat(data[0].lat);
-          const lng = parseFloat(data[0].lon);
+          const lat = parseFloat(result.lat);
+          const lng = parseFloat(result.lon);
           map.setView([lat, lng], 12);
           L.circleMarker([lat, lng], {
             radius: 8,
@@ -364,11 +380,13 @@ class RSDetailMap extends RSBaseComponent {
             weight: 2
           }).addTo(map);
         } else {
-          // Nominatim returned nothing - use fallback coordinates or default
-          this.setFallbackView(map);
+          // Nominatim returned nothing - try alternative queries
+          const found = await this.tryAlternativeQueries(map, L);
+          if (!found) {
+            this.setFallbackView(map);
+          }
         }
       } catch (err) {
-        console.warn('[RealtySoft] Nominatim boundary fetch failed:', err);
         this.setFallbackView(map);
       }
 
@@ -390,29 +408,143 @@ class RSDetailMap extends RSBaseComponent {
       return parts.join(', ');
     }
 
-    // Municipality mode: prioritize municipality for polygon boundaries
-    // Neighborhoods (locationName) often don't have polygon boundaries in Nominatim
+    // Build query prioritizing location name with clean municipality
     const parts: string[] = [];
 
-    if (useMunicipality && this.municipality) {
-      // Use municipality (e.g., "Torremolinos") - more likely to have polygon
-      parts.push(this.municipality);
-    } else if (this.locationName) {
-      // Use location name (e.g., "Torremolinos Centro")
+    // Clean municipality name: "Marbella Central/Centro" -> "Marbella"
+    const cleanMunicipality = this.municipality
+      ? this.municipality.split(/[\/]/)[0].replace(/\s*(Central|Centro|Norte|Sur|Este|Oeste).*$/i, '').trim()
+      : '';
+
+    if (this.locationName) {
+      // Start with the location/area name (e.g., "The Golden Mile")
       parts.push(this.locationName);
+      // Add clean municipality if available and different from locationName
+      if (cleanMunicipality && cleanMunicipality.toLowerCase() !== this.locationName.toLowerCase()) {
+        parts.push(cleanMunicipality);
+      }
+    } else if (cleanMunicipality) {
+      // No location name, use clean municipality
+      parts.push(cleanMunicipality);
     } else if (this.municipality) {
-      // Fallback to municipality if no location name
+      // Fallback to full municipality string
       parts.push(this.municipality);
     } else if (this.province) {
       // Use province as last resort
       parts.push(this.province);
     }
 
-    if (this.province && parts[0] !== this.province) {
+    if (this.province && !parts.includes(this.province)) {
       parts.push(this.province);
     }
     parts.push(this.country);
     return parts.join(', ');
+  }
+
+  /**
+   * Select the best Nominatim result, preferring residential/urban areas over natural features.
+   * Also verifies the result is in the correct municipality when we have that info.
+   * Returns null if all results are unsuitable.
+   */
+  private selectBestNominatimResult(results: any[], query: string): any | null {
+    // Classes/types we want (residential, administrative areas)
+    const preferredClasses = ['place', 'boundary', 'landuse'];
+    const preferredTypes = [
+      'city', 'town', 'village', 'hamlet', 'suburb', 'neighbourhood', 'quarter',
+      'residential', 'administrative', 'municipality', 'district', 'borough',
+      'locality', 'isolated_dwelling', 'urban', 'urbanization'
+    ];
+
+    // Classes/types we want to avoid (natural features, geographic features)
+    const avoidClasses = ['natural', 'geological'];
+    const avoidTypes = [
+      'peak', 'mountain', 'mountain_range', 'ridge', 'cliff', 'valley',
+      'water', 'river', 'stream', 'lake', 'reservoir', 'bay',
+      'wood', 'forest', 'scrub', 'heath', 'grassland'
+    ];
+
+    // Get expected municipality for validation (clean version)
+    const expectedMunicipality = this.municipality
+      ? this.municipality.split(/[\/]/)[0].replace(/\s*(Central|Centro|Norte|Sur|Este|Oeste).*$/i, '').trim().toLowerCase()
+      : '';
+
+    // Helper to check if result is in the correct municipality
+    const isInCorrectMunicipality = (result: any): boolean => {
+      if (!expectedMunicipality) return true; // No municipality to check against
+      const displayName = (result.display_name || '').toLowerCase();
+      // Check if display_name contains our expected municipality
+      // But also accept if it contains the province (wider area is OK)
+      if (displayName.includes(expectedMunicipality)) return true;
+      // If the result is the municipality itself or province, accept it
+      const resultType = (result.type || '').toLowerCase();
+      if (['city', 'town', 'municipality', 'administrative', 'province', 'state'].includes(resultType)) return true;
+      return false;
+    };
+
+    // Helper to check if result is NOT in a wrong municipality
+    const isNotInWrongMunicipality = (result: any): boolean => {
+      if (!expectedMunicipality) return true;
+      const displayName = (result.display_name || '').toLowerCase();
+      // List of other municipalities that might have same-named places
+      const otherMunicipalities = ['mijas', 'estepona', 'fuengirola', 'benalmádena', 'torremolinos', 'nerja', 'ronda', 'antequera'];
+      // If we expect Marbella but result is in Mijas, reject it
+      for (const other of otherMunicipalities) {
+        if (other !== expectedMunicipality && displayName.includes(other) && !displayName.includes(expectedMunicipality)) {
+          return false;
+        }
+      }
+      return true;
+    };
+
+    // Helper to check if result has a polygon boundary (not just a point)
+    const hasPolygonBoundary = (result: any): boolean => {
+      if (!result.geojson) return false;
+      const geomType = result.geojson.type;
+      return geomType === 'Polygon' || geomType === 'MultiPolygon';
+    };
+
+    // First pass: look for preferred types WITH POLYGON BOUNDARY in correct municipality
+    for (const result of results) {
+      const resultClass = (result.class || '').toLowerCase();
+      const resultType = (result.type || '').toLowerCase();
+
+      if (preferredClasses.includes(resultClass) || preferredTypes.includes(resultType)) {
+        if (hasPolygonBoundary(result) && isInCorrectMunicipality(result) && isNotInWrongMunicipality(result)) {
+          return result;
+        }
+      }
+    }
+
+    // Second pass: accept preferred types even WITHOUT polygon (will show circleMarker)
+    for (const result of results) {
+      const resultClass = (result.class || '').toLowerCase();
+      const resultType = (result.type || '').toLowerCase();
+
+      if (preferredClasses.includes(resultClass) || preferredTypes.includes(resultType)) {
+        if (isInCorrectMunicipality(result) && isNotInWrongMunicipality(result)) {
+          // Only accept point results if they're cities/towns (not small suburbs)
+          const isLargePlace = ['city', 'town', 'municipality', 'administrative'].includes(resultType);
+          if (hasPolygonBoundary(result) || isLargePlace) {
+            return result;
+          }
+        }
+      }
+    }
+
+    // Third pass: accept anything that's NOT a natural feature AND in correct municipality AND has polygon
+    for (const result of results) {
+      const resultClass = (result.class || '').toLowerCase();
+      const resultType = (result.type || '').toLowerCase();
+
+      if (!avoidClasses.includes(resultClass) && !avoidTypes.includes(resultType)) {
+        if (hasPolygonBoundary(result) && isInCorrectMunicipality(result) && isNotInWrongMunicipality(result)) {
+          return result;
+        }
+      }
+    }
+
+    // No suitable results with polygons - return null to try next query (which might find municipality polygon)
+    return null;
   }
 
   /**
@@ -427,6 +559,121 @@ class RSDetailMap extends RSBaseComponent {
       // Default: center of Spain
       map.setView([40.0, -3.7], 6);
     }
+  }
+
+  /**
+   * Try alternative Nominatim queries when the primary query fails.
+   * Priority: Location name (area/neighborhood) > Municipality > Province
+   * Returns true if a location was found and displayed.
+   */
+  private async tryAlternativeQueries(map: LeafletMap, L: LeafletStatic): Promise<boolean> {
+    // Build list of alternative queries to try - ORDER MATTERS!
+    const queries: string[] = [];
+
+    // PRIORITY 1: Try location name (area/neighborhood) with different combinations
+    // This is most specific - e.g., "The Golden Mile, Marbella, Spain"
+    if (this.locationName) {
+      // Extract municipality name (first word before / or space patterns like "Marbella Central/Centro")
+      const cleanMunicipality = this.municipality ? this.municipality.split(/[\/\s]/)[0] : '';
+
+      if (cleanMunicipality && cleanMunicipality.toLowerCase() !== this.locationName.toLowerCase()) {
+        // Try: "The Golden Mile, Marbella, Málaga, Spain"
+        queries.push(`${this.locationName}, ${cleanMunicipality}, ${this.province || ''}, Spain`.replace(/, ,/g, ', ').replace(/,\s*,/g, ','));
+        // Try: "The Golden Mile, Marbella, Spain"
+        queries.push(`${this.locationName}, ${cleanMunicipality}, Spain`);
+      }
+
+      // Try: "The Golden Mile, Málaga, Spain"
+      if (this.province) {
+        queries.push(`${this.locationName}, ${this.province}, Spain`);
+      }
+
+      // Try: "The Golden Mile, Spain"
+      queries.push(`${this.locationName}, Spain`);
+    }
+
+    // PRIORITY 2: Try clean municipality name (first part before / or Central etc.)
+    if (this.municipality) {
+      // Extract just the city name: "Marbella Central/Centro" -> "Marbella"
+      const cleanMunicipality = this.municipality.split(/[\/]/)[0].replace(/\s*(Central|Centro|Norte|Sur|Este|Oeste).*$/i, '').trim();
+
+      if (cleanMunicipality && cleanMunicipality !== this.municipality) {
+        queries.push(`${cleanMunicipality}, ${this.province || ''}, Spain`.replace(/, ,/g, ', '));
+        queries.push(`${cleanMunicipality}, Spain`);
+      }
+
+      // Try full municipality if different
+      if (!queries.includes(`${this.municipality}, ${this.province || ''}, Spain`.replace(/, ,/g, ', '))) {
+        queries.push(`${this.municipality}, ${this.province || ''}, Spain`.replace(/, ,/g, ', '));
+      }
+    }
+
+    // PRIORITY 3: Try province-level as last resort (will show province boundary)
+    if (this.province && !queries.some(q => q === `${this.province}, Spain`)) {
+      queries.push(`${this.province}, Spain`);
+    }
+
+    // Remove duplicates while preserving order
+    const uniqueQueries = [...new Set(queries)];
+
+    for (const query of uniqueQueries) {
+      try {
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&polygon_geojson=1&limit=5&q=${encodeURIComponent(query)}`,
+          { headers: { 'Accept': 'application/json' } }
+        );
+        const data = await response.json();
+
+        if (data && data.length > 0) {
+          // Find the best result - prefer residential/urban areas over natural features
+          const result = this.selectBestNominatimResult(data, query);
+          if (!result) {
+            continue; // Try next query
+          }
+
+          if (result.geojson) {
+            const geojson = result.geojson;
+            const geomType = geojson.type;
+            const isPolygon = geomType === 'Polygon' || geomType === 'MultiPolygon';
+
+            if (isPolygon) {
+              const layer = L.geoJSON(geojson, {
+                style: () => ({
+                  color: '#0066cc',
+                  weight: 3,
+                  opacity: 0.8,
+                  fillColor: '#0066cc',
+                  fillOpacity: 0.1
+                })
+              });
+              layer.addTo(map);
+              const bounds = layer.getBounds();
+              map.fitBounds(bounds, { padding: [30, 30] });
+              return true;
+            }
+          }
+
+          // No polygon but have coordinates - show circle marker
+          const lat = parseFloat(result.lat);
+          const lng = parseFloat(result.lon);
+          if (!isNaN(lat) && !isNaN(lng)) {
+            map.setView([lat, lng], 13);
+            L.circleMarker([lat, lng], {
+              radius: 10,
+              color: '#0066cc',
+              fillColor: '#0066cc',
+              fillOpacity: 0.2,
+              weight: 2
+            }).addTo(map);
+            return true;
+          }
+        }
+      } catch (err) {
+        // Query failed, try next one
+      }
+    }
+
+    return false;
   }
 
   /**
