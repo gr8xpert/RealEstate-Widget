@@ -1,6 +1,7 @@
 /**
  * RealtySoft Widget v3 - Map View Component
  * Interactive map view with property markers and bounds-based filtering
+ * Supports geocoding properties without lat/lng using zipcode
  */
 
 import { RSBaseComponent } from '../base';
@@ -13,6 +14,7 @@ import type {
   RealtySoftAnalyticsModule,
   Property,
 } from '../../types/index';
+import { geocodeBatch, type GeocodeResult } from '../../core/geocode';
 
 // Declare globals
 declare const RealtySoft: RealtySoftModule;
@@ -87,6 +89,13 @@ interface LeafletStatic {
 // Leaflet is loaded dynamically - window.L is declared in detail/map.ts
 // We reference it through window directly to avoid type conflicts
 
+// Property with potentially geocoded coordinates
+interface PropertyWithCoords extends Property {
+  _geocodedLat?: number;
+  _geocodedLng?: number;
+  _isApproximate?: boolean;
+}
+
 class RSMapView extends RSBaseComponent {
   private properties: Property[] = [];
   private filteredProperties: Property[] = [];
@@ -98,6 +107,8 @@ class RSMapView extends RSBaseComponent {
   private boundsFilterDebounce: ReturnType<typeof setTimeout> | null = null;
   private isVisible: boolean = false;
   private initialBoundsSet: boolean = false;
+  private isGeocoding: boolean = false;
+  private geocodedProperties: Map<number, { lat: number; lng: number; isApproximate: boolean }> = new Map();
 
   constructor(element: HTMLElement, options: ComponentOptions = {}) {
     super(element, options);
@@ -353,16 +364,96 @@ class RSMapView extends RSBaseComponent {
     setTimeout(() => this.map?.invalidateSize(), 200);
   }
 
-  private updateMarkers(): void {
+  private async updateMarkers(): Promise<void> {
     if (!this.map || !this.isMapReady) return;
 
     const L = window.L;
     if (!L) return;
 
-    // Get properties with valid coordinates
-    const propertiesWithCoords = this.properties.filter(
-      (p) => p.latitude && p.longitude && p.latitude !== 0 && p.longitude !== 0
-    );
+    // Split properties into groups
+    const withCoords: PropertyWithCoords[] = [];
+    const withZipOnly: PropertyWithCoords[] = [];
+
+    for (const property of this.properties) {
+      const hasCoords = property.latitude && property.longitude &&
+                        property.latitude !== 0 && property.longitude !== 0;
+
+      if (hasCoords) {
+        withCoords.push(property);
+      } else if (this.getPropertyZipcode(property)) {
+        // Check if we already geocoded this property
+        const cached = this.geocodedProperties.get(property.id);
+        if (cached) {
+          withCoords.push({
+            ...property,
+            _geocodedLat: cached.lat,
+            _geocodedLng: cached.lng,
+            _isApproximate: cached.isApproximate
+          });
+        } else {
+          withZipOnly.push(property);
+        }
+      }
+    }
+
+    // Geocode properties without coordinates (if any)
+    if (withZipOnly.length > 0 && !this.isGeocoding) {
+      this.isGeocoding = true;
+
+      // Show geocoding status
+      this.updateCountDisplay(withCoords.length, this.properties.length, true);
+
+      // Get unique zipcodes
+      const zipcodeMap = new Map<string, PropertyWithCoords[]>();
+      for (const property of withZipOnly) {
+        const zipcode = this.getPropertyZipcode(property);
+        if (zipcode) {
+          const existing = zipcodeMap.get(zipcode) || [];
+          existing.push(property);
+          zipcodeMap.set(zipcode, existing);
+        }
+      }
+
+      // Get province from first property (if available)
+      const firstProp = withZipOnly[0];
+      const province = this.getPropertyProvince(firstProp);
+
+      // Batch geocode unique zipcodes
+      try {
+        const geocodeResults = await geocodeBatch(
+          Array.from(zipcodeMap.keys()),
+          province,
+          'Spain'
+        );
+
+        // Assign geocoded coordinates to properties
+        for (const [zipcode, properties] of zipcodeMap) {
+          const result = geocodeResults.get(zipcode);
+          if (result) {
+            for (const property of properties) {
+              // Cache the result
+              this.geocodedProperties.set(property.id, {
+                lat: result.lat,
+                lng: result.lng,
+                isApproximate: result.isApproximate
+              });
+
+              // Add to withCoords array
+              withCoords.push({
+                ...property,
+                _geocodedLat: result.lat,
+                _geocodedLng: result.lng,
+                _isApproximate: true
+              });
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('[RealtySoft MapView] Geocoding failed:', err);
+      }
+
+      this.isGeocoding = false;
+    }
 
     // Clear existing markers
     if (this.markerCluster) {
@@ -372,16 +463,16 @@ class RSMapView extends RSBaseComponent {
     }
     this.markers.clear();
 
-    // Create new markers
+    // Create new markers for all properties with coordinates
     const newMarkers: LeafletMarker[] = [];
 
-    propertiesWithCoords.forEach((property) => {
+    for (const property of withCoords) {
       const marker = this.createMarker(property);
       if (marker) {
         this.markers.set(property.id, marker);
         newMarkers.push(marker);
       }
-    });
+    }
 
     // Add markers to cluster or map
     if (this.markerCluster && newMarkers.length > 0) {
@@ -391,18 +482,59 @@ class RSMapView extends RSBaseComponent {
     }
 
     // Update count display
-    this.updateCountDisplay(propertiesWithCoords.length, this.properties.length);
+    this.updateCountDisplay(withCoords.length, this.properties.length);
 
     // Fit bounds to markers on first load
-    if (!this.initialBoundsSet && propertiesWithCoords.length > 0) {
+    if (!this.initialBoundsSet && withCoords.length > 0) {
       this.fitBoundsToMarkers();
       this.initialBoundsSet = true;
     }
   }
 
-  private createMarker(property: Property): LeafletMarker | null {
+  /**
+   * Extract zipcode from property (handles different API field names)
+   */
+  private getPropertyZipcode(property: Property): string | null {
+    // Try direct fields
+    if (property.postal_code) return property.postal_code;
+
+    // Try _original fields (raw API data)
+    const orig = (property._original || {}) as Record<string, unknown>;
+    if (orig.postal_code) return String(orig.postal_code);
+    if (orig.zipcode) return String(orig.zipcode);
+    if (orig.postcode) return String(orig.postcode);
+    if (orig.zip) return String(orig.zip);
+
+    return null;
+  }
+
+  /**
+   * Extract province from property
+   */
+  private getPropertyProvince(property: Property): string | undefined {
+    const orig = (property._original || {}) as Record<string, unknown>;
+
+    // Try province_id object first (Resales6 format)
+    const provinceId = orig.province_id as { name?: string } | undefined;
+    if (provinceId?.name) return provinceId.name;
+
+    // Try direct fields
+    if (orig.province) return String(orig.province);
+    if (orig.region) return String(orig.region);
+    if (orig.state) return String(orig.state);
+
+    return undefined;
+  }
+
+  private createMarker(property: PropertyWithCoords): LeafletMarker | null {
     const L = window.L;
-    if (!L || !property.latitude || !property.longitude) return null;
+
+    // Get coordinates: use geocoded coords if available, otherwise use original
+    const lat = property._geocodedLat ?? property.latitude;
+    const lng = property._geocodedLng ?? property.longitude;
+    const isApproximate = property._isApproximate ?? false;
+
+    if (!L || !lat || !lng) return null;
 
     // Create custom icon
     const icon = L.divIcon({
@@ -417,7 +549,7 @@ class RSMapView extends RSBaseComponent {
       popupAnchor: [0, -36],
     });
 
-    const marker = L.marker([property.latitude, property.longitude], { icon });
+    const marker = L.marker([lat, lng], { icon });
 
     // Create popup content
     const popupContent = this.createPopupContent(property);
@@ -437,7 +569,7 @@ class RSMapView extends RSBaseComponent {
     return marker;
   }
 
-  private createPopupContent(property: Property): HTMLElement {
+  private createPopupContent(property: PropertyWithCoords): HTMLElement {
     const container = document.createElement('div');
     container.className = 'rs-map-popup__content';
 
@@ -447,6 +579,12 @@ class RSMapView extends RSBaseComponent {
     const convertedPrice = (property.price || 0) * currencyInfo.rate;
     const price = `${currencyInfo.symbol} ${Math.round(convertedPrice).toLocaleString()}`;
     const url = this.generatePropertyUrl(property);
+    const isApproximate = property._isApproximate ?? false;
+
+    // Add approximate location note for geocoded properties
+    const locationNote = isApproximate
+      ? `<p class="rs-map-popup__approx">${this.label('map_approximate_location') || 'Approximate location'}</p>`
+      : '';
 
     container.innerHTML = `
       <a href="${url}" class="rs-map-popup__link">
@@ -457,6 +595,7 @@ class RSMapView extends RSBaseComponent {
           <div class="rs-map-popup__price">${price}</div>
           <h4 class="rs-map-popup__title">${this.escapeHtml(property.title || '')}</h4>
           <p class="rs-map-popup__location">${this.escapeHtml(String(property.location || ''))}</p>
+          ${locationNote}
           <div class="rs-map-popup__specs">
             ${property.beds ? `<span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7v11a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7"/><path d="M21 7V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v2"/><path d="M3 11h18"/></svg> ${property.beds}</span>` : ''}
             ${property.baths ? `<span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12h16a1 1 0 0 1 1 1v3a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4v-3a1 1 0 0 1 1-1z"/><path d="M6 12V5a2 2 0 0 1 2-2h1a2 2 0 0 1 2 2"/></svg> ${property.baths}</span>` : ''}
@@ -578,10 +717,20 @@ class RSMapView extends RSBaseComponent {
     const center = this.map.getCenter();
     RealtySoftState.set('map.center', [center.lat, center.lng]);
 
-    // Filter properties by bounds (client-side)
+    // Filter properties by bounds (including geocoded ones)
     this.filteredProperties = this.properties.filter((p) => {
-      if (!p.latitude || !p.longitude) return false;
-      return bounds.contains({ lat: p.latitude, lng: p.longitude });
+      // Check original coordinates
+      if (p.latitude && p.longitude && p.latitude !== 0 && p.longitude !== 0) {
+        return bounds.contains({ lat: p.latitude, lng: p.longitude });
+      }
+
+      // Check geocoded coordinates
+      const geocoded = this.geocodedProperties.get(p.id);
+      if (geocoded) {
+        return bounds.contains({ lat: geocoded.lat, lng: geocoded.lng });
+      }
+
+      return false;
     });
 
     // Update count display
@@ -608,24 +757,46 @@ class RSMapView extends RSBaseComponent {
     }
   }
 
-  private updateCountDisplay(visible: number, total: number): void {
+  private updateCountDisplay(visible: number, total: number, isGeocoding: boolean = false): void {
     const countEl = this.element.querySelector('.rs-map-view__count');
-    if (countEl) {
-      const propertiesWithCoords = this.properties.filter(
-        (p) => p.latitude && p.longitude && p.latitude !== 0 && p.longitude !== 0
-      ).length;
+    if (!countEl) return;
 
-      if (visible < propertiesWithCoords) {
-        countEl.textContent = `${visible} of ${propertiesWithCoords} ${this.label('results_properties') || 'properties'} in view`;
-      } else {
-        countEl.textContent = `${propertiesWithCoords} ${this.label('results_properties') || 'properties'}`;
-      }
+    // Count properties with original coordinates
+    const withOriginalCoords = this.properties.filter(
+      (p) => p.latitude && p.longitude && p.latitude !== 0 && p.longitude !== 0
+    ).length;
 
-      // Note if some properties don't have coordinates
-      const withoutCoords = total - propertiesWithCoords;
-      if (withoutCoords > 0) {
-        countEl.textContent += ` (${withoutCoords} without location)`;
-      }
+    // Count geocoded properties
+    const geocodedCount = this.geocodedProperties.size;
+
+    // Total shown on map
+    const totalOnMap = visible;
+
+    if (isGeocoding) {
+      countEl.textContent = `${this.label('map_geocoding') || 'Locating properties...'} (${withOriginalCoords} ${this.label('results_properties') || 'properties'})`;
+      return;
+    }
+
+    // Build display text
+    if (totalOnMap === total) {
+      // All properties shown
+      countEl.textContent = `${total} ${this.label('results_properties') || 'properties'}`;
+    } else if (totalOnMap < total) {
+      // Some in view, some not (due to bounds filtering)
+      countEl.textContent = `${totalOnMap} of ${total} ${this.label('results_properties') || 'properties'} in view`;
+    } else {
+      countEl.textContent = `${totalOnMap} ${this.label('results_properties') || 'properties'}`;
+    }
+
+    // Add info about geocoded properties
+    if (geocodedCount > 0) {
+      countEl.textContent += ` (${geocodedCount} ${this.label('map_by_zipcode') || 'by zipcode'})`;
+    }
+
+    // Note if some properties still don't have coordinates
+    const withoutAnyCoords = total - withOriginalCoords - geocodedCount;
+    if (withoutAnyCoords > 0) {
+      countEl.textContent += ` (${withoutAnyCoords} ${this.label('map_no_location') || 'without location'})`;
     }
   }
 

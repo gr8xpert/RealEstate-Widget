@@ -251,6 +251,13 @@
   gap: 4px;
 }
 
+.rs-map-popup__approx {
+  margin: 0 0 8px 0;
+  font-size: 11px;
+  color: var(--rs-warning, #f59e0b);
+  font-style: italic;
+}
+
 .rs-map-popup__specs {
   display: flex;
   flex-wrap: wrap;
