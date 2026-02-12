@@ -383,7 +383,7 @@ class RSMapView extends RSBaseComponent {
       if (hasCoords) {
         // Property has valid coordinates - use them directly (no geocoding)
         withCoords.push(property);
-      } else if (this.getPropertyZipcode(property)) {
+      } else {
         // Check if we already geocoded this property
         const cached = this.geocodedProperties.get(property.id);
         if (cached) {
@@ -393,7 +393,8 @@ class RSMapView extends RSBaseComponent {
             _geocodedLng: cached.lng,
             _isApproximate: cached.isApproximate
           });
-        } else {
+        } else if (this.getPropertyZipcode(property) || this.getPropertyLocation(property)) {
+          // Has zipcode or location name - can be geocoded
           withZipOnly.push(property);
         }
       }
@@ -460,14 +461,25 @@ class RSMapView extends RSBaseComponent {
     // Show geocoding status
     this.updateCountDisplay(existingCount, this.properties.length, true);
 
-    // Get unique zipcodes
+    // Group properties by zipcode or location name
     const zipcodeMap = new Map<string, PropertyWithCoords[]>();
+    const locationMap = new Map<string, PropertyWithCoords[]>();
+
     for (const property of withZipOnly) {
       const zipcode = this.getPropertyZipcode(property);
       if (zipcode) {
+        // Has zipcode - most precise
         const existing = zipcodeMap.get(zipcode) || [];
         existing.push(property);
         zipcodeMap.set(zipcode, existing);
+      } else {
+        // No zipcode - try location name as fallback
+        const location = this.getPropertyLocation(property);
+        if (location) {
+          const existing = locationMap.get(location) || [];
+          existing.push(property);
+          locationMap.set(location, existing);
+        }
       }
     }
 
@@ -477,37 +489,71 @@ class RSMapView extends RSBaseComponent {
 
     const geocodedProps: PropertyWithCoords[] = [];
 
-    // Batch geocode unique zipcodes
-    try {
-      const geocodeResults = await geocodeBatch(
-        Array.from(zipcodeMap.keys()),
-        province,
-        'Spain'
-      );
+    // Batch geocode unique zipcodes first (more precise)
+    if (zipcodeMap.size > 0) {
+      try {
+        const geocodeResults = await geocodeBatch(
+          Array.from(zipcodeMap.keys()),
+          province,
+          'Spain'
+        );
 
-      // Assign geocoded coordinates to properties
-      for (const [zipcode, properties] of zipcodeMap) {
-        const result = geocodeResults.get(zipcode);
-        if (result) {
-          for (const property of properties) {
-            // Cache the result
-            this.geocodedProperties.set(property.id, {
-              lat: result.lat,
-              lng: result.lng,
-              isApproximate: result.isApproximate
-            });
+        // Assign geocoded coordinates to properties
+        for (const [zipcode, properties] of zipcodeMap) {
+          const result = geocodeResults.get(zipcode);
+          if (result) {
+            for (const property of properties) {
+              this.geocodedProperties.set(property.id, {
+                lat: result.lat,
+                lng: result.lng,
+                isApproximate: result.isApproximate
+              });
 
-            geocodedProps.push({
-              ...property,
-              _geocodedLat: result.lat,
-              _geocodedLng: result.lng,
-              _isApproximate: true
-            });
+              geocodedProps.push({
+                ...property,
+                _geocodedLat: result.lat,
+                _geocodedLng: result.lng,
+                _isApproximate: true
+              });
+            }
           }
         }
+      } catch (err) {
+        console.warn('[RealtySoft MapView] Zipcode geocoding failed:', err);
       }
-    } catch (err) {
-      console.warn('[RealtySoft MapView] Geocoding failed:', err);
+    }
+
+    // Then geocode by location name (less precise, fallback)
+    if (locationMap.size > 0) {
+      try {
+        const geocodeResults = await geocodeBatch(
+          Array.from(locationMap.keys()),
+          province,
+          'Spain'
+        );
+
+        for (const [location, properties] of locationMap) {
+          const result = geocodeResults.get(location);
+          if (result) {
+            for (const property of properties) {
+              this.geocodedProperties.set(property.id, {
+                lat: result.lat,
+                lng: result.lng,
+                isApproximate: true
+              });
+
+              geocodedProps.push({
+                ...property,
+                _geocodedLat: result.lat,
+                _geocodedLng: result.lng,
+                _isApproximate: true
+              });
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('[RealtySoft MapView] Location geocoding failed:', err);
+      }
     }
 
     this.isGeocoding = false;
@@ -579,6 +625,34 @@ class RSMapView extends RSBaseComponent {
     if (orig.state) return String(orig.state);
 
     return undefined;
+  }
+
+  /**
+   * Extract location/municipality name from property (fallback for geocoding)
+   */
+  private getPropertyLocation(property: Property): string | null {
+    // Try normalized location field first
+    if (property.location && typeof property.location === 'string') {
+      return property.location;
+    }
+
+    const orig = (property._original || {}) as Record<string, unknown>;
+
+    // Try location_id object (Resales6 format)
+    const locationId = orig.location_id as { name?: string } | undefined;
+    if (locationId?.name) return locationId.name;
+
+    // Try municipality_id object (Resales6 format)
+    const municipalityId = orig.municipality_id as { name?: string } | undefined;
+    if (municipalityId?.name) return municipalityId.name;
+
+    // Try direct fields
+    if (orig.location && typeof orig.location === 'string') return orig.location;
+    if (orig.municipality) return String(orig.municipality);
+    if (orig.city) return String(orig.city);
+    if (orig.town) return String(orig.town);
+
+    return null;
   }
 
   private createMarker(property: PropertyWithCoords): LeafletMarker | null {
