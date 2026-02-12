@@ -110,6 +110,8 @@ class RSMapView extends RSBaseComponent {
   private isGeocoding: boolean = false;
   private pendingGeocode: PropertyWithCoords[] | null = null;
   private geocodedProperties: Map<number, { lat: number; lng: number; isApproximate: boolean }> = new Map();
+  private lastResultsHash: string = '';
+  private shouldFitBounds: boolean = false;
 
   constructor(element: HTMLElement, options: ComponentOptions = {}) {
     super(element, options);
@@ -125,6 +127,17 @@ class RSMapView extends RSBaseComponent {
     // Subscribe to results changes
     this.subscribe<Property[]>('results.properties', (properties) => {
       console.log('[Map] results.properties changed, count:', properties?.length || 0);
+
+      // Check if results actually changed (new search or pagination)
+      const newHash = (properties || []).map(p => p.id).sort().join(',');
+      if (newHash !== this.lastResultsHash) {
+        console.log('[Map] Results changed - will fit bounds');
+        this.shouldFitBounds = true;
+        this.lastResultsHash = newHash;
+        // Clear geocoded cache for new results
+        this.geocodedProperties.clear();
+      }
+
       this.properties = properties || [];
       if (this.isVisible && this.isMapReady) {
         this.updateMarkers();
@@ -197,6 +210,9 @@ class RSMapView extends RSBaseComponent {
 
   private showMap(): void {
     this.element.style.display = 'block';
+
+    // Always fit bounds when showing map (user switched to map view)
+    this.shouldFitBounds = true;
 
     if (!this.isMapReady) {
       this.loadLeafletAndInit();
@@ -466,9 +482,11 @@ class RSMapView extends RSBaseComponent {
     // Update count display
     this.updateCountDisplay(properties.length, this.properties.length);
 
-    // Fit bounds to markers on first load
-    if (!this.initialBoundsSet && properties.length > 0) {
+    // Fit bounds when results change (new search, pagination, or first load)
+    if (this.shouldFitBounds && properties.length > 0) {
+      console.log('[Map] Fitting bounds to', properties.length, 'markers');
       this.fitBoundsToMarkers();
+      this.shouldFitBounds = false;
       this.initialBoundsSet = true;
     }
   }
@@ -620,9 +638,11 @@ class RSMapView extends RSBaseComponent {
         // Update count with all markers
         this.updateCountDisplay(existingCount + geocodedProps.length, this.properties.length);
 
-        // Fit bounds if this is the first load
-        if (!this.initialBoundsSet) {
+        // Fit bounds after geocoding completes (for zipcode-only properties)
+        if (this.shouldFitBounds || !this.initialBoundsSet) {
+          console.log('[Map] Fitting bounds after geocoding');
           this.fitBoundsToMarkers();
+          this.shouldFitBounds = false;
           this.initialBoundsSet = true;
         }
       }
