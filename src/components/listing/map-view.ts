@@ -364,7 +364,7 @@ class RSMapView extends RSBaseComponent {
     setTimeout(() => this.map?.invalidateSize(), 200);
   }
 
-  private async updateMarkers(): Promise<void> {
+  private updateMarkers(): void {
     if (!this.map || !this.isMapReady) return;
 
     const L = window.L;
@@ -399,64 +399,21 @@ class RSMapView extends RSBaseComponent {
       }
     }
 
-    // Geocode properties without coordinates (if any)
+    // Render markers for properties that already have coordinates
+    this.renderMarkers(withCoords);
+
+    // Geocode properties without coordinates (if any) - runs async in background
     if (withZipOnly.length > 0 && !this.isGeocoding) {
-      this.isGeocoding = true;
-
-      // Show geocoding status
-      this.updateCountDisplay(withCoords.length, this.properties.length, true);
-
-      // Get unique zipcodes
-      const zipcodeMap = new Map<string, PropertyWithCoords[]>();
-      for (const property of withZipOnly) {
-        const zipcode = this.getPropertyZipcode(property);
-        if (zipcode) {
-          const existing = zipcodeMap.get(zipcode) || [];
-          existing.push(property);
-          zipcodeMap.set(zipcode, existing);
-        }
-      }
-
-      // Get province from first property (if available)
-      const firstProp = withZipOnly[0];
-      const province = this.getPropertyProvince(firstProp);
-
-      // Batch geocode unique zipcodes
-      try {
-        const geocodeResults = await geocodeBatch(
-          Array.from(zipcodeMap.keys()),
-          province,
-          'Spain'
-        );
-
-        // Assign geocoded coordinates to properties
-        for (const [zipcode, properties] of zipcodeMap) {
-          const result = geocodeResults.get(zipcode);
-          if (result) {
-            for (const property of properties) {
-              // Cache the result
-              this.geocodedProperties.set(property.id, {
-                lat: result.lat,
-                lng: result.lng,
-                isApproximate: result.isApproximate
-              });
-
-              // Add to withCoords array
-              withCoords.push({
-                ...property,
-                _geocodedLat: result.lat,
-                _geocodedLng: result.lng,
-                _isApproximate: true
-              });
-            }
-          }
-        }
-      } catch (err) {
-        console.warn('[RealtySoft MapView] Geocoding failed:', err);
-      }
-
-      this.isGeocoding = false;
+      this.geocodeAndRenderMissing(withZipOnly, withCoords.length);
     }
+  }
+
+  /**
+   * Render markers on the map (sync operation)
+   */
+  private renderMarkers(properties: PropertyWithCoords[]): void {
+    const L = window.L;
+    if (!L || !this.map) return;
 
     // Clear existing markers
     if (this.markerCluster) {
@@ -466,10 +423,10 @@ class RSMapView extends RSBaseComponent {
     }
     this.markers.clear();
 
-    // Create new markers for all properties with coordinates
+    // Create new markers
     const newMarkers: LeafletMarker[] = [];
 
-    for (const property of withCoords) {
+    for (const property of properties) {
       const marker = this.createMarker(property);
       if (marker) {
         this.markers.set(property.id, marker);
@@ -485,12 +442,107 @@ class RSMapView extends RSBaseComponent {
     }
 
     // Update count display
-    this.updateCountDisplay(withCoords.length, this.properties.length);
+    this.updateCountDisplay(properties.length, this.properties.length);
 
     // Fit bounds to markers on first load
-    if (!this.initialBoundsSet && withCoords.length > 0) {
+    if (!this.initialBoundsSet && properties.length > 0) {
       this.fitBoundsToMarkers();
       this.initialBoundsSet = true;
+    }
+  }
+
+  /**
+   * Geocode properties without coords and add them to the map (async, non-blocking)
+   */
+  private async geocodeAndRenderMissing(withZipOnly: PropertyWithCoords[], existingCount: number): Promise<void> {
+    this.isGeocoding = true;
+
+    // Show geocoding status
+    this.updateCountDisplay(existingCount, this.properties.length, true);
+
+    // Get unique zipcodes
+    const zipcodeMap = new Map<string, PropertyWithCoords[]>();
+    for (const property of withZipOnly) {
+      const zipcode = this.getPropertyZipcode(property);
+      if (zipcode) {
+        const existing = zipcodeMap.get(zipcode) || [];
+        existing.push(property);
+        zipcodeMap.set(zipcode, existing);
+      }
+    }
+
+    // Get province from first property (if available)
+    const firstProp = withZipOnly[0];
+    const province = this.getPropertyProvince(firstProp);
+
+    const geocodedProps: PropertyWithCoords[] = [];
+
+    // Batch geocode unique zipcodes
+    try {
+      const geocodeResults = await geocodeBatch(
+        Array.from(zipcodeMap.keys()),
+        province,
+        'Spain'
+      );
+
+      // Assign geocoded coordinates to properties
+      for (const [zipcode, properties] of zipcodeMap) {
+        const result = geocodeResults.get(zipcode);
+        if (result) {
+          for (const property of properties) {
+            // Cache the result
+            this.geocodedProperties.set(property.id, {
+              lat: result.lat,
+              lng: result.lng,
+              isApproximate: result.isApproximate
+            });
+
+            geocodedProps.push({
+              ...property,
+              _geocodedLat: result.lat,
+              _geocodedLng: result.lng,
+              _isApproximate: true
+            });
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('[RealtySoft MapView] Geocoding failed:', err);
+    }
+
+    this.isGeocoding = false;
+
+    // Add geocoded markers to the map (append, don't replace)
+    if (geocodedProps.length > 0) {
+      const L = window.L;
+      if (L && this.map) {
+        const newMarkers: LeafletMarker[] = [];
+        for (const property of geocodedProps) {
+          const marker = this.createMarker(property);
+          if (marker) {
+            this.markers.set(property.id, marker);
+            newMarkers.push(marker);
+          }
+        }
+
+        if (this.markerCluster && newMarkers.length > 0) {
+          this.markerCluster.addLayers(newMarkers);
+        } else {
+          newMarkers.forEach((marker) => marker.addTo(this.map!));
+        }
+
+        // Update count with all markers
+        this.updateCountDisplay(existingCount + geocodedProps.length, this.properties.length);
+
+        // Fit bounds if this is the first load
+        if (!this.initialBoundsSet) {
+          this.fitBoundsToMarkers();
+          this.initialBoundsSet = true;
+        }
+      }
+    } else {
+      // No geocoded props, just update the count
+      this.updateCountDisplay(existingCount, this.properties.length);
     }
   }
 
