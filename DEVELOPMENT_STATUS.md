@@ -72,6 +72,8 @@ Properties with same zipcode cluster at that zipcode's center location.
 | **Batch Geocoding** | Geocodes unique zipcodes once, assigns to all matching properties |
 | **Approximate Location Note** | Popup shows "Approximate location" for geocoded properties |
 | **Smart Detection** | Uses exact coords when available, only geocodes when needed |
+| **Location Name Fallback** | When zipcode is unavailable, geocodes by location/municipality name |
+| **Default mapPerPage: 200** | Map view now defaults to 200 properties (configurable) |
 
 #### Files Created/Modified
 
@@ -98,10 +100,12 @@ const results = await geocodeBatch(['29640', '29660', '29670'], 'Málaga');
 ```
 Properties loaded → updateMarkers()
     ↓
-├── Has lat/lng? → Use directly
-└── Has zipcode only?
-    ├── Cached? → Use cached coords
-    └── Not cached? → Nominatim query → Cache result
+├── Has lat/lng? → Use directly (synchronous, fast)
+└── Missing coords?
+    ├── Has zipcode? → Geocode by zipcode
+    └── Has location name only? → Geocode by location/municipality
+        ├── Cached? → Use cached coords
+        └── Not cached? → Nominatim query → Cache result
     ↓
 All properties → createMarker() → MarkerCluster
 ```
