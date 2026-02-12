@@ -365,10 +365,17 @@ class RSMapView extends RSBaseComponent {
   }
 
   private updateMarkers(): void {
-    if (!this.map || !this.isMapReady) return;
+    console.log('[Map] updateMarkers called, properties:', this.properties.length);
+    if (!this.map || !this.isMapReady) {
+      console.log('[Map] Map not ready, skipping');
+      return;
+    }
 
     const L = window.L;
-    if (!L) return;
+    if (!L) {
+      console.log('[Map] Leaflet not loaded');
+      return;
+    }
 
     // Split properties into groups
     const withCoords: PropertyWithCoords[] = [];
@@ -400,11 +407,14 @@ class RSMapView extends RSBaseComponent {
       }
     }
 
+    console.log('[Map] With coords:', withCoords.length, '| Need geocoding:', withZipOnly.length);
+
     // Render markers for properties that already have coordinates
     this.renderMarkers(withCoords);
 
     // Geocode properties without coordinates (if any) - runs async in background
     if (withZipOnly.length > 0 && !this.isGeocoding) {
+      console.log('[Map] Starting geocoding for', withZipOnly.length, 'properties');
       this.geocodeAndRenderMissing(withZipOnly, withCoords.length);
     }
   }
@@ -456,6 +466,7 @@ class RSMapView extends RSBaseComponent {
    * Geocode properties without coords and add them to the map (async, non-blocking)
    */
   private async geocodeAndRenderMissing(withZipOnly: PropertyWithCoords[], existingCount: number): Promise<void> {
+    console.log('[Map] geocodeAndRenderMissing called with', withZipOnly.length, 'properties');
     this.isGeocoding = true;
 
     // Show geocoding status
@@ -482,6 +493,8 @@ class RSMapView extends RSBaseComponent {
         }
       }
     }
+
+    console.log('[Map] Grouped by zipcode:', zipcodeMap.size, '| By location:', locationMap.size);
 
     // Get province from first property (if available)
     const firstProp = withZipOnly[0];
@@ -557,6 +570,7 @@ class RSMapView extends RSBaseComponent {
     }
 
     this.isGeocoding = false;
+    console.log('[Map] Geocoding complete, got', geocodedProps.length, 'results');
 
     // Add geocoded markers to the map (append, don't replace)
     if (geocodedProps.length > 0) {
