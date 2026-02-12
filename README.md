@@ -2,7 +2,7 @@
 
 A modular "Lego blocks" real estate property search widget system built with TypeScript and Vite.
 
-**Current Version:** 3.9.1 | **Last Updated:** February 12, 2026
+**Current Version:** 3.9.2 | **Last Updated:** February 12, 2026
 
 ---
 
@@ -51,7 +51,7 @@ window.RealtySoftConfig = {
     // Map View Settings
     enableMapView: true,   // Enable/disable map view toggle (default: true)
     perPage: 12,           // Items per page for grid/list view (default: 12)
-    mapPerPage: 50         // Items per page for map view (default: 50)
+    mapPerPage: 200        // Items per page for map view (default: 200)
 };
 </script>
 ```

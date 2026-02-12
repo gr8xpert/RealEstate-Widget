@@ -1,6 +1,6 @@
 # RealtySoft Widget v3 - Development Status
 
-> **Version:** 3.9.1 | **Last Updated:** February 12, 2026
+> **Version:** 3.9.2 | **Last Updated:** February 12, 2026
 
 ---
 
@@ -43,7 +43,7 @@
 
 ## What Has Been Done (Completed)
 
-### Phase 20: Zipcode Geocoding for Map View (v3.9.1)
+### Phase 20: Zipcode Geocoding for Map View (v3.9.2)
 
 Enabled map view for APIs that don't return lat/lng coordinates by using zipcode-based geocoding.
 
@@ -74,6 +74,8 @@ Properties with same zipcode cluster at that zipcode's center location.
 | **Smart Detection** | Uses exact coords when available, only geocodes when needed |
 | **Location Name Fallback** | When zipcode is unavailable, geocodes by location/municipality name |
 | **Default mapPerPage: 200** | Map view now defaults to 200 properties (configurable) |
+| **Auto-Fit Bounds** | Map automatically zooms to show all markers when search results change |
+| **Race Condition Fix** | Properly handles properties arriving while geocoding is in progress |
 
 #### Files Created/Modified
 
