@@ -52,7 +52,7 @@ interface ControllerConfig {
   siteName?: string;
   enableMapView?: boolean;
   perPage?: number;      // Items per page for grid/list view (default: 12)
-  mapPerPage?: number;   // Items per page for map view (default: 50)
+  mapPerPage?: number;   // Items per page for map view (default: 200)
 }
 
 // Widget mode type
@@ -2546,7 +2546,7 @@ const RealtySoft = (function () {
 
         // Pagination settings
         const defaultPerPage = globalConfig.perPage || 12;
-        const defaultMapPerPage = globalConfig.mapPerPage || 50;
+        const defaultMapPerPage = globalConfig.mapPerPage || 200;
         RealtySoftState.set('config.perPage', defaultPerPage);
         RealtySoftState.set('config.mapPerPage', defaultMapPerPage);
         RealtySoftState.set('results.perPage', defaultPerPage);
@@ -3163,7 +3163,7 @@ const RealtySoft = (function () {
     // Check if perPage needs to change
     if (wasMapView !== isMapView) {
       const listPerPage = RealtySoftState.get<number>('config.perPage') || 12;
-      const mapPerPage = RealtySoftState.get<number>('config.mapPerPage') || 50;
+      const mapPerPage = RealtySoftState.get<number>('config.mapPerPage') || 200;
       const newPerPage = isMapView ? mapPerPage : listPerPage;
       const currentPerPage = RealtySoftState.get<number>('results.perPage') || 12;
 

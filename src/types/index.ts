@@ -143,7 +143,7 @@ export interface WidgetConfig {
   wpApiNonce?: string;
   enableMapView?: boolean;
   perPage?: number;      // Items per page for grid/list view (default: 12)
-  mapPerPage?: number;   // Items per page for map view (default: 50)
+  mapPerPage?: number;   // Items per page for map view (default: 200)
   branding?: BrandingConfig;  // Branding for emails and PDF
 }
 
