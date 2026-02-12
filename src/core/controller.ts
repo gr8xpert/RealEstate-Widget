@@ -3,9 +3,6 @@
  * Main entry point that initializes and coordinates all modules
  */
 
-// Version check - fires immediately on script load
-console.log('%c[RealtySoft] v3.9.1-debug-20260212d', 'color: #00aa00; font-weight: bold');
-
 // Import TypeScript modules
 import { RealtySoftState } from './state';
 import { RealtySoftAPI } from './api';
@@ -2918,14 +2915,12 @@ const RealtySoft = (function () {
 
     try {
       const params = RealtySoftState.getSearchParams();
-      console.log('[RealtySoft] Search params:', { limit: params.limit, page: params.page });
       const results = await RealtySoftAPI.searchProperties(params);
 
       // Results can have additional fields from API
       const resultsAny = results as unknown as Record<string, unknown>;
       const properties = results.data || [];
       const total = (results.total || results.count || properties.length || 0) as number;
-      console.log('[RealtySoft] Search results:', { returned: properties.length, total: total });
       const paramsAny = params as unknown as Record<string, unknown>;
       const perPage = (paramsAny.per_page || paramsAny.limit || 12) as number;
       const totalPages =

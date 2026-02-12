@@ -119,19 +119,15 @@ class RSMapView extends RSBaseComponent {
   }
 
   init(): void {
-    console.log('[Map] MapView component init()');
     this.mapContainerId = `rs-map-view-${Date.now()}`;
     this.render();
     this.bindEvents();
 
     // Subscribe to results changes
     this.subscribe<Property[]>('results.properties', (properties) => {
-      console.log('[Map] results.properties changed, count:', properties?.length || 0);
-
       // Check if results actually changed (new search or pagination)
       const newHash = (properties || []).map(p => p.id).sort().join(',');
       if (newHash !== this.lastResultsHash) {
-        console.log('[Map] Results changed - will fit bounds');
         this.shouldFitBounds = true;
         this.lastResultsHash = newHash;
         // Clear geocoded cache for new results
@@ -146,7 +142,6 @@ class RSMapView extends RSBaseComponent {
 
     // Subscribe to view changes
     this.subscribe<string>('ui.view', (view) => {
-      console.log('[Map] ui.view changed to:', view);
       const wasVisible = this.isVisible;
       this.isVisible = view === 'map';
 
@@ -161,7 +156,6 @@ class RSMapView extends RSBaseComponent {
 
     // Check initial view
     const currentView = RealtySoftState.get<string>('ui.view');
-    console.log('[Map] Initial view:', currentView);
     this.isVisible = currentView === 'map';
 
     if (this.isVisible) {
@@ -386,17 +380,10 @@ class RSMapView extends RSBaseComponent {
   }
 
   private updateMarkers(): void {
-    console.log('[Map] updateMarkers called, properties:', this.properties.length);
-    if (!this.map || !this.isMapReady) {
-      console.log('[Map] Map not ready, skipping');
-      return;
-    }
+    if (!this.map || !this.isMapReady) return;
 
     const L = window.L;
-    if (!L) {
-      console.log('[Map] Leaflet not loaded');
-      return;
-    }
+    if (!L) return;
 
     // Split properties into groups
     const withCoords: PropertyWithCoords[] = [];
@@ -428,8 +415,6 @@ class RSMapView extends RSBaseComponent {
       }
     }
 
-    console.log('[Map] With coords:', withCoords.length, '| Need geocoding:', withZipOnly.length, '| Skipped (no location):', this.properties.length - withCoords.length - withZipOnly.length);
-
     // Render markers for properties that already have coordinates
     this.renderMarkers(withCoords);
 
@@ -437,10 +422,8 @@ class RSMapView extends RSBaseComponent {
     if (withZipOnly.length > 0) {
       if (this.isGeocoding) {
         // Already geocoding - queue these for when current batch finishes
-        console.log('[Map] Geocoding in progress, queuing', withZipOnly.length, 'properties');
         this.pendingGeocode = withZipOnly;
       } else {
-        console.log('[Map] Starting geocoding for', withZipOnly.length, 'properties');
         this.geocodeAndRenderMissing(withZipOnly, withCoords.length);
       }
     }
@@ -484,7 +467,6 @@ class RSMapView extends RSBaseComponent {
 
     // Fit bounds when results change (new search, pagination, or first load)
     if (this.shouldFitBounds && properties.length > 0) {
-      console.log('[Map] Fitting bounds to', properties.length, 'markers');
       this.fitBoundsToMarkers();
       this.shouldFitBounds = false;
       this.initialBoundsSet = true;
@@ -495,7 +477,6 @@ class RSMapView extends RSBaseComponent {
    * Geocode properties without coords and add them to the map (async, non-blocking)
    */
   private async geocodeAndRenderMissing(withZipOnly: PropertyWithCoords[], existingCount: number): Promise<void> {
-    console.log('[Map] geocodeAndRenderMissing called with', withZipOnly.length, 'properties');
     this.isGeocoding = true;
 
     // Show geocoding status
@@ -520,23 +501,6 @@ class RSMapView extends RSBaseComponent {
           existing.push(property);
           locationMap.set(location, existing);
         }
-      }
-    }
-
-    // Count properties with no geocodable data
-    const noLocationCount = withZipOnly.length - Array.from(zipcodeMap.values()).flat().length - Array.from(locationMap.values()).flat().length;
-    console.log('[Map] Grouped by zipcode:', zipcodeMap.size, '(' + Array.from(zipcodeMap.values()).flat().length + ' props) | By location:', locationMap.size, '(' + Array.from(locationMap.values()).flat().length + ' props) | No data:', noLocationCount);
-
-    // Log sample of first property without zipcode to debug
-    if (locationMap.size === 0 && withZipOnly.length > 0) {
-      const sampleProp = withZipOnly.find(p => !this.getPropertyZipcode(p));
-      if (sampleProp) {
-        console.log('[Map] Sample property without zipcode:', {
-          id: sampleProp.id,
-          location: sampleProp.location,
-          postal_code: sampleProp.postal_code,
-          _original_keys: Object.keys(sampleProp._original || {})
-        });
       }
     }
 
@@ -614,7 +578,6 @@ class RSMapView extends RSBaseComponent {
     }
 
     this.isGeocoding = false;
-    console.log('[Map] Geocoding complete, got', geocodedProps.length, 'results');
 
     // Add geocoded markers to the map (append, don't replace)
     if (geocodedProps.length > 0) {
@@ -640,7 +603,6 @@ class RSMapView extends RSBaseComponent {
 
         // Fit bounds after geocoding completes (for zipcode-only properties)
         if (this.shouldFitBounds || !this.initialBoundsSet) {
-          console.log('[Map] Fitting bounds after geocoding');
           this.fitBoundsToMarkers();
           this.shouldFitBounds = false;
           this.initialBoundsSet = true;
@@ -653,8 +615,6 @@ class RSMapView extends RSBaseComponent {
 
     // Process any pending properties that arrived while we were geocoding
     if (this.pendingGeocode && this.pendingGeocode.length > 0) {
-      console.log('[Map] Processing queued properties:', this.pendingGeocode.length);
-      const pending = this.pendingGeocode;
       this.pendingGeocode = null;
       // Re-run updateMarkers to handle the new batch properly
       this.updateMarkers();
