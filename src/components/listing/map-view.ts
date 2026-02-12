@@ -375,10 +375,13 @@ class RSMapView extends RSBaseComponent {
     const withZipOnly: PropertyWithCoords[] = [];
 
     for (const property of this.properties) {
-      const hasCoords = property.latitude && property.longitude &&
-                        property.latitude !== 0 && property.longitude !== 0;
+      // Parse coordinates as numbers to handle string values from API
+      const lat = parseFloat(String(property.latitude || 0));
+      const lng = parseFloat(String(property.longitude || 0));
+      const hasCoords = !isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0;
 
       if (hasCoords) {
+        // Property has valid coordinates - use them directly (no geocoding)
         withCoords.push(property);
       } else if (this.getPropertyZipcode(property)) {
         // Check if we already geocoded this property
@@ -530,11 +533,22 @@ class RSMapView extends RSBaseComponent {
     const L = window.L;
 
     // Get coordinates: use geocoded coords if available, otherwise use original
-    const lat = property._geocodedLat ?? property.latitude;
-    const lng = property._geocodedLng ?? property.longitude;
+    // For properties with real coords, _geocodedLat/_geocodedLng will be undefined
+    let lat: number;
+    let lng: number;
     const isApproximate = property._isApproximate ?? false;
 
-    if (!L || !lat || !lng) return null;
+    if (property._geocodedLat !== undefined && property._geocodedLng !== undefined) {
+      // Geocoded property (no original coords)
+      lat = property._geocodedLat;
+      lng = property._geocodedLng;
+    } else {
+      // Property with original coordinates
+      lat = parseFloat(String(property.latitude || 0));
+      lng = parseFloat(String(property.longitude || 0));
+    }
+
+    if (!L || !lat || !lng || isNaN(lat) || isNaN(lng)) return null;
 
     // Create custom icon
     const icon = L.divIcon({
