@@ -3,6 +3,9 @@
  * Main entry point that initializes and coordinates all modules
  */
 
+// Version check - fires immediately on script load
+console.log('%c[RealtySoft] v3.9.1-debug-20260212', 'color: #00aa00; font-weight: bold');
+
 // Import TypeScript modules
 import { RealtySoftState } from './state';
 import { RealtySoftAPI } from './api';
