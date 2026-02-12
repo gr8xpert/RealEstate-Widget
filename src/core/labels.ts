@@ -301,6 +301,10 @@ const RealtySoftLabels: RealtySoftLabelsModule = (function () {
     map_error: 'Unable to load map',
     map_reset_view: 'Reset View',
     map_properties_in_view: 'properties in view',
+    map_geocoding: 'Locating properties...',
+    map_by_zipcode: 'by zipcode',
+    map_no_location: 'without location',
+    map_approximate_location: 'Approximate location',
     results_properties: 'properties',
   };
 
@@ -545,6 +549,10 @@ const RealtySoftLabels: RealtySoftLabelsModule = (function () {
       map_error: 'No se puede cargar el mapa',
       map_reset_view: 'Restablecer vista',
       map_properties_in_view: 'propiedades a la vista',
+      map_geocoding: 'Localizando propiedades...',
+      map_by_zipcode: 'por código postal',
+      map_no_location: 'sin ubicación',
+      map_approximate_location: 'Ubicación aproximada',
       results_properties: 'propiedades',
     },
     de_DE: {

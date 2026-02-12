@@ -1,6 +1,6 @@
 # RealtySoft Widget v3 - Development Status
 
-> **Version:** 3.9.0 | **Last Updated:** February 5, 2026
+> **Version:** 3.9.1 | **Last Updated:** February 12, 2026
 
 ---
 
@@ -37,10 +37,92 @@
 | Phase 17: Email & PDF Branding | Complete | 100% |
 | Phase 18: Currency Converter & Config Options | Complete | 100% |
 | Phase 19: Multilingual URL Routing & Currency Enhancements | Complete | 100% |
+| Phase 20: Zipcode Geocoding for Map View | Complete | 100% |
 
 ---
 
 ## What Has Been Done (Completed)
+
+### Phase 20: Zipcode Geocoding for Map View (v3.9.1)
+
+Enabled map view for APIs that don't return lat/lng coordinates by using zipcode-based geocoding.
+
+#### Problem Solved
+
+- Resales6 API doesn't return lat/lng coordinates for properties
+- Map view (`enableMapView: true`) was filtering out properties without coordinates
+- Resales6 API DOES return `postal_code` (zipcode)
+
+#### Solution: Intelligent Geocoding
+
+Only geocode properties that are MISSING lat/lng coordinates:
+- **Resales6 API** (no coords) → Uses zipcode geocoding
+- **Costacasas API** (has coords) → Uses exact coordinates (unchanged)
+
+Properties with same zipcode cluster at that zipcode's center location.
+
+#### Features Implemented
+
+| Feature | Description |
+|---------|-------------|
+| **Geocoding Service** | New `src/core/geocode.ts` with Nominatim API integration |
+| **LocalStorage Cache** | 24-hour TTL cache for geocoded coordinates |
+| **Memory LRU Cache** | In-memory cache (500 entries) for fast session access |
+| **Rate Limiting** | 200ms between Nominatim requests (respects their policy) |
+| **Batch Geocoding** | Geocodes unique zipcodes once, assigns to all matching properties |
+| **Approximate Location Note** | Popup shows "Approximate location" for geocoded properties |
+| **Smart Detection** | Uses exact coords when available, only geocodes when needed |
+
+#### Files Created/Modified
+
+| File | Change |
+|------|--------|
+| `src/core/geocode.ts` | **NEW** - Geocoding service with caching |
+| `src/components/listing/map-view.ts` | Added geocoding logic in `updateMarkers()` |
+| `src/styles/map-search.css` | Added `.rs-map-popup__approx` styling |
+
+#### Geocoding Service API
+
+```typescript
+// Single zipcode geocoding
+const result = await geocodeZipcode('29640', 'Málaga', 'Spain');
+// Returns: { lat: 36.5, lng: -4.6, isApproximate: true }
+
+// Batch geocoding (efficient for multiple properties)
+const results = await geocodeBatch(['29640', '29660', '29670'], 'Málaga');
+// Returns: Map<zipcode, GeocodeResult>
+```
+
+#### Data Flow
+
+```
+Properties loaded → updateMarkers()
+    ↓
+├── Has lat/lng? → Use directly
+└── Has zipcode only?
+    ├── Cached? → Use cached coords
+    └── Not cached? → Nominatim query → Cache result
+    ↓
+All properties → createMarker() → MarkerCluster
+```
+
+#### Cache Details
+
+| Cache Type | Storage | TTL | Max Size |
+|------------|---------|-----|----------|
+| LocalStorage | `rs_geocode_{zipcode}_{province}` | 24 hours | Unlimited |
+| Memory LRU | In-memory Map | Session | 500 entries |
+
+#### Labels Added
+
+| Key | English | Description |
+|-----|---------|-------------|
+| `map_geocoding` | "Locating properties..." | Loading state during geocoding |
+| `map_by_zipcode` | "by zipcode" | Count suffix for geocoded properties |
+| `map_no_location` | "without location" | Count suffix for properties without any location |
+| `map_approximate_location` | "Approximate location" | Popup note for geocoded properties |
+
+---
 
 ### Phase 19: Multilingual URL Routing & Currency Enhancements (v3.9.0)
 

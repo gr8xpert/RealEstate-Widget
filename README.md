@@ -2,7 +2,7 @@
 
 A modular "Lego blocks" real estate property search widget system built with TypeScript and Vite.
 
-**Current Version:** 3.4.0 | **Last Updated:** January 29, 2026
+**Current Version:** 3.9.1 | **Last Updated:** February 12, 2026
 
 ---
 
@@ -449,7 +449,15 @@ The widget works across multiple website platforms with smart content detection:
 | Lazy Loading (IntersectionObserver) | Complete |
 | Map Search Feature | Complete |
 
-### Recent Updates (v3.4.0) - January 29, 2026
+### Recent Updates (v3.9.1) - February 12, 2026
+- **Zipcode Geocoding for Map View:** Properties without lat/lng coordinates now appear on the map using zipcode geocoding
+- **Intelligent Coordinate Detection:** Uses exact lat/lng when available, falls back to zipcode geocoding only when needed
+- **Geocode Caching:** 24-hour LocalStorage cache + in-memory LRU cache for fast repeat loads
+- **Rate-Limited API Calls:** Nominatim requests rate-limited to 200ms between calls
+- **Approximate Location Indicator:** Popup shows "Approximate location" note for geocoded properties
+- **API Compatibility:** Works with Resales6 API (no coords) and Costacasas API (has coords)
+
+### Previous Updates (v3.4.0) - January 29, 2026
 - **Map Search Feature:** Interactive map view with property markers, marker clustering, and bounds-based filtering
 - **Grid/List/Map Toggle:** View toggle now includes Map option (configurable via `enableMapView`)
 - **Configurable Pagination:** New `perPage` (default: 12) and `mapPerPage` (default: 50) config options
