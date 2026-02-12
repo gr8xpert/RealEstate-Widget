@@ -3160,18 +3160,16 @@ const RealtySoft = (function () {
     RealtySoftState.set('ui.view', view);
     RealtySoftAnalytics.trackViewToggle(view);
 
-    // Check if perPage needs to change
+    // When switching to/from map view, always update perPage and re-search
     if (wasMapView !== isMapView) {
       const listPerPage = RealtySoftState.get<number>('config.perPage') || 12;
       const mapPerPage = RealtySoftState.get<number>('config.mapPerPage') || 200;
       const newPerPage = isMapView ? mapPerPage : listPerPage;
-      const currentPerPage = RealtySoftState.get<number>('results.perPage') || 12;
 
-      if (newPerPage !== currentPerPage) {
-        RealtySoftState.set('results.perPage', newPerPage);
-        RealtySoftState.set('results.page', 1); // Reset to page 1
-        search();
-      }
+      // Always set the correct perPage and re-search when switching views
+      RealtySoftState.set('results.perPage', newPerPage);
+      RealtySoftState.set('results.page', 1); // Reset to page 1
+      search();
     }
   }
 
