@@ -24,6 +24,18 @@ import type {
 
 import { LRUCache } from './lru-cache';
 
+// Search version tracker - prevents stale background refreshes from overwriting current results
+// Incremented on each new search, background refreshes check version before updating state
+let currentSearchVersion = 0;
+
+/**
+ * Increment search version to invalidate in-flight background refreshes
+ * Call this when search params change (page navigation, filter changes, etc.)
+ */
+export function incrementSearchVersion(): number {
+  return ++currentSearchVersion;
+}
+
 // Logger utility (set by controller)
 declare const RealtySoftLogger: {
   debug: (message: string, ...args: unknown[]) => void;
@@ -1328,13 +1340,23 @@ const RealtySoftAPI: RealtySoftAPIModule = (function () {
   /**
    * Refresh search results in background (SWR pattern)
    * Fetches fresh data without blocking, updates cache and optionally notifies UI
+   * Uses searchVersion to prevent stale refreshes from overwriting newer results
    */
   function refreshSearchInBackground(
     params: Partial<SearchParams>,
-    cacheKey: string
+    cacheKey: string,
+    searchVersion: number
   ): void {
     fetchFreshSearch(params, cacheKey)
       .then((freshResult) => {
+        // Only update state if this refresh is still current
+        // Prevents race condition where user navigates to different page/filters
+        // while background refresh is in-flight
+        if (searchVersion !== currentSearchVersion) {
+          Logger.debug('[RealtySoft] Background refresh discarded (stale version:', searchVersion, 'current:', currentSearchVersion + ')');
+          return;
+        }
+
         Logger.debug('[RealtySoft] Background search refresh complete');
         // Notify UI if RealtySoftState is available
         // This updates the listing grid with fresh data
@@ -1358,6 +1380,11 @@ const RealtySoftAPI: RealtySoftAPIModule = (function () {
     params: Partial<SearchParams>,
     options: { forceRefresh?: boolean } = {}
   ): Promise<APIResponse<Property[]>> {
+    // Increment version for each new search to track this specific request
+    // This prevents stale background refreshes from overwriting results
+    // when user navigates between pages quickly
+    const searchVersion = ++currentSearchVersion;
+
     // Include language in cache key to ensure language-specific results
     // Use normalizeParams for consistent hashing (sorted keys, normalized values)
     const cacheKey = 'search_' + config.language + '_' + hashString(normalizeParams(params as Record<string, unknown>));
@@ -1368,7 +1395,8 @@ const RealtySoftAPI: RealtySoftAPIModule = (function () {
       if (cached) {
         Logger.debug('[RealtySoft] Search results from cache (SWR: refreshing in background)');
         // SWR: Return cached immediately, refresh in background
-        refreshSearchInBackground(params, cacheKey);
+        // Pass searchVersion so background refresh can check if still current
+        refreshSearchInBackground(params, cacheKey, searchVersion);
         return cached;
       }
     }
@@ -1734,6 +1762,7 @@ const RealtySoftAPI: RealtySoftAPIModule = (function () {
     clearSearchCache,
     clearStaticDataCache,
     clearPropertyCache,
+    incrementSearchVersion,
   };
 })();
 
