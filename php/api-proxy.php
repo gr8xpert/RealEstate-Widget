@@ -12,13 +12,17 @@ class ProxyCache {
     private static $cacheDir = __DIR__ . '/cache/';
 
     // Cache TTL in seconds for each endpoint type
+    // Reduced TTLs ensure fresh property counts for location/type dropdowns
     private static $ttl = [
-        'v1/location' => 86400,         // 24 hours
-        'v2/location' => 86400,         // 24 hours
-        'v1/property_types' => 86400,   // 24 hours
-        'v1/property_features' => 86400, // 24 hours
-        'v1/plugin_labels' => 86400,    // 24 hours
+        'v1/location' => 900,           // 15 min (reduced from 24h for fresh property_count)
+        'v2/location' => 900,           // 15 min (reduced from 24h for fresh property_count)
+        'v1/property_types' => 900,     // 15 min (reduced from 24h for fresh property_count)
+        'v1/property_features' => 3600, // 1 hour (reduced from 24h)
+        'v1/plugin_labels' => 86400,    // 24 hours (unchanged - rarely changes)
     ];
+
+    // Stale grace period - serve stale data for this long while refreshing
+    private static $staleGrace = 3600; // 1 hour grace period
 
     public static function init() {
         if (!is_dir(self::$cacheDir)) {
@@ -40,7 +44,48 @@ class ProxyCache {
         return false;
     }
 
+    /**
+     * Get cached data with stale-while-revalidate support
+     * Returns: ['data' => string|null, 'stale' => bool, 'hash' => string|null]
+     */
+    public static function getWithMeta($key) {
+        $file = self::$cacheDir . $key . '.json';
+        if (!file_exists($file)) return ['data' => null, 'stale' => false, 'hash' => null];
+
+        $content = @file_get_contents($file);
+        if (!$content) return ['data' => null, 'stale' => false, 'hash' => null];
+
+        $data = json_decode($content, true);
+        if (!$data || !isset($data['expires'])) {
+            @unlink($file);
+            return ['data' => null, 'stale' => false, 'hash' => null];
+        }
+
+        $hash = $data['hash'] ?? null;
+        $isExpired = time() > $data['expires'];
+        $isStale = $isExpired && time() < ($data['expires'] + self::$staleGrace);
+
+        // Completely expired beyond grace period
+        if ($isExpired && !$isStale) {
+            return ['data' => null, 'stale' => false, 'hash' => $hash];
+        }
+
+        return [
+            'data' => $data['response'],
+            'stale' => $isExpired,
+            'hash' => $hash
+        ];
+    }
+
     public static function get($key) {
+        $result = self::getWithMeta($key);
+        return $result['stale'] ? null : $result['data'];
+    }
+
+    /**
+     * Get stale data (for fallback when API fails)
+     */
+    public static function getStale($key) {
         $file = self::$cacheDir . $key . '.json';
         if (!file_exists($file)) return null;
 
@@ -48,21 +93,20 @@ class ProxyCache {
         if (!$content) return null;
 
         $data = json_decode($content, true);
-        if (!$data || !isset($data['expires']) || time() > $data['expires']) {
-            @unlink($file);
-            return null;
-        }
-        return $data['response'];
+        return $data['response'] ?? null;
     }
 
     public static function set($key, $response, $ttl) {
         $file = self::$cacheDir . $key . '.json';
+        $hash = md5($response);
         $data = [
             'expires' => time() + $ttl,
             'created' => date('Y-m-d H:i:s'),
+            'hash' => $hash,
             'response' => $response
         ];
         @file_put_contents($file, json_encode($data), LOCK_EX);
+        return $hash;
     }
 
     public static function clear() {
@@ -96,6 +140,59 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit;
 }
 
+// ============================================
+// DOMAIN DETECTION (moved before cache check to prevent cross-client data leakage)
+// ============================================
+// Get requesting domain FIRST - needed for cache key isolation
+// Priority: 1. _domain parameter (for admin tools) 2. X-RS-Domain header 3. Origin/Referer
+$domain = null;
+
+if (!empty($_GET['_domain'])) {
+    $domain = $_GET['_domain'];
+} elseif (!empty($_SERVER['HTTP_X_RS_DOMAIN'])) {
+    $domain = $_SERVER['HTTP_X_RS_DOMAIN'];
+} else {
+    $origin = $_SERVER['HTTP_ORIGIN'] ?? $_SERVER['HTTP_REFERER'] ?? '';
+    $domain = parse_url($origin, PHP_URL_HOST) ?? 'localhost';
+}
+
+// Remove www. prefix for matching
+$domain = preg_replace('/^www\./', '', $domain);
+
+// ============================================
+// EARLY CACHE CHECK FOR STATIC ENDPOINTS
+// ============================================
+// Check cache BEFORE subscription/auth checks for static data
+// This ensures fast responses even when auth has issues
+// NOTE: Domain is NOT included in cache key for static endpoints
+// Client isolation happens at API key level, not domain level
+// This allows cache-warm.php to pre-populate caches that match runtime requests
+$endpoint = $_GET['_endpoint'] ?? $_POST['_endpoint'] ?? '';
+$staticEndpoints = ['v1/location', 'v2/location', 'v1/property_types', 'v1/property_features', 'v1/plugin_labels'];
+
+if ($_SERVER['REQUEST_METHOD'] === 'GET' && in_array($endpoint, $staticEndpoints)) {
+    $cacheParams = $_GET;
+    // Remove parameters that shouldn't affect cache key
+    unset($cacheParams['_endpoint']);
+    unset($cacheParams['_t']);  // Remove cache-busting timestamp
+    unset($cacheParams['_']);   // Remove jQuery cache-buster
+    unset($cacheParams['_domain']); // Domain not used in cache key - isolation via API key
+    // Domain NOT added to cache params - static data is per-API-key, not per-domain
+
+    $earlyCacheKey = ProxyCache::getCacheKey($endpoint, $cacheParams);
+    $earlyCacheResult = ProxyCache::getWithMeta($earlyCacheKey);
+
+    // If we have ANY cached data (fresh or stale), return it immediately
+    if ($earlyCacheResult['data'] !== null) {
+        $isStale = $earlyCacheResult['stale'];
+        header('X-Cache: ' . ($isStale ? 'STALE-EARLY' : 'HIT-EARLY'));
+        header('X-Cache-Hash: ' . ($earlyCacheResult['hash'] ?? ''));
+        header('Cache-Control: public, max-age=' . ($isStale ? '300' : '3600'));
+        echo $earlyCacheResult['data'];
+        exit;
+    }
+}
+
 // Load client configuration
 $configFile = __DIR__ . '/../config/clients.php';
 if (!file_exists($configFile)) {
@@ -120,22 +217,14 @@ if ($subscriptionCheckEnabled) {
     require_once $subscriptionServiceFile;
 }
 
-// Get requesting domain
-// Priority: 1. _domain parameter (for admin tools) 2. X-RS-Domain header 3. Origin/Referer
-$domain = null;
+// Domain already detected above (before cache check)
 
-// Check for explicit domain parameter (used by filter-ids admin page)
-if (!empty($_GET['_domain'])) {
-    $domain = $_GET['_domain'];
-} elseif (!empty($_SERVER['HTTP_X_RS_DOMAIN'])) {
-    $domain = $_SERVER['HTTP_X_RS_DOMAIN'];
-} else {
-    $origin = $_SERVER['HTTP_ORIGIN'] ?? $_SERVER['HTTP_REFERER'] ?? '';
-    $domain = parse_url($origin, PHP_URL_HOST) ?? 'localhost';
-}
-
-// Remove www. prefix for matching
-$domain = preg_replace('/^www\./', '', $domain);
+// ============================================
+// WHITELISTED DOMAINS (bypass subscription check)
+// ============================================
+// These domains are always allowed (e.g., main widget hosting domain)
+$whitelistedDomains = ['smartpropertywidget.com', 'localhost'];
+$isWhitelisted = in_array($domain, $whitelistedDomains);
 
 // ============================================
 // CHECK SUBSCRIPTION STATUS
@@ -148,8 +237,8 @@ if ($subscriptionCheckEnabled) {
         $subscriptionService = new SubscriptionService();
         $subscriptionStatus = $subscriptionService->checkSubscription($domain);
 
-        // Block if subscription expired and past grace period
-        if ($subscriptionStatus['status'] === 'blocked') {
+        // Block if subscription expired and past grace period (skip for whitelisted)
+        if (!$isWhitelisted && $subscriptionStatus['status'] === 'blocked') {
             http_response_code(403);
             echo json_encode([
                 'error' => 'Subscription expired',
@@ -191,6 +280,11 @@ if (!$clientConfig) {
     // Fallback to localhost config for local development
     if (!$clientConfig && $domain === 'localhost' && isset($clients['localhost'])) {
         $clientConfig = $clients['localhost'];
+    }
+
+    // Fallback for whitelisted domains - use first available config
+    if (!$clientConfig && $isWhitelisted && !empty($clients)) {
+        $clientConfig = reset($clients);
     }
 }
 
@@ -234,20 +328,36 @@ if (!in_array($endpoint, $allowedEndpoints)) {
 // ============================================
 $cacheTtl = ProxyCache::shouldCache($endpoint);
 $cacheKey = null;
+$staleData = null;
 
 if ($cacheTtl && $_SERVER['REQUEST_METHOD'] === 'GET') {
     $cacheParams = $_GET;
     unset($cacheParams['_endpoint']); // Keep _lang in cache key
+    unset($cacheParams['_t']);  // Remove cache-busting timestamp
+    unset($cacheParams['_']);   // Remove jQuery cache-buster
+    unset($cacheParams['_domain']); // Domain not used in cache key - isolation via API key
+    // Domain NOT added - static data is per-API-key, not per-domain
+    // This ensures cache keys match between cache-warm.php and runtime requests
     $cacheKey = ProxyCache::getCacheKey($endpoint, $cacheParams);
 
-    $cached = ProxyCache::get($cacheKey);
-    if ($cached !== null) {
+    $cacheResult = ProxyCache::getWithMeta($cacheKey);
+
+    // Fresh cache hit - return immediately
+    if ($cacheResult['data'] !== null && !$cacheResult['stale']) {
         header('X-Cache: HIT');
+        header('X-Cache-Hash: ' . ($cacheResult['hash'] ?? ''));
         header('Cache-Control: public, max-age=3600');  // 1 hour browser cache
-        echo $cached;
+        echo $cacheResult['data'];
         exit;
     }
-    header('X-Cache: MISS');
+
+    // Stale cache - save for potential fallback, continue to refresh
+    if ($cacheResult['data'] !== null) {
+        $staleData = $cacheResult['data'];
+        header('X-Cache: STALE');
+    } else {
+        header('X-Cache: MISS');
+    }
 }
 
 // ============================================
@@ -259,7 +369,7 @@ $apiUrl = rtrim($clientConfig['api_url'], '/') . '/' . $endpoint;
 
 // Get all parameters except internal ones
 $params = $_GET;
-unset($params['_endpoint'], $params['_lang']);
+unset($params['_endpoint'], $params['_lang'], $params['_t'], $params['_']);
 
 // Add language only if explicitly provided
 // CRM uses 'ln' parameter for language (not 'lang')
@@ -315,20 +425,47 @@ $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 $error = curl_error($ch);
 curl_close($ch);
 
-// Handle errors
-if ($error) {
-    http_response_code(500);
-    echo json_encode(['error' => 'API request failed: ' . $error]);
+// Handle errors - fallback to stale cache if available
+if ($error || $httpCode !== 200) {
+    // Try to return stale data on error
+    if ($staleData !== null) {
+        header('X-Cache: STALE-FALLBACK');
+        header('Cache-Control: public, max-age=300');  // Short cache on stale fallback
+        echo $staleData;
+        exit;
+    }
+
+    // Also try to get any cached data as last resort
+    if ($cacheKey) {
+        $fallback = ProxyCache::getStale($cacheKey);
+        if ($fallback !== null) {
+            header('X-Cache: STALE-FALLBACK');
+            header('Cache-Control: public, max-age=300');
+            echo $fallback;
+            exit;
+        }
+    }
+
+    // No fallback available
+    http_response_code($error ? 500 : $httpCode);
+    echo $error ? json_encode(['error' => 'API request failed: ' . $error]) : $response;
     exit;
 }
 
 // ============================================
 // CACHE SUCCESSFUL RESPONSE
 // ============================================
+$hash = null;
 if ($cacheTtl && $cacheKey && $httpCode === 200) {
-    ProxyCache::set($cacheKey, $response, $cacheTtl);
+    $hash = ProxyCache::set($cacheKey, $response, $cacheTtl);
 }
 
-// Forward response
+// Add hash header for browser cache validation
+if ($hash) {
+    header('X-Cache-Hash: ' . $hash);
+}
+
+// Forward response with appropriate cache headers
+header('Cache-Control: public, max-age=3600');  // 1 hour browser cache
 http_response_code($httpCode);
 echo $response;

@@ -3,6 +3,9 @@
  * Handles all API communication through proxy
  */
 
+// Version check
+console.log('[RealtySoft] API module loaded - v3.9.4');
+
 import type {
   APIConfig,
   APIResponse,
@@ -47,6 +50,7 @@ interface CacheManagerInterface {
   get<T>(key: string, category?: CacheTTLCategory): T | null;
   set<T>(key: string, data: T): void;
   clear(key?: string): void;
+  cleanup(): void;
 }
 
 // Raw property from API (before normalization)
@@ -109,13 +113,17 @@ interface RawProperty {
   useful_area?: number;
   m2_utiles?: number;
   images?: Array<string | RawImage>;
+  total_images?: number;
+  image_count?: number;
+  images_count?: number;
   url?: string;
   link?: string;
   permalink?: string;
   listing_type?: string;
-  listing_type_id?: { code?: string; name?: string };
+  listing_type_id?: { code?: string; name?: string } | string;
   status?: string;
   listing_status?: string;
+  property_status?: string;
   type_id?: { name?: string };
   type?: { name?: string } | string;
   property_type?: { name?: string };
@@ -246,15 +254,22 @@ const RealtySoftAPI: RealtySoftAPIModule = (function () {
 
   /**
    * Default cache TTL values (in milliseconds)
+   * Reduced TTLs ensure fresh data for filters and search results
+   * Server-side cache (PHP) has similar TTLs now
    */
   const DEFAULT_CACHE_TTL: Record<CacheTTLCategory, number> = {
-    locations: 24 * 60 * 60 * 1000,     // 24 hours
-    propertyTypes: 24 * 60 * 60 * 1000, // 24 hours
-    features: 24 * 60 * 60 * 1000,      // 24 hours
-    labels: 24 * 60 * 60 * 1000,        // 24 hours
-    search: 24 * 60 * 60 * 1000,        // 24 hours
-    property: 60 * 60 * 1000,           // 1 hour
+    locations: 15 * 60 * 1000,      // 15 min (reduced from 4h for fresh property_count)
+    propertyTypes: 15 * 60 * 1000,  // 15 min (reduced from 4h for fresh property_count)
+    features: 30 * 60 * 1000,       // 30 min (reduced from 4h)
+    labels: 4 * 60 * 60 * 1000,     // 4 hours (unchanged - rarely changes)
+    search: 5 * 60 * 1000,          // 5 min (reduced from 15 min)
+    property: 10 * 60 * 1000,       // 10 min (reduced from 30 min)
   };
+
+  /**
+   * Track if localStorage is available and has space
+   */
+  let localStorageAvailable = true;
 
   /**
    * Cache configuration — updated via init()
@@ -326,11 +341,31 @@ const RealtySoftAPI: RealtySoftAPIModule = (function () {
       // L1: Always write to memory
       memoryCache.set(fullKey, { data, timestamp });
 
-      // L2: Write to localStorage (non-fatal on failure)
+      // L2: Write to localStorage (skip if previously failed)
+      if (!localStorageAvailable) return;
+
       try {
-        localStorage.setItem(fullKey, JSON.stringify({ data, timestamp }));
+        const jsonData = JSON.stringify({ data, timestamp });
+        // Skip large items (>500KB) to avoid filling localStorage
+        if (jsonData.length > 500 * 1024) {
+          Logger.debug('[RealtySoft] Skipping localStorage for large item:', key);
+          return;
+        }
+        localStorage.setItem(fullKey, jsonData);
       } catch (e) {
-        console.warn('Cache write error (localStorage):', e);
+        // QuotaExceededError - clean up old cache and retry
+        if (e instanceof DOMException && (e.name === 'QuotaExceededError' || e.code === 22)) {
+          Logger.debug('[RealtySoft] Storage quota exceeded, cleaning up...');
+          this.cleanup();
+          // Retry once after cleanup
+          try {
+            localStorage.setItem(fullKey, JSON.stringify({ data, timestamp }));
+          } catch (_retryError) {
+            // Still failed - disable localStorage caching for this session
+            Logger.debug('[RealtySoft] Storage still full, disabling localStorage cache');
+            localStorageAvailable = false;
+          }
+        }
       }
     },
 
@@ -351,6 +386,70 @@ const RealtySoftAPI: RealtySoftAPIModule = (function () {
         console.warn('Cache clear error:', e);
       }
     },
+
+    /**
+     * Clean up expired and oldest cache entries to free space
+     */
+    cleanup(): void {
+      try {
+        const now = Date.now();
+        const entries: Array<{ key: string; timestamp: number; size: number }> = [];
+        let removedExpired = 0;
+
+        // Collect all RS cache entries with their timestamps and sizes
+        for (let i = localStorage.length - 1; i >= 0; i--) {
+          const key = localStorage.key(i);
+          if (key && key.startsWith(this.CACHE_PREFIX)) {
+            try {
+              const value = localStorage.getItem(key);
+              if (value) {
+                const parsed = JSON.parse(value);
+                const timestamp = parsed.timestamp || 0;
+
+                // Remove if expired (older than 4 hours - match new TTL)
+                if (now - timestamp > 4 * 60 * 60 * 1000) {
+                  localStorage.removeItem(key);
+                  removedExpired++;
+                } else {
+                  entries.push({ key, timestamp, size: value.length });
+                }
+              }
+            } catch (_parseError) {
+              // Invalid entry, remove it
+              localStorage.removeItem(key);
+              removedExpired++;
+            }
+          }
+        }
+
+        if (removedExpired > 0) {
+          Logger.debug(`[RealtySoft] Removed ${removedExpired} expired cache entries`);
+        }
+
+        // Sort by timestamp (oldest first)
+        entries.sort((a, b) => a.timestamp - b.timestamp);
+        const totalSize = entries.reduce((sum, e) => sum + e.size, 0);
+
+        // If total cache is over 1MB, remove oldest entries until under 500KB
+        // (Aggressive cleanup since server handles caching)
+        if (totalSize > 1024 * 1024) {
+          let removedSize = 0;
+          const targetRemoval = totalSize - 512 * 1024; // Remove down to 500KB
+          for (const entry of entries) {
+            if (removedSize >= targetRemoval) break;
+            try {
+              localStorage.removeItem(entry.key);
+              removedSize += entry.size;
+            } catch (_e) { /* ignore */ }
+          }
+          Logger.debug(`[RealtySoft] Cleaned up ${Math.round(removedSize / 1024)}KB of cache`);
+        }
+      } catch (e) {
+        // If cleanup fails, clear everything as last resort
+        Logger.debug('[RealtySoft] Cleanup failed, clearing all cache');
+        this.clear();
+      }
+    },
   };
 
   /**
@@ -364,6 +463,36 @@ const RealtySoftAPI: RealtySoftAPIModule = (function () {
       hash = hash & hash;
     }
     return Math.abs(hash).toString(16);
+  }
+
+  /**
+   * Normalize params for consistent cache key generation
+   * Ensures same params always produce same hash regardless of property order
+   * Handles: key ordering, array sorting, type normalization (numbers to strings)
+   */
+  function normalizeParams(params: Record<string, unknown>): string {
+    const sorted = Object.keys(params)
+      .sort()
+      .reduce((obj, key) => {
+        let val = params[key];
+        // Skip null/undefined values
+        if (val === null || val === undefined) return obj;
+        // Normalize arrays: sort elements and join
+        if (Array.isArray(val)) {
+          val = [...val].map(v => String(v)).sort().join(',');
+        }
+        // Normalize numbers to strings for consistent comparison
+        if (typeof val === 'number') {
+          val = String(val);
+        }
+        // Normalize booleans to strings
+        if (typeof val === 'boolean') {
+          val = val ? '1' : '0';
+        }
+        obj[key] = val;
+        return obj;
+      }, {} as Record<string, unknown>);
+    return JSON.stringify(sorted);
   }
 
   // In-flight request deduplication - prevents duplicate concurrent API requests
@@ -401,6 +530,11 @@ const RealtySoftAPI: RealtySoftAPIModule = (function () {
     cacheConfig = options.cache ? { ...options.cache } : {};
     const maxEntries = cacheConfig.maxCacheEntries ?? 100;
     memoryCache = new LRUCache<{ data: unknown; timestamp: number }>(maxEntries);
+
+    // Run cleanup on init to clear stale/expired entries and prevent quota issues
+    try {
+      CacheManager.cleanup();
+    } catch (_e) { /* ignore cleanup errors on init */ }
   }
 
   /**
@@ -486,18 +620,9 @@ const RealtySoftAPI: RealtySoftAPIModule = (function () {
   }
 
   /**
-   * Get locations (tries v2 endpoint first, falls back to v1)
+   * Fetch fresh locations from API (internal helper for SWR)
    */
-  async function getLocations(parentId: number | null = null): Promise<APIResponse<Location[]>> {
-    const cacheKey = 'locations' + (parentId ? '_' + parentId : '');
-
-    // Check cache first
-    const cached = CacheManager.get<APIResponse<Location[]>>(cacheKey, 'locations');
-    if (cached) {
-      Logger.debug('[RealtySoft] Locations loaded from cache');
-      return cached;
-    }
-
+  async function fetchFreshLocations(parentId: number | null, cacheKey: string): Promise<APIResponse<Location[]>> {
     // Fetch ALL locations in a single request with high limit
     const params: Record<string, unknown> = { page: 1, limit: 1000 };
     if (parentId) params.parent_id = parentId;
@@ -556,6 +681,44 @@ const RealtySoftAPI: RealtySoftAPIModule = (function () {
     Logger.debug('[RealtySoft] Locations cached');
 
     return result;
+  }
+
+  /**
+   * Refresh locations in background (SWR pattern)
+   */
+  function refreshLocationsInBackground(parentId: number | null, cacheKey: string): void {
+    fetchFreshLocations(parentId, cacheKey)
+      .then((freshResult) => {
+        Logger.debug('[RealtySoft] Background locations refresh complete');
+        // Update state with fresh data
+        if (typeof window !== 'undefined' && (window as unknown as { RealtySoftState?: { set: (path: string, value: unknown) => void } }).RealtySoftState) {
+          const state = (window as unknown as { RealtySoftState: { set: (path: string, value: unknown) => void } }).RealtySoftState;
+          state.set('data.locations', freshResult.data);
+        }
+      })
+      .catch((err) => {
+        Logger.debug('[RealtySoft] Background locations refresh failed:', err);
+      });
+  }
+
+  /**
+   * Get locations with SWR (Stale-While-Revalidate) pattern
+   * Returns cached data immediately, refreshes in background
+   */
+  async function getLocations(parentId: number | null = null): Promise<APIResponse<Location[]>> {
+    const cacheKey = 'locations' + (parentId ? '_' + parentId : '');
+
+    // Check cache first - if found, return immediately and refresh in background (SWR)
+    const cached = CacheManager.get<APIResponse<Location[]>>(cacheKey, 'locations');
+    if (cached) {
+      Logger.debug('[RealtySoft] Locations loaded from cache (SWR: refreshing in background)');
+      // SWR: Return cached immediately, refresh in background
+      refreshLocationsInBackground(parentId, cacheKey);
+      return cached;
+    }
+
+    // No cache - fetch directly
+    return fetchFreshLocations(parentId, cacheKey);
   }
 
   /**
@@ -894,9 +1057,45 @@ const RealtySoftAPI: RealtySoftAPIModule = (function () {
       (typeof property.type === 'string' ? property.type : '') ||
       '';
 
-    // Determine listing type
-    const listingType =
-      property.listing_type || property.listing_type_id?.code || property.status || 'resale';
+    // Determine listing type - normalize from various API formats
+    // Map for normalizing listing type names/codes to standard codes
+    const listingTypeMap: Record<string, string> = {
+      'resale': 'resale', 'sale': 'resale', 'for sale': 'resale', 'sales': 'resale',
+      'new development': 'development', 'development': 'development', 'new': 'development',
+      'off plan': 'development', 'off-plan': 'development', 'new_development': 'development',
+      'long term rental': 'long_rental', 'long rental': 'long_rental', 'rental': 'long_rental',
+      'rent': 'long_rental', 'long-term rental': 'long_rental', 'long_term': 'long_rental',
+      'short term rental': 'short_rental', 'short rental': 'short_rental', 'holiday rental': 'short_rental',
+      'holiday': 'short_rental', 'vacation': 'short_rental', 'short-term rental': 'short_rental',
+      'short_term': 'short_rental', 'vacation rental': 'short_rental',
+    };
+
+    // Get raw listing type from various possible fields
+    // Handle multiple API response formats
+    // Extract from listing_type_id which can be string or object
+    const listingTypeIdValue = property.listing_type_id;
+    const listingTypeFromId = typeof listingTypeIdValue === 'string'
+      ? listingTypeIdValue
+      : (listingTypeIdValue?.code || listingTypeIdValue?.name || '');
+
+    let rawListingType =
+      property.listing_type ||
+      listingTypeFromId ||
+      property.listing_status ||
+      property.property_status ||
+      property.status ||
+      '';
+
+
+    // Normalize to standard code
+    let listingType = '';
+    if (rawListingType) {
+      const normalized = rawListingType.toLowerCase().trim();
+      listingType = listingTypeMap[normalized] || normalized;
+    }
+
+    // Don't default to 'resale' - let UI decide what to show for unknown types
+    // listingType stays as '' if not found
 
     // Extract features with translation support
     let features: PropertyFeature[] = [];
@@ -1006,10 +1205,11 @@ const RealtySoftAPI: RealtySoftAPIModule = (function () {
       images,
       imagesFull,
       imagesWithSizes,
-      total_images: property.images?.length || 0,
+      // Use API's total_images if available (more accurate than array length for search results)
+      total_images: property.total_images || property.image_count || property.images_count || property.images?.length || 0,
       url: property.url || property.link || property.permalink || null,
       listing_type: listingType,
-      status: property.status || property.listing_type_id?.name || property.listing_status || '',
+      status: property.status || (typeof property.listing_type_id === 'object' ? property.listing_type_id?.name : '') || property.listing_status || '',
       type: typeName,
       is_featured: toBoolean(property.is_featured),
       is_own: toBoolean(property.is_own),
@@ -1096,21 +1296,13 @@ const RealtySoftAPI: RealtySoftAPIModule = (function () {
   }
 
   /**
-   * Search properties
+   * Fetch fresh search results from API and cache them
+   * Internal helper for SWR pattern
    */
-  async function searchProperties(
-    params: Partial<SearchParams>
+  async function fetchFreshSearch(
+    params: Partial<SearchParams>,
+    cacheKey: string
   ): Promise<APIResponse<Property[]>> {
-    // Include language in cache key to ensure language-specific results
-    const cacheKey = 'search_' + config.language + '_' + hashString(JSON.stringify(params));
-
-    // Check cache
-    const cached = CacheManager.get<APIResponse<Property[]>>(cacheKey, 'search');
-    if (cached) {
-      Logger.debug('[RealtySoft] Search results from cache');
-      return cached;
-    }
-
     const result = await request<APIResponse<RawProperty[]>>('v1/property', params);
 
     const normalizedResult: APIResponse<Property[]> = {
@@ -1134,13 +1326,74 @@ const RealtySoftAPI: RealtySoftAPIModule = (function () {
   }
 
   /**
+   * Refresh search results in background (SWR pattern)
+   * Fetches fresh data without blocking, updates cache and optionally notifies UI
+   */
+  function refreshSearchInBackground(
+    params: Partial<SearchParams>,
+    cacheKey: string
+  ): void {
+    fetchFreshSearch(params, cacheKey)
+      .then((freshResult) => {
+        Logger.debug('[RealtySoft] Background search refresh complete');
+        // Notify UI if RealtySoftState is available
+        // This updates the listing grid with fresh data
+        if (typeof window !== 'undefined' && (window as unknown as { RealtySoftState?: { set: (path: string, value: unknown) => void } }).RealtySoftState) {
+          const state = (window as unknown as { RealtySoftState: { set: (path: string, value: unknown) => void } }).RealtySoftState;
+          state.set('results.properties', freshResult.data);
+          state.set('results.total', freshResult.total || freshResult.count || freshResult.data.length);
+        }
+      })
+      .catch((err) => {
+        // Silently ignore background refresh errors - stale data is still usable
+        Logger.debug('[RealtySoft] Background search refresh failed:', err);
+      });
+  }
+
+  /**
+   * Search properties with SWR (Stale-While-Revalidate) pattern
+   * Returns cached data immediately for fast UI, then refreshes in background
+   */
+  async function searchProperties(
+    params: Partial<SearchParams>,
+    options: { forceRefresh?: boolean } = {}
+  ): Promise<APIResponse<Property[]>> {
+    // Include language in cache key to ensure language-specific results
+    // Use normalizeParams for consistent hashing (sorted keys, normalized values)
+    const cacheKey = 'search_' + config.language + '_' + hashString(normalizeParams(params as Record<string, unknown>));
+
+    // Check cache (skip if forceRefresh)
+    if (!options.forceRefresh) {
+      const cached = CacheManager.get<APIResponse<Property[]>>(cacheKey, 'search');
+      if (cached) {
+        Logger.debug('[RealtySoft] Search results from cache (SWR: refreshing in background)');
+        // SWR: Return cached immediately, refresh in background
+        refreshSearchInBackground(params, cacheKey);
+        return cached;
+      }
+    }
+
+    // No cache or forceRefresh - fetch directly
+    return fetchFreshSearch(params, cacheKey);
+  }
+
+  /**
    * Cache a single property (language-specific)
+   * Preserves higher total_images count from existing cached property
    */
   function cacheProperty(property: Property): void {
     if (!property || !property.id) return;
     // Include language in cache key since property content is language-specific
     const lang = config.language;
     const key = 'property_' + lang + '_' + property.id;
+
+    // Preserve higher total_images count from existing cached property
+    // Search results often return limited images (e.g., 5) while detail API returns all
+    const existingProperty = CacheManager.get<Property>(key, 'property');
+    if (existingProperty && existingProperty.total_images > property.total_images) {
+      property = { ...property, total_images: existingProperty.total_images };
+    }
+
     CacheManager.set(key, property);
     if (property.ref) {
       const refKey = 'property_ref_' + lang + '_' + property.ref;
@@ -1338,6 +1591,76 @@ const RealtySoftAPI: RealtySoftAPIModule = (function () {
   }
 
   /**
+   * Clear search-specific cache entries
+   * Called when filters change to ensure fresh results
+   */
+  function clearSearchCache(): void {
+    const searchPrefix = CacheManager.CACHE_PREFIX + 'search_';
+
+    // Clear L1 (memory cache)
+    const memoryKeysToRemove: string[] = [];
+    memoryCache.forEach((_, key) => {
+      if (key.startsWith(searchPrefix) || key.startsWith('search_')) {
+        memoryKeysToRemove.push(key);
+      }
+    });
+    memoryKeysToRemove.forEach(key => memoryCache.delete(key));
+
+    // Clear L2 (localStorage)
+    try {
+      const keysToRemove: string[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith(searchPrefix)) {
+          keysToRemove.push(key);
+        }
+      }
+      keysToRemove.forEach(key => localStorage.removeItem(key));
+      Logger.debug('[RealtySoft API] Cleared', keysToRemove.length + memoryKeysToRemove.length, 'search cache entries');
+    } catch (e) {
+      console.warn('[RealtySoft API] Error clearing search cache from localStorage:', e);
+    }
+  }
+
+  /**
+   * Clear static data cache (locations, property types, features)
+   * Use this to force fresh dropdown data with updated property counts
+   */
+  function clearStaticDataCache(): void {
+    const prefixes = ['locations', 'parentLocations', 'childLocations_', 'propertyTypes_', 'features_'];
+
+    // Clear L1 (memory cache)
+    const memoryKeysToRemove: string[] = [];
+    memoryCache.forEach((_, key) => {
+      const cacheKey = key.startsWith(CacheManager.CACHE_PREFIX)
+        ? key.slice(CacheManager.CACHE_PREFIX.length)
+        : key;
+      if (prefixes.some(prefix => cacheKey.startsWith(prefix))) {
+        memoryKeysToRemove.push(key);
+      }
+    });
+    memoryKeysToRemove.forEach(key => memoryCache.delete(key));
+
+    // Clear L2 (localStorage)
+    try {
+      const keysToRemove: string[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith(CacheManager.CACHE_PREFIX)) {
+          const cacheKey = key.slice(CacheManager.CACHE_PREFIX.length);
+          if (prefixes.some(prefix => cacheKey.startsWith(prefix))) {
+            keysToRemove.push(key);
+          }
+        }
+      }
+      keysToRemove.forEach(key => localStorage.removeItem(key));
+      Logger.debug('[RealtySoft API] Cleared', keysToRemove.length + memoryKeysToRemove.length, 'static data cache entries');
+    } catch (e) {
+      console.warn('[RealtySoft API] Error clearing static data cache:', e);
+    }
+  }
+
+  /**
    * Clear all language-dependent caches
    * Used when language changes to force fresh translated data from API
    */
@@ -1407,6 +1730,9 @@ const RealtySoftAPI: RealtySoftAPIModule = (function () {
     getCachedProperty,
     cacheProperty,
     clearCache: CacheManager.clear.bind(CacheManager),
+    cleanupCache: CacheManager.cleanup.bind(CacheManager),
+    clearSearchCache,
+    clearStaticDataCache,
     clearPropertyCache,
   };
 })();

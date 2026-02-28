@@ -412,7 +412,7 @@ export interface RealtySoftAPIModule {
   getFeatures(): Promise<APIResponse<Feature[]>>;
   getLabels(): Promise<Record<string, string>>;
   getAllLabels(): Promise<unknown>;
-  searchProperties(params: Partial<SearchParams>): Promise<APIResponse<Property[]>>;
+  searchProperties(params: Partial<SearchParams>, options?: { forceRefresh?: boolean }): Promise<APIResponse<Property[]>>;
   getProperty(id: number, options?: { forceRefresh?: boolean; skipBackgroundRefresh?: boolean }): Promise<{ data: Property; fromCache?: boolean }>;
   getPropertyByRef(ref: string, options?: { forceRefresh?: boolean; skipBackgroundRefresh?: boolean }): Promise<{ data: Property; fromCache?: boolean }>;
   getRelatedProperties(propertyId: number, limit?: number): Promise<APIResponse<Property[]>>;
@@ -422,6 +422,8 @@ export interface RealtySoftAPIModule {
   getCachedProperty(idOrRef: number | string, isRef?: boolean): Property | null;
   cacheProperty(property: Property): void;
   clearCache(key?: string): void;
+  clearSearchCache(): void;
+  clearStaticDataCache(): void;
   clearPropertyCache(): void;
 }
 

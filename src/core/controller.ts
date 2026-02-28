@@ -202,6 +202,11 @@ const RealtySoft = (function () {
     let items: Array<Record<string, string>> = [];
     const raw = rawData as Record<string, unknown>;
 
+    // New format: { labels: {...}, enabledListingTypes: [...] }
+    if (raw && raw.labels && typeof raw.labels === 'object' && !Array.isArray(raw.labels)) {
+      return raw.labels as Record<string, string>;
+    }
+
     if (raw && Array.isArray(raw.data)) {
       items = raw.data as Array<Record<string, string>>;
     } else if (Array.isArray(rawData)) {
@@ -330,6 +335,22 @@ const RealtySoft = (function () {
 
     Logger.debug('[RealtySoft] Transformed', Object.keys(result).length, 'API labels for language:', language);
     return result;
+  }
+
+  /**
+   * Extract enabledListingTypes from labels API response.
+   * API returns: { labels: {...}, enabledListingTypes: ["resale", "development", ...] }
+   * Returns null if not present (backwards compatibility - show all types).
+   */
+  function extractEnabledListingTypes(rawData: unknown): string[] | null {
+    if (!rawData) return null;
+
+    const raw = rawData as Record<string, unknown>;
+    if (raw.enabledListingTypes && Array.isArray(raw.enabledListingTypes)) {
+      return raw.enabledListingTypes as string[];
+    }
+
+    return null;
   }
 
   /**
@@ -2539,6 +2560,13 @@ const RealtySoft = (function () {
         RealtySoftState.set('config.resultsPage', globalConfig.resultsPage || '/properties');
         RealtySoftState.set('config.enableMapView', globalConfig.enableMapView !== false);
 
+        // Enabled listing types (filter dropdown options)
+        const enabledListingTypes = (globalConfig as any).enabledListingTypes;
+        if (enabledListingTypes && Array.isArray(enabledListingTypes) && enabledListingTypes.length > 0) {
+          RealtySoftState.set('data.enabledListingTypes', enabledListingTypes);
+          Logger.debug('[RealtySoft] Enabled listing types from config:', enabledListingTypes);
+        }
+
         // Branding config for emails and PDF
         if (globalConfig.branding) {
           RealtySoftState.set('config.branding', globalConfig.branding);
@@ -2607,6 +2635,12 @@ const RealtySoft = (function () {
                 RealtySoftState.set('data.labels', RealtySoftLabels.getAll());
                 Logger.debug('[RealtySoft] Hybrid mode: API labels merged in background');
               }
+              // Extract and store enabledListingTypes
+              const enabledTypes = extractEnabledListingTypes(labelsData);
+              if (enabledTypes !== null) {
+                RealtySoftState.set('data.enabledListingTypes', enabledTypes);
+                Logger.debug('[RealtySoft] Enabled listing types:', enabledTypes);
+              }
             })
             .catch(() => {
               Logger.debug('[RealtySoft] Hybrid mode: API labels fetch failed, using static');
@@ -2634,6 +2668,13 @@ const RealtySoft = (function () {
             }
 
             RealtySoftState.set('data.labels', RealtySoftLabels.getAll());
+
+            // Extract and store enabledListingTypes
+            const enabledTypes = extractEnabledListingTypes(labelsData);
+            if (enabledTypes !== null) {
+              RealtySoftState.set('data.enabledListingTypes', enabledTypes);
+              Logger.debug('[RealtySoft] Enabled listing types:', enabledTypes);
+            }
           }
 
           // Extract propertyTypes from results (locations now loaded in background)
@@ -3175,10 +3216,13 @@ const RealtySoft = (function () {
 
   /**
    * Update filter
+   * Clears search cache to ensure fresh results with new filter values
    */
   function setFilter(name: string, value: unknown): void {
     Logger.debug('[RealtySoft] setFilter called:', name, '=', value);
     if (!RealtySoftState.isFilterLocked(name)) {
+      // Clear search cache before updating filter to ensure fresh results
+      RealtySoftAPI.clearSearchCache();
       RealtySoftState.set(`filters.${name}`, value);
       RealtySoftAnalytics.trackFilterChange(name, value);
     } else {
@@ -3807,6 +3851,11 @@ const RealtySoft = (function () {
             reRenderComponents();
             Logger.debug('[RealtySoft] Hybrid mode: API labels merged for:', newLanguage);
           }
+          // Extract and store enabledListingTypes
+          const enabledTypes = extractEnabledListingTypes(labelsData);
+          if (enabledTypes !== null) {
+            RealtySoftState.set('data.enabledListingTypes', enabledTypes);
+          }
         })
         .catch((error) => {
           console.warn('[RealtySoft] Hybrid mode: API labels fetch failed, using static:', error);
@@ -3831,6 +3880,13 @@ const RealtySoft = (function () {
       }
 
       RealtySoftState.set('data.labels', RealtySoftLabels.getAll());
+
+      // Extract and store enabledListingTypes
+      const enabledTypes = extractEnabledListingTypes(labelsData);
+      if (enabledTypes !== null) {
+        RealtySoftState.set('data.enabledListingTypes', enabledTypes);
+      }
+
       reRenderComponents();
       Logger.debug('[RealtySoft] API mode: language changed successfully to:', newLanguage);
     } catch (error) {
