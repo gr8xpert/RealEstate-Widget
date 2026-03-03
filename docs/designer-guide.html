@@ -1096,8 +1096,17 @@
 
         /* Selection */
         ::selection {
-            background: rgba(99, 102, 241, 0.2);
+            background: rgba(99, 102, 241, 0.3);
             color: var(--text);
+        }
+
+        /* Code block selection - high contrast */
+        .code-block ::selection,
+        .code-block code::selection,
+        pre ::selection,
+        code ::selection {
+            background: rgba(255, 255, 255, 0.3);
+            color: #fff;
         }
 
         /* Focus Visible */
@@ -1234,7 +1243,7 @@
         <div class="nav-section">
             <div class="nav-section-title">Listing Templates</div>
             <div class="nav-section-links">
-                <a href="#listing-templates" class="nav-link">Card Styles (12)</a>
+                <a href="#listing-templates" class="nav-link">Card Styles (13)</a>
             </div>
         </div>
 
@@ -2728,6 +2737,13 @@ window.RealtySoftConfig = {
                     <div class="template-info">
                         <div class="template-name">rs-listing-template-12</div>
                         <div class="template-desc">Magazine layout</div>
+                    </div>
+                </a>
+                <a href="https://smartpropertywidget.com/listing-13" target="_blank" class="template-card">
+                    <div class="template-preview" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">13</div>
+                    <div class="template-info">
+                        <div class="template-name">rs-listing-template-13</div>
+                        <div class="template-desc">2-col centered + ref badge</div>
                     </div>
                 </a>
             </div>
