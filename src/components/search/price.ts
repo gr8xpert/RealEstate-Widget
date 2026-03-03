@@ -1,6 +1,6 @@
 /**
  * RealtySoft Widget v3 - Price Component
- * Variations: 1=Styled Dropdown, 2=Stacked Buttons, 3=Multi-Select, 4=Free Input
+ * Variations: 1=Styled Dropdown, 2=Stacked Buttons, 3=Combined Min/Max Dropdown, 4=Free Input
  */
 
 import { RSBaseComponent } from '../base';
@@ -133,7 +133,7 @@ class RSPrice extends RSBaseComponent {
         this.renderStackedButtons();
         break;
       case '3':
-        this.renderMultiSelect();
+        this.renderCombinedDropdown();
         break;
       case '4':
         this.renderFreeInput();
@@ -219,45 +219,102 @@ class RSPrice extends RSBaseComponent {
     this.dropdown = this.element.querySelector('.rs-price__dropdown');
   }
 
-  // VARIATION 3: Multi-Select Dropdown
-  private renderMultiSelect(): void {
-    const placeholder = this.type === 'min'
-      ? (this.label('search_price_select_min') || 'Select Min Prices')
-      : (this.label('search_price_select_max') || 'Select Max Prices');
+  // VARIATION 3: Combined Min/Max Dropdown (both columns in one panel)
+  private renderCombinedDropdown(): void {
+    const minLabel = this.label('search_price_min') || 'Min. Price';
+    const maxLabel = this.label('search_price_max') || 'Max. Price';
 
-    const options = this.getPriceOptions();
-    const count = this.selectedValues.size;
-    const buttonText = count > 0 ? count + ' selected' : placeholder;
+    // Get price options for both min and max
+    const listingType = this.getFilter<string>('listingType') || 'resale';
+    const defaultPriceRanges: DefaultPriceRanges = {
+      resale: {
+        min: [50000, 100000, 150000, 200000, 250000, 300000, 400000, 500000, 600000, 750000, 1000000, 1500000, 2000000, 3000000, 5000000],
+        max: [50000, 100000, 150000, 200000, 250000, 300000, 400000, 500000, 600000, 750000, 1000000, 1500000, 2000000, 3000000, 5000000, 10000000]
+      },
+      development: {
+        min: [50000, 100000, 150000, 200000, 250000, 300000, 400000, 500000, 600000, 750000, 1000000, 1500000, 2000000, 3000000, 5000000],
+        max: [50000, 100000, 150000, 200000, 250000, 300000, 400000, 500000, 600000, 750000, 1000000, 1500000, 2000000, 3000000, 5000000, 10000000]
+      },
+      long_rental: {
+        min: [500, 750, 1000, 1250, 1500, 2000, 2500, 3000, 4000, 5000, 7500, 10000],
+        max: [500, 750, 1000, 1250, 1500, 2000, 2500, 3000, 4000, 5000, 7500, 10000, 15000, 25000]
+      },
+      short_rental: {
+        min: [250, 500, 750, 1000, 1500, 2000, 2500, 3000, 4000, 5000],
+        max: [250, 500, 750, 1000, 1500, 2000, 2500, 3000, 4000, 5000, 7500, 10000]
+      }
+    };
 
-    let checkboxesHtml = '';
-    options.forEach(price => {
-      const checked = this.selectedValues.has(price) ? 'checked' : '';
-      checkboxesHtml += `
-        <label class="rs-price__multiselect-option">
-          <input type="checkbox" class="rs-price__multiselect-checkbox" value="${price}" ${checked}>
-          <span>${this.formatPriceFull(price)}</span>
-        </label>
+    const priceRange = defaultPriceRanges[listingType] || defaultPriceRanges.resale;
+    const minOptions = priceRange.min;
+    const maxOptions = priceRange.max;
+
+    // Build button text
+    let buttonText = `${minLabel} - ${maxLabel}`;
+    if (this.minValue && this.maxValue) {
+      buttonText = `${this.formatPriceFull(this.minValue)} - ${this.formatPriceFull(this.maxValue)}`;
+    } else if (this.minValue) {
+      buttonText = `${this.formatPriceFull(this.minValue)} - ${maxLabel}`;
+    } else if (this.maxValue) {
+      buttonText = `${minLabel} - ${this.formatPriceFull(this.maxValue)}`;
+    }
+
+    // Build min column options
+    let minOptionsHtml = '';
+    minOptions.forEach(price => {
+      const active = this.minValue === price ? 'rs-price__combined-option--active' : '';
+      minOptionsHtml += `
+        <button type="button" class="rs-price__combined-option ${active}" data-type="min" data-value="${price}">
+          ${this.formatPriceFull(price)}
+        </button>
+      `;
+    });
+
+    // Build max column options
+    let maxOptionsHtml = '';
+    maxOptions.forEach(price => {
+      const active = this.maxValue === price ? 'rs-price__combined-option--active' : '';
+      maxOptionsHtml += `
+        <button type="button" class="rs-price__combined-option ${active}" data-type="max" data-value="${price}">
+          ${this.formatPriceFull(price)}
+        </button>
       `;
     });
 
     this.element.innerHTML = `
       <div class="rs-price__wrapper">
-        <label class="rs-price__label">${this.type === 'min' ? this.label('search_price_min') : this.label('search_price_max')}</label>
-        <div class="rs-price__multiselect">
-          <button type="button" class="rs-price__multiselect-button">
-            <span class="rs-price__multiselect-text">${buttonText}</span>
-            <span class="rs-price__multiselect-arrow">▼</span>
+        <div class="rs-price__combined">
+          <button type="button" class="rs-price__combined-toggle ${(this.minValue || this.maxValue) ? 'rs-price__combined-toggle--has-selection' : ''}">
+            <span class="rs-price__combined-text">${buttonText}</span>
+            <span class="rs-price__combined-arrow">
+              <svg width="10" height="6" viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </span>
           </button>
-          <div class="rs-price__multiselect-dropdown" style="display: none;">
-            ${checkboxesHtml}
+          <div class="rs-price__combined-dropdown" style="display: none;">
+            <div class="rs-price__combined-columns">
+              <div class="rs-price__combined-column">
+                <div class="rs-price__combined-header">${minLabel}</div>
+                <div class="rs-price__combined-options">
+                  ${minOptionsHtml}
+                </div>
+              </div>
+              <div class="rs-price__combined-column">
+                <div class="rs-price__combined-header">${maxLabel}</div>
+                <div class="rs-price__combined-options">
+                  ${maxOptionsHtml}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
     `;
 
-    this.button = this.element.querySelector('.rs-price__multiselect-button');
-    this.buttonText = this.element.querySelector('.rs-price__multiselect-text');
-    this.dropdown = this.element.querySelector('.rs-price__multiselect-dropdown');
+    this.button = this.element.querySelector('.rs-price__combined-toggle');
+    this.buttonText = this.element.querySelector('.rs-price__combined-text');
+    this.dropdown = this.element.querySelector('.rs-price__combined-dropdown');
   }
 
   // VARIATION 4: Free Input
@@ -290,7 +347,7 @@ class RSPrice extends RSBaseComponent {
         this.bindStackedButtonsEvents();
         break;
       case '3':
-        this.bindMultiSelectEvents();
+        this.bindCombinedDropdownEvents();
         break;
       case '4':
         this.bindFreeInputEvents();
@@ -364,27 +421,47 @@ class RSPrice extends RSBaseComponent {
     }
   }
 
-  private bindMultiSelectEvents(): void {
+  private bindCombinedDropdownEvents(): void {
     // Toggle dropdown
     if (this.button) {
       this.button.addEventListener('click', (e: Event) => {
         e.preventDefault();
+        e.stopPropagation();
         this.toggleDropdown();
       });
     }
 
-    // Checkbox changes
-    this.element.querySelectorAll<HTMLInputElement>('.rs-price__multiselect-checkbox').forEach(checkbox => {
-      checkbox.addEventListener('change', (e: Event) => {
-        const target = e.target as HTMLInputElement;
-        const value = parseInt(target.value);
-        if (target.checked) {
-          this.selectedValues.add(value);
-        } else {
-          this.selectedValues.delete(value);
+    // Option selection (both min and max columns)
+    this.element.querySelectorAll<HTMLButtonElement>('.rs-price__combined-option').forEach(optionBtn => {
+      optionBtn.addEventListener('click', (e: Event) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const type = optionBtn.dataset.type as 'min' | 'max';
+        const value = optionBtn.dataset.value ? parseInt(optionBtn.dataset.value) : null;
+
+        // Update active state in the column
+        const column = optionBtn.closest('.rs-price__combined-column');
+        if (column) {
+          column.querySelectorAll('.rs-price__combined-option').forEach(btn =>
+            btn.classList.remove('rs-price__combined-option--active')
+          );
         }
-        this.updateMultiSelectButton();
-        this.updateMultiSelectFilter();
+        if (value) {
+          optionBtn.classList.add('rs-price__combined-option--active');
+        }
+
+        // Update values and filter
+        if (type === 'min') {
+          this.minValue = value;
+          this.setFilter('priceMin', value);
+        } else {
+          this.maxValue = value;
+          this.setFilter('priceMax', value);
+        }
+
+        // Update button text
+        this.updateCombinedButtonText();
       });
     });
   }
@@ -419,22 +496,26 @@ class RSPrice extends RSBaseComponent {
     this.setFilter(filterKey, value);
   }
 
-  private updateMultiSelectButton(): void {
-    if (!this.buttonText) return;
-    const placeholder = this.type === 'min'
-      ? (this.label('search_price_select_min') || 'Select Min Prices')
-      : (this.label('search_price_select_max') || 'Select Max Prices');
-    const count = this.selectedValues.size;
-    this.buttonText.textContent = count > 0 ? count + ' selected' : placeholder;
-  }
+  private updateCombinedButtonText(): void {
+    if (!this.buttonText || !this.button) return;
+    const minLabel = this.label('search_price_min') || 'Min. Price';
+    const maxLabel = this.label('search_price_max') || 'Max. Price';
 
-  private updateMultiSelectFilter(): void {
-    if (this.selectedValues.size > 0) {
-      const values = Array.from(this.selectedValues).sort((a, b) => a - b);
-      const filterValue = this.type === 'min' ? Math.min(...values) : Math.max(...values);
-      this.setValue(filterValue);
+    let buttonText = `${minLabel} - ${maxLabel}`;
+    if (this.minValue && this.maxValue) {
+      buttonText = `${this.formatPriceFull(this.minValue)} - ${this.formatPriceFull(this.maxValue)}`;
+    } else if (this.minValue) {
+      buttonText = `${this.formatPriceFull(this.minValue)} - ${maxLabel}`;
+    } else if (this.maxValue) {
+      buttonText = `${minLabel} - ${this.formatPriceFull(this.maxValue)}`;
+    }
+
+    this.buttonText.textContent = buttonText;
+
+    if (this.minValue || this.maxValue) {
+      this.button.classList.add('rs-price__combined-toggle--has-selection');
     } else {
-      this.setValue(null);
+      this.button.classList.remove('rs-price__combined-toggle--has-selection');
     }
   }
 
@@ -490,19 +571,18 @@ class RSPrice extends RSBaseComponent {
       this.input.value = this.currentValue?.toString() || '';
     }
 
-    // Update multi-select (variation 3)
+    // Update combined dropdown (variation 3)
     if (this.variation === '3') {
-      // Clear selectedValues if filter is reset
-      if (!this.currentValue) {
-        this.selectedValues.clear();
-      }
-      // Update checkbox states
-      this.element.querySelectorAll<HTMLInputElement>('.rs-price__multiselect-checkbox').forEach(checkbox => {
-        const value = parseInt(checkbox.value);
-        checkbox.checked = this.selectedValues.has(value);
+      // Update active states in both columns
+      this.element.querySelectorAll<HTMLButtonElement>('.rs-price__combined-option').forEach(btn => {
+        const type = btn.dataset.type as 'min' | 'max';
+        const value = btn.dataset.value ? parseInt(btn.dataset.value) : null;
+        const isActive = (type === 'min' && value === this.minValue) ||
+                         (type === 'max' && value === this.maxValue);
+        btn.classList.toggle('rs-price__combined-option--active', isActive);
       });
+      this.updateCombinedButtonText();
     }
-    this.updateMultiSelectButton();
   }
 }
 
