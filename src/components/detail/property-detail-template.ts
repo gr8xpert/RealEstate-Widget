@@ -538,11 +538,6 @@ class RSPropertyDetailTemplate extends RSBaseComponent {
       items.push({ label: this.label('detail_terrace') || 'Terrace', value: `${p.terrace_size} m²` });
     }
 
-    // Garden
-    if (p.garden_size && parseFloat(String(p.garden_size)) > 0) {
-      items.push({ label: this.label('detail_garden') || 'Garden', value: `${p.garden_size} m²` });
-    }
-
     // Solarium
     if (p.solarium_size && parseFloat(String(p.solarium_size)) > 0) {
       items.push({ label: this.label('detail_solarium') || 'Solarium', value: `${p.solarium_size} m²` });
@@ -551,16 +546,6 @@ class RSPropertyDetailTemplate extends RSBaseComponent {
     // Usable Area
     if (p.usable_area && parseFloat(String(p.usable_area)) > 0) {
       items.push({ label: this.label('detail_usable_area') || 'Usable Area', value: `${p.usable_area} m²` });
-    }
-
-    // Year Built
-    if (p.year_built) {
-      items.push({ label: this.label('detail_year_built') || 'Year Built', value: String(p.year_built) });
-    }
-
-    // Status
-    if (p.status) {
-      items.push({ label: this.label('detail_status') || 'Status', value: p.status });
     }
 
     // Floor
@@ -586,11 +571,6 @@ class RSPropertyDetailTemplate extends RSBaseComponent {
     // Views
     if (p.views) {
       items.push({ label: this.label('detail_views') || 'Views', value: p.views });
-    }
-
-    // Parking
-    if (p.parking) {
-      items.push({ label: this.label('detail_parking') || 'Parking', value: p.parking });
     }
 
     if (items.length === 0) return '';

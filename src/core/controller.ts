@@ -483,6 +483,7 @@ const RealtySoft = (function () {
       !!document.querySelector('.rs-listing-template-10') ||
       !!document.querySelector('.rs-listing-template-11') ||
       !!document.querySelector('.rs-listing-template-12') ||
+      !!document.querySelector('.rs-listing-template-13') ||
       !!document.querySelector('.rs-map-search-template-01');
 
     // Standalone listings fetch their own data independently — don't count for widget mode
@@ -1952,6 +1953,67 @@ const RealtySoft = (function () {
       <div class="rs_pagination" style="margin-top: 30px;"></div>
     `,
 
+    // Listing Template 13: Clean card with location badge, centered content
+    'rs-listing-template-13': `
+      <div class="rs-template-listing-13__header">
+        <div class="rs_results_count"></div>
+        <div class="rs-template-listing-13__controls">
+          <div class="rs_sort"></div>
+        </div>
+      </div>
+      <div class="rs_property_grid">
+        <div class="rs_card rs-template-card-13">
+          <a class="rs_card_link rs-template-card-13__link">
+            <div class="rs-template-card-13__image-section">
+              <div class="rs_card_carousel"></div>
+              <div class="rs_card_status rs-template-card-13__status"></div>
+              <button class="rs_card_wishlist rs-template-card-13__wishlist" type="button"></button>
+              <div class="rs-template-card-13__image-count">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                  <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                  <polyline points="21 15 16 10 5 21"></polyline>
+                </svg>
+                <span class="rs_card_image_count"></span>
+              </div>
+              <div class="rs-template-card-13__ref-badge">
+                <span class="rs_card_ref"></span>
+              </div>
+            </div>
+            <div class="rs-template-card-13__content">
+              <h3 class="rs_card_title rs-template-card-13__title"></h3>
+              <div class="rs-template-card-13__specs">
+                <div class="rs-template-card-13__spec">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 12h18M3 12v7a1 1 0 001 1h16a1 1 0 001-1v-7M3 12V5a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h8a1 1 0 001-1V5a1 1 0 011-1h2a1 1 0 011 1v7"></path>
+                  </svg>
+                  <span class="rs_card_beds"></span>
+                </div>
+                <div class="rs-template-card-13__spec">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M4 12h16a1 1 0 011 1v3a4 4 0 01-4 4H7a4 4 0 01-4-4v-3a1 1 0 011-1z"></path>
+                    <path d="M6 12V5a2 2 0 012-2h2a2 2 0 012 2v1"></path>
+                  </svg>
+                  <span class="rs_card_baths"></span>
+                </div>
+                <div class="rs-template-card-13__spec">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 6l9-4 9 4v12l-9 4-9-4V6z"></path>
+                    <path d="M12 2v20"></path>
+                  </svg>
+                  <span class="rs_card_plot"></span>
+                </div>
+              </div>
+              <span class="rs_card_price rs-template-card-13__price"></span>
+              <p class="rs_card_description rs-template-card-13__description"></p>
+              <span class="rs-template-card-13__read-more">READ MORE</span>
+            </div>
+          </a>
+        </div>
+      </div>
+      <div class="rs_pagination" style="margin-top: 30px;"></div>
+    `,
+
     // Map Search Template 01: Full-width map with filters on top
     'rs-map-search-template-01': `
       <div class="rs-map-search-template-01">
@@ -2802,6 +2864,7 @@ const RealtySoft = (function () {
       '.rs-listing-template-10',
       '.rs-listing-template-11',
       '.rs-listing-template-12',
+      '.rs-listing-template-13',
       // Map search templates
       '.rs-map-search-template-01',
       // Standalone components (can be placed without a container)
@@ -3675,7 +3738,8 @@ const RealtySoft = (function () {
       document.querySelector('.rs-listing-template-09') ||
       document.querySelector('.rs-listing-template-10') ||
       document.querySelector('.rs-listing-template-11') ||
-      document.querySelector('.rs-listing-template-12')
+      document.querySelector('.rs-listing-template-12') ||
+      document.querySelector('.rs-listing-template-13')
     ) {
       return true;
     }

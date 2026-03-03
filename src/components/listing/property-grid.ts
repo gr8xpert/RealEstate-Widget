@@ -347,6 +347,84 @@ class RSPropertyGrid extends RSBaseComponent {
 
     // Set up lazy loading observer for images
     this.observeImages();
+
+    // Fetch accurate image counts for cards showing exactly 5 images
+    // (search API often truncates to 5, but detail API has full count)
+    this.fetchAccurateImageCounts();
+  }
+
+  /**
+   * Fetch accurate image counts for properties showing exactly 5 images
+   * Search results often truncate images to 5, so we fetch detail API to get real count
+   */
+  private fetchAccurateImageCounts(): void {
+    if (!this.container) return;
+
+    // Find cards with exactly 5 images (likely truncated)
+    const cardsNeedingUpdate: Array<{ card: HTMLElement; property: Property }> = [];
+
+    this.properties.forEach(property => {
+      const totalImages = property.total_images || property.images?.length || 0;
+      // Only fetch for properties showing exactly 5 images (likely truncated by search API)
+      if (totalImages === 5) {
+        const card = this.container?.querySelector(`[data-property-id="${property.id}"]`) as HTMLElement;
+        if (card) {
+          cardsNeedingUpdate.push({ card, property });
+        }
+      }
+    });
+
+    if (cardsNeedingUpdate.length === 0) return;
+
+    // Throttle concurrent requests to avoid overwhelming the API
+    const MAX_CONCURRENT = 3;
+    let activeRequests = 0;
+    let index = 0;
+
+    const processNext = () => {
+      while (activeRequests < MAX_CONCURRENT && index < cardsNeedingUpdate.length) {
+        const { card, property } = cardsNeedingUpdate[index++];
+        activeRequests++;
+
+        // Fetch property details to get accurate image count
+        // Use forceRefresh to bypass cache and get fresh data from detail API
+        // Use ref if available (more reliable), otherwise use id
+        const fetchPromise = property.ref
+          ? RealtySoftAPI.getPropertyByRef(property.ref, { forceRefresh: true })
+          : RealtySoftAPI.getProperty(property.id as number, { forceRefresh: true });
+
+        fetchPromise
+          .then((result) => {
+            // Check both total_images field AND images array length
+            // Some APIs (like Resales Online) may not have total_images but return all images in detail API
+            const detailImageCount = result?.data?.total_images ||
+              (result?.data as unknown as { images?: string[] })?.images?.length || 0;
+
+            if (detailImageCount > 5) {
+              // Update the card's image count display
+              // Try multiple selectors for different template structures
+              const countEl = card.querySelector('.rs_card_image_count') ||
+                card.querySelector('.rs-card__image-count span') ||
+                card.querySelector('.rs-template-card-13__image-count .rs_card_image_count');
+              if (countEl) {
+                countEl.textContent = String(detailImageCount);
+              }
+              // Also update the card's data attribute
+              card.dataset.totalImages = String(detailImageCount);
+              Logger.debug('[RSPropertyGrid] Updated image count for', property.ref || property.id, 'to', detailImageCount);
+            }
+          })
+          .catch(() => {
+            // Silently ignore errors - 5 is still a valid fallback
+          })
+          .finally(() => {
+            activeRequests--;
+            processNext();
+          });
+      }
+    };
+
+    processNext();
   }
 
   /**

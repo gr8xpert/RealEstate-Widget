@@ -1218,7 +1218,10 @@ const RealtySoftAPI: RealtySoftAPIModule = (function () {
       imagesFull,
       imagesWithSizes,
       // Use API's total_images if available (more accurate than array length for search results)
-      total_images: property.total_images || property.image_count || property.images_count || property.images?.length || 0,
+      // Support various field names from different CRM/feed providers
+      total_images: property.total_images || property.image_count || property.images_count ||
+        property.n_images || property.num_images || property.n_fotos || property.num_fotos ||
+        property.pictures_count || property.photos_count || property.images?.length || 0,
       url: property.url || property.link || property.permalink || null,
       listing_type: listingType,
       status: property.status || (typeof property.listing_type_id === 'object' ? property.listing_type_id?.name : '') || property.listing_status || '',
@@ -1339,8 +1342,8 @@ const RealtySoftAPI: RealtySoftAPIModule = (function () {
 
   /**
    * Refresh search results in background (SWR pattern)
-   * Fetches fresh data without blocking, updates cache and optionally notifies UI
-   * Uses searchVersion to prevent stale refreshes from overwriting newer results
+   * Fetches fresh data without blocking, updates CACHE ONLY for next request
+   * Does NOT update current UI state - that would cause jarring content changes
    */
   function refreshSearchInBackground(
     params: Partial<SearchParams>,
@@ -1349,22 +1352,17 @@ const RealtySoftAPI: RealtySoftAPIModule = (function () {
   ): void {
     fetchFreshSearch(params, cacheKey)
       .then((freshResult) => {
-        // Only update state if this refresh is still current
-        // Prevents race condition where user navigates to different page/filters
-        // while background refresh is in-flight
+        // Only log if this refresh is still relevant
         if (searchVersion !== currentSearchVersion) {
           Logger.debug('[RealtySoft] Background refresh discarded (stale version:', searchVersion, 'current:', currentSearchVersion + ')');
           return;
         }
 
-        Logger.debug('[RealtySoft] Background search refresh complete');
-        // Notify UI if RealtySoftState is available
-        // This updates the listing grid with fresh data
-        if (typeof window !== 'undefined' && (window as unknown as { RealtySoftState?: { set: (path: string, value: unknown) => void } }).RealtySoftState) {
-          const state = (window as unknown as { RealtySoftState: { set: (path: string, value: unknown) => void } }).RealtySoftState;
-          state.set('results.properties', freshResult.data);
-          state.set('results.total', freshResult.total || freshResult.count || freshResult.data.length);
-        }
+        Logger.debug('[RealtySoft] Background search refresh complete - cache updated for next request');
+        // NOTE: We intentionally do NOT update UI state here
+        // The SWR pattern refreshes the cache so the NEXT request gets fresh data
+        // Updating UI mid-view causes jarring content changes (results suddenly disappear/change)
+        // The fetchFreshSearch call already updates the cache internally
       })
       .catch((err) => {
         // Silently ignore background refresh errors - stale data is still usable
