@@ -69,6 +69,9 @@ class RSPrice extends RSBaseComponent {
       if (this.type === 'min') {
         this.currentValue = value;
         this.updateDisplay();
+      } else if (this.type === 'max' || this.variation === '3') {
+        // Re-render max options when min changes (filter out invalid prices)
+        this.updatePriceOptions();
       }
     });
 
@@ -77,6 +80,9 @@ class RSPrice extends RSBaseComponent {
       if (this.type === 'max') {
         this.currentValue = value;
         this.updateDisplay();
+      } else if (this.type === 'min' || this.variation === '3') {
+        // Re-render min options when max changes (filter out invalid prices)
+        this.updatePriceOptions();
       }
     });
 
@@ -86,8 +92,9 @@ class RSPrice extends RSBaseComponent {
     });
   }
 
-  // Get price options based on listing type
-  private getPriceOptions(): number[] {
+  // Get price options based on listing type (filtered by opposite selection)
+  private getPriceOptions(forType?: 'min' | 'max'): number[] {
+    const type = forType || this.type;
     const listingType = this.getFilter<string>('listingType') || 'resale';
 
     const defaultPriceRanges: DefaultPriceRanges = {
@@ -110,7 +117,18 @@ class RSPrice extends RSBaseComponent {
     };
 
     const priceRange = defaultPriceRanges[listingType] || defaultPriceRanges.resale;
-    return priceRange[this.type] || priceRange.min;
+    let options = priceRange[type] || priceRange.min;
+
+    // Filter options based on opposite selection
+    // Max options: remove prices <= minValue
+    // Min options: remove prices >= maxValue
+    if (type === 'max' && this.minValue) {
+      options = options.filter(price => price > this.minValue!);
+    } else if (type === 'min' && this.maxValue) {
+      options = options.filter(price => price < this.maxValue!);
+    }
+
+    return options;
   }
 
   // Format price (short format)
@@ -224,30 +242,9 @@ class RSPrice extends RSBaseComponent {
     const minLabel = this.label('search_price_min') || 'Min. Price';
     const maxLabel = this.label('search_price_max') || 'Max. Price';
 
-    // Get price options for both min and max
-    const listingType = this.getFilter<string>('listingType') || 'resale';
-    const defaultPriceRanges: DefaultPriceRanges = {
-      resale: {
-        min: [50000, 100000, 150000, 200000, 250000, 300000, 400000, 500000, 600000, 750000, 1000000, 1500000, 2000000, 3000000, 5000000],
-        max: [50000, 100000, 150000, 200000, 250000, 300000, 400000, 500000, 600000, 750000, 1000000, 1500000, 2000000, 3000000, 5000000, 10000000]
-      },
-      development: {
-        min: [50000, 100000, 150000, 200000, 250000, 300000, 400000, 500000, 600000, 750000, 1000000, 1500000, 2000000, 3000000, 5000000],
-        max: [50000, 100000, 150000, 200000, 250000, 300000, 400000, 500000, 600000, 750000, 1000000, 1500000, 2000000, 3000000, 5000000, 10000000]
-      },
-      long_rental: {
-        min: [500, 750, 1000, 1250, 1500, 2000, 2500, 3000, 4000, 5000, 7500, 10000],
-        max: [500, 750, 1000, 1250, 1500, 2000, 2500, 3000, 4000, 5000, 7500, 10000, 15000, 25000]
-      },
-      short_rental: {
-        min: [250, 500, 750, 1000, 1500, 2000, 2500, 3000, 4000, 5000],
-        max: [250, 500, 750, 1000, 1500, 2000, 2500, 3000, 4000, 5000, 7500, 10000]
-      }
-    };
-
-    const priceRange = defaultPriceRanges[listingType] || defaultPriceRanges.resale;
-    const minOptions = priceRange.min;
-    const maxOptions = priceRange.max;
+    // Get filtered price options for both min and max
+    const minOptions = this.getPriceOptions('min');
+    const maxOptions = this.getPriceOptions('max');
 
     // Build button text
     let buttonText = `${minLabel} - ${maxLabel}`;
@@ -259,7 +256,7 @@ class RSPrice extends RSBaseComponent {
       buttonText = `${minLabel} - ${this.formatPriceFull(this.maxValue)}`;
     }
 
-    // Build min column options
+    // Build min column options (filtered: excludes prices >= maxValue)
     let minOptionsHtml = '';
     minOptions.forEach(price => {
       const active = this.minValue === price ? 'rs-price__combined-option--active' : '';
@@ -270,7 +267,7 @@ class RSPrice extends RSBaseComponent {
       `;
     });
 
-    // Build max column options
+    // Build max column options (filtered: excludes prices <= minValue)
     let maxOptionsHtml = '';
     maxOptions.forEach(price => {
       const active = this.maxValue === price ? 'rs-price__combined-option--active' : '';
