@@ -1959,6 +1959,7 @@ const RealtySoft = (function () {
         <div class="rs_results_count"></div>
         <div class="rs-template-listing-13__controls">
           <div class="rs_sort"></div>
+          <div class="rs_view_toggle"></div>
         </div>
       </div>
       <div class="rs_property_grid">
