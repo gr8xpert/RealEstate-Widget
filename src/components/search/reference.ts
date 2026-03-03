@@ -127,7 +127,7 @@ class RSReference extends RSBaseComponent {
 }
 
 // Register component
-RealtySoft.registerComponent('rs_ref', RSReference as unknown as ComponentConstructor);
+RealtySoft.registerComponent('rs_reference', RSReference as unknown as ComponentConstructor);
 
 export { RSReference };
 export default RSReference;
