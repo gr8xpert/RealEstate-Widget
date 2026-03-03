@@ -168,7 +168,8 @@ $domain = preg_replace('/^www\./', '', $domain);
 // Client isolation happens at API key level, not domain level
 // This allows cache-warm.php to pre-populate caches that match runtime requests
 $endpoint = $_GET['_endpoint'] ?? $_POST['_endpoint'] ?? '';
-$staticEndpoints = ['v1/location', 'v2/location', 'v1/property_types', 'v1/property_features', 'v1/plugin_labels'];
+// NOTE: plugin_labels excluded from early cache because enabledListingTypes is per-domain
+$staticEndpoints = ['v1/location', 'v2/location', 'v1/property_types', 'v1/property_features'];
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && in_array($endpoint, $staticEndpoints)) {
     $cacheParams = $_GET;
@@ -336,8 +337,11 @@ if ($cacheTtl && $_SERVER['REQUEST_METHOD'] === 'GET') {
     unset($cacheParams['_t']);  // Remove cache-busting timestamp
     unset($cacheParams['_']);   // Remove jQuery cache-buster
     unset($cacheParams['_domain']); // Domain not used in cache key - isolation via API key
-    // Domain NOT added - static data is per-API-key, not per-domain
-    // This ensures cache keys match between cache-warm.php and runtime requests
+    // Domain NOT added for most endpoints - static data is per-API-key, not per-domain
+    // EXCEPTION: plugin_labels includes enabledListingTypes which is per-domain
+    if ($endpoint === 'v1/plugin_labels') {
+        $cacheParams['_domain'] = $domain;
+    }
     $cacheKey = ProxyCache::getCacheKey($endpoint, $cacheParams);
 
     $cacheResult = ProxyCache::getWithMeta($cacheKey);
@@ -361,7 +365,66 @@ if ($cacheTtl && $_SERVER['REQUEST_METHOD'] === 'GET') {
 }
 
 // ============================================
-// MAKE API REQUEST
+// ROUTE LABELS TO DASHBOARD API
+// ============================================
+// Labels, enabledListingTypes come from dashboard (not CRM directly)
+// This ensures client-specific settings like enabled listing types are applied
+
+if ($endpoint === 'v1/plugin_labels') {
+    // Load database config for Laravel API settings
+    $dbConfigFile = __DIR__ . '/config/database.local.php';
+    if (!file_exists($dbConfigFile)) {
+        $dbConfigFile = __DIR__ . '/config/database.php';
+    }
+    $dbConfig = file_exists($dbConfigFile) ? require $dbConfigFile : [];
+    $laravelApi = $dbConfig['laravel_api'] ?? [];
+
+    if (!empty($laravelApi['base_url']) && !empty($laravelApi['internal_api_key'])) {
+        $dashboardUrl = rtrim($laravelApi['base_url'], '/') . '/api/internal/labels';
+        $dashboardUrl .= '?domain=' . urlencode($domain) . '&language=' . urlencode($language);
+
+        $ch = curl_init();
+        curl_setopt_array($ch, [
+            CURLOPT_URL => $dashboardUrl,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_TIMEOUT => 15,
+            CURLOPT_HTTPHEADER => [
+                'X-Internal-API-Key: ' . $laravelApi['internal_api_key'],
+                'Accept: application/json',
+            ]
+        ]);
+
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $error = curl_error($ch);
+        curl_close($ch);
+
+        if (!$error && $httpCode === 200) {
+            // Successfully got labels from dashboard
+            // Cache the response
+            if ($cacheTtl && $cacheKey) {
+                $hash = ProxyCache::set($cacheKey, $response, $cacheTtl);
+                if ($hash) {
+                    header('X-Cache-Hash: ' . $hash);
+                }
+            }
+
+            header('Content-Type: application/json');
+            header('Cache-Control: public, max-age=3600');
+            header('X-Labels-Source: dashboard');
+            http_response_code(200);
+            echo $response;
+            exit;
+        }
+
+        // Dashboard API failed - log and fall through to CRM
+        error_log('Dashboard labels API failed: ' . ($error ?: "HTTP $httpCode"));
+    }
+}
+
+// ============================================
+// MAKE API REQUEST (to CRM)
 // ============================================
 
 // Build API URL
@@ -450,6 +513,18 @@ if ($error || $httpCode !== 200) {
     http_response_code($error ? 500 : $httpCode);
     echo $error ? json_encode(['error' => 'API request failed: ' . $error]) : $response;
     exit;
+}
+
+// ============================================
+// INJECT CLIENT CONFIG INTO LABELS RESPONSE
+// ============================================
+// For plugin_labels endpoint, inject enabledListingTypes from client config
+if ($endpoint === 'v1/plugin_labels' && $httpCode === 200 && !empty($clientConfig['enabledListingTypes'])) {
+    $labelsData = json_decode($response, true);
+    if ($labelsData !== null) {
+        $labelsData['enabledListingTypes'] = $clientConfig['enabledListingTypes'];
+        $response = json_encode($labelsData);
+    }
 }
 
 // ============================================

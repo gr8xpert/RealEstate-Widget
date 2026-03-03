@@ -51,17 +51,44 @@ class RSListingType extends RSBaseComponent {
       this.selected = value || '';
       this.updateDisplay();
     });
+
+    // Subscribe to enabledListingTypes changes (loaded asynchronously from API)
+    this.subscribe<string[] | null>('data.enabledListingTypes', () => {
+      // Re-render to show only enabled listing types
+      this.render();
+      if (!this.lockedMode) {
+        this.bindEvents();
+      }
+    });
   }
 
-  // Get listing type options
+  // Get listing type options (filtered by enabled types from config)
   private getOptions(): Record<string, string> {
     const labels = RealtySoftState.get<Record<string, string>>('data.labels') || {};
-    return {
+    const enabledTypes = RealtySoftState.get<string[]>('data.enabledListingTypes');
+
+    // All available listing types with their labels
+    const allOptions: Record<string, string> = {
       'resale': labels.listing_type_sale || 'ReSale',
       'development': labels.listing_type_new || 'New Development',
       'long_rental': labels.listing_type_long_rental || 'Long Term Rental',
       'short_rental': labels.listing_type_short_rental || 'Holiday Rental'
     };
+
+    // If no enabled types configured, show all (backwards compatibility)
+    if (!enabledTypes || !Array.isArray(enabledTypes) || enabledTypes.length === 0) {
+      return allOptions;
+    }
+
+    // Filter to only show enabled types
+    const filteredOptions: Record<string, string> = {};
+    for (const type of enabledTypes) {
+      if (allOptions[type]) {
+        filteredOptions[type] = allOptions[type];
+      }
+    }
+
+    return filteredOptions;
   }
 
   render(): void {

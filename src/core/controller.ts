@@ -2684,6 +2684,23 @@ const RealtySoft = (function () {
           RealtySoftState.set('data.labels', RealtySoftLabels.getAll());
         }
 
+        // Static mode: still fetch enabledListingTypes from API in background
+        // This ensures listing type filtering works even with static labels
+        if (labelsMode === 'static') {
+          RealtySoftAPI.getLabels()
+            .then((labelsData) => {
+              // Extract and store enabledListingTypes (don't update labels in static mode)
+              const enabledTypes = extractEnabledListingTypes(labelsData);
+              if (enabledTypes !== null) {
+                RealtySoftState.set('data.enabledListingTypes', enabledTypes);
+                Logger.debug('[RealtySoft] Static mode: enabledListingTypes loaded:', enabledTypes);
+              }
+            })
+            .catch(() => {
+              Logger.debug('[RealtySoft] Static mode: enabledListingTypes fetch failed');
+            });
+        }
+
         // Hybrid mode: fire API labels in background (non-blocking)
         if (labelsMode === 'hybrid') {
           RealtySoftAPI.getLabels()
@@ -3891,9 +3908,18 @@ const RealtySoft = (function () {
     // Start property refetch (don't await - let it run in parallel with label fetching)
     refetchPropertyData();
 
-    // Static mode: we're done - no API call needed
+    // Static mode: still fetch enabledListingTypes in background
     if (labelsMode === 'static') {
       Logger.debug('[RealtySoft] Static mode: language changed to:', newLanguage);
+      RealtySoftAPI.getLabels()
+        .then((labelsData) => {
+          const enabledTypes = extractEnabledListingTypes(labelsData);
+          if (enabledTypes !== null) {
+            RealtySoftState.set('data.enabledListingTypes', enabledTypes);
+            Logger.debug('[RealtySoft] Static mode: enabledListingTypes refreshed:', enabledTypes);
+          }
+        })
+        .catch(() => {});
       reRenderComponents();
       return;
     }
