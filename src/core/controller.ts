@@ -1962,6 +1962,7 @@ const RealtySoft = (function () {
           <div class="rs_view_toggle"></div>
         </div>
       </div>
+      <div class="rs_map_view" style="display: none;"></div>
       <div class="rs_property_grid">
         <div class="rs_card rs-template-card-13">
           <a class="rs_card_link rs-template-card-13__link">

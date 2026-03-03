@@ -14003,6 +14003,62 @@ a[class*=" rs-"]:focus-visible {
     background: #0d2840;
 }
 
+/* List View Adjustments for Template 13 */
+.rs-property-grid--list .rs-template-card-13 {
+    display: flex;
+    flex-direction: row;
+}
+
+.rs-property-grid--list .rs-template-card-13__link {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+}
+
+.rs-property-grid--list .rs-template-card-13__image-section {
+    flex: 0 0 350px;
+    aspect-ratio: auto;
+    min-height: 220px;
+}
+
+.rs-property-grid--list .rs-template-card-13__content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    text-align: left;
+    padding: 24px 30px;
+}
+
+.rs-property-grid--list .rs-template-card-13__title {
+    text-align: left;
+}
+
+.rs-property-grid--list .rs-template-card-13__specs {
+    justify-content: flex-start;
+}
+
+.rs-property-grid--list .rs-template-card-13__price {
+    text-align: left;
+}
+
+.rs-property-grid--list .rs-template-card-13__description {
+    text-align: left;
+    -webkit-line-clamp: 3;
+}
+
+.rs-property-grid--list .rs-template-card-13__read-more {
+    align-self: flex-start;
+}
+
+.rs-property-grid--list .rs-template-card-13__ref-badge {
+    bottom: auto;
+    top: 12px;
+    right: 12px;
+    left: auto;
+    transform: none;
+}
+
 /* Responsive - Tablet */
 @media (max-width: 1024px) {
     .rs-listing-template-13 .rs-property-grid--grid .rs-property-grid__items {
@@ -14014,6 +14070,37 @@ a[class*=" rs-"]:focus-visible {
 @media (max-width: 768px) {
     .rs-listing-template-13 .rs-property-grid--grid .rs-property-grid__items {
         grid-template-columns: 1fr !important;
+    }
+
+    /* List view stacks on mobile */
+    .rs-property-grid--list .rs-template-card-13,
+    .rs-property-grid--list .rs-template-card-13__link {
+        flex-direction: column;
+    }
+
+    .rs-property-grid--list .rs-template-card-13__image-section {
+        flex: none;
+        aspect-ratio: 16 / 10;
+        min-height: auto;
+    }
+
+    .rs-property-grid--list .rs-template-card-13__content {
+        text-align: center;
+        padding: 20px;
+    }
+
+    .rs-property-grid--list .rs-template-card-13__title,
+    .rs-property-grid--list .rs-template-card-13__price,
+    .rs-property-grid--list .rs-template-card-13__description {
+        text-align: center;
+    }
+
+    .rs-property-grid--list .rs-template-card-13__specs {
+        justify-content: center;
+    }
+
+    .rs-property-grid--list .rs-template-card-13__read-more {
+        align-self: center;
     }
 }
 
