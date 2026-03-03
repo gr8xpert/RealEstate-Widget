@@ -66,10 +66,13 @@ class RSPrice extends RSBaseComponent {
 
     this.subscribe<number | null>('filters.priceMin', (value) => {
       this.minValue = value;
-      if (this.type === 'min') {
+      if (this.variation === '3') {
+        // Combined dropdown: re-render to filter max options
+        this.updatePriceOptions();
+      } else if (this.type === 'min') {
         this.currentValue = value;
         this.updateDisplay();
-      } else if (this.type === 'max' || this.variation === '3') {
+      } else if (this.type === 'max') {
         // Re-render max options when min changes (filter out invalid prices)
         this.updatePriceOptions();
       }
@@ -77,10 +80,13 @@ class RSPrice extends RSBaseComponent {
 
     this.subscribe<number | null>('filters.priceMax', (value) => {
       this.maxValue = value;
-      if (this.type === 'max') {
+      if (this.variation === '3') {
+        // Combined dropdown: re-render to filter min options
+        this.updatePriceOptions();
+      } else if (this.type === 'max') {
         this.currentValue = value;
         this.updateDisplay();
-      } else if (this.type === 'min' || this.variation === '3') {
+      } else if (this.type === 'min') {
         // Re-render min options when max changes (filter out invalid prices)
         this.updatePriceOptions();
       }
@@ -517,9 +523,18 @@ class RSPrice extends RSBaseComponent {
   }
 
   private updatePriceOptions(): void {
-    // Re-render when listing type changes
+    // Remember if dropdown was open (for variation 3)
+    const wasOpen = this.isOpen;
+
+    // Re-render with filtered options
     this.render();
     this.bindEvents();
+
+    // Keep dropdown open if it was open (for combined dropdown UX)
+    if (wasOpen && this.variation === '3' && this.dropdown) {
+      this.dropdown.style.display = 'block';
+      this.isOpen = true;
+    }
   }
 
   private showDropdown(): void {
