@@ -228,16 +228,55 @@
         }
 
         .nav-section {
-            margin-bottom: 8px;
+            margin-bottom: 4px;
         }
 
         .nav-section-title {
-            padding: 12px 20px 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 20px;
             font-size: 0.6875rem;
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 0.08em;
             color: var(--text-muted);
+            cursor: pointer;
+            user-select: none;
+            transition: all var(--transition);
+            border-radius: 6px;
+            margin: 0 8px;
+        }
+
+        .nav-section-title:hover {
+            background: var(--bg);
+            color: var(--primary);
+        }
+
+        .nav-section-title::after {
+            content: '';
+            width: 6px;
+            height: 6px;
+            border-right: 1.5px solid currentColor;
+            border-bottom: 1.5px solid currentColor;
+            transform: rotate(45deg);
+            transition: transform var(--transition);
+            margin-top: -2px;
+        }
+
+        .nav-section.expanded .nav-section-title::after {
+            transform: rotate(-135deg);
+            margin-top: 2px;
+        }
+
+        .nav-section-links {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+
+        .nav-section.expanded .nav-section-links {
+            max-height: 1000px;
         }
 
         .nav-link {
@@ -1145,72 +1184,88 @@
             </div>
         </div>
 
-        <div class="nav-section">
+        <div class="nav-section expanded">
             <div class="nav-section-title">Getting Started</div>
-            <a href="#getting-started" class="nav-link">Quick Setup</a>
-            <a href="#configuration" class="nav-link">Configuration</a>
-            <a href="#wordpress" class="nav-link">WordPress Integration</a>
+            <div class="nav-section-links">
+                <a href="#getting-started" class="nav-link">Quick Setup</a>
+                <a href="#configuration" class="nav-link">Configuration</a>
+                <a href="#wordpress" class="nav-link">WordPress Integration</a>
+            </div>
         </div>
 
         <div class="nav-section">
             <div class="nav-section-title">Search Components</div>
-            <a href="#search-components" class="nav-link">Overview</a>
-            <a href="#rs_location" class="nav-link nav-link-sub">Location</a>
-            <a href="#rs_listing_type" class="nav-link nav-link-sub">Listing Type</a>
-            <a href="#rs_property_type" class="nav-link nav-link-sub">Property Type</a>
-            <a href="#rs_bedrooms" class="nav-link nav-link-sub">Bedrooms</a>
-            <a href="#rs_bathrooms" class="nav-link nav-link-sub">Bathrooms</a>
-            <a href="#rs_price" class="nav-link nav-link-sub">Price</a>
-            <a href="#rs_built_area" class="nav-link nav-link-sub">Built Area</a>
-            <a href="#rs_plot_size" class="nav-link nav-link-sub">Plot Size</a>
-            <a href="#rs_features" class="nav-link nav-link-sub">Features</a>
-            <a href="#rs_reference" class="nav-link nav-link-sub">Reference</a>
-            <a href="#search-buttons" class="nav-link nav-link-sub">Search/Reset Buttons</a>
-            <a href="#search-example" class="nav-link nav-link-sub">Complete Example</a>
+            <div class="nav-section-links">
+                <a href="#search-components" class="nav-link">Overview</a>
+                <a href="#rs_location" class="nav-link nav-link-sub">Location</a>
+                <a href="#rs_listing_type" class="nav-link nav-link-sub">Listing Type</a>
+                <a href="#rs_property_type" class="nav-link nav-link-sub">Property Type</a>
+                <a href="#rs_bedrooms" class="nav-link nav-link-sub">Bedrooms</a>
+                <a href="#rs_bathrooms" class="nav-link nav-link-sub">Bathrooms</a>
+                <a href="#rs_price" class="nav-link nav-link-sub">Price</a>
+                <a href="#rs_built_area" class="nav-link nav-link-sub">Built Area</a>
+                <a href="#rs_plot_size" class="nav-link nav-link-sub">Plot Size</a>
+                <a href="#rs_features" class="nav-link nav-link-sub">Features</a>
+                <a href="#rs_reference" class="nav-link nav-link-sub">Reference</a>
+                <a href="#search-buttons" class="nav-link nav-link-sub">Search/Reset Buttons</a>
+                <a href="#search-example" class="nav-link nav-link-sub">Complete Example</a>
+            </div>
         </div>
 
         <div class="nav-section">
             <div class="nav-section-title">Search Templates</div>
-            <a href="#search-templates" class="nav-link">Pre-built Templates</a>
+            <div class="nav-section-links">
+                <a href="#search-templates" class="nav-link">Pre-built Templates</a>
+            </div>
         </div>
 
         <div class="nav-section">
             <div class="nav-section-title">Listing Components</div>
-            <a href="#listing-components" class="nav-link">Overview</a>
-            <a href="#rs_property_grid" class="nav-link nav-link-sub">Property Grid</a>
-            <a href="#rs_property_carousel" class="nav-link nav-link-sub">Property Carousel</a>
-            <a href="#rs_pagination" class="nav-link nav-link-sub">Pagination</a>
-            <a href="#listing-utilities" class="nav-link nav-link-sub">Sort, Count, Toggle</a>
-            <a href="#rs_map_view" class="nav-link nav-link-sub">Map View</a>
+            <div class="nav-section-links">
+                <a href="#listing-components" class="nav-link">Overview</a>
+                <a href="#rs_property_grid" class="nav-link nav-link-sub">Property Grid</a>
+                <a href="#rs_property_carousel" class="nav-link nav-link-sub">Property Carousel</a>
+                <a href="#rs_pagination" class="nav-link nav-link-sub">Pagination</a>
+                <a href="#listing-utilities" class="nav-link nav-link-sub">Sort, Count, Toggle</a>
+                <a href="#rs_map_view" class="nav-link nav-link-sub">Map View</a>
+            </div>
         </div>
 
         <div class="nav-section">
             <div class="nav-section-title">Listing Templates</div>
-            <a href="#listing-templates" class="nav-link">Card Styles (12)</a>
+            <div class="nav-section-links">
+                <a href="#listing-templates" class="nav-link">Card Styles (12)</a>
+            </div>
         </div>
 
         <div class="nav-section">
             <div class="nav-section-title">Property Detail</div>
-            <a href="#detail-components" class="nav-link">Overview</a>
-            <a href="#detail-gallery" class="nav-link nav-link-sub">Gallery</a>
-            <a href="#detail-info" class="nav-link nav-link-sub">Info Components</a>
-            <a href="#detail-agent" class="nav-link nav-link-sub">Agent Card</a>
-            <a href="#detail-form" class="nav-link nav-link-sub">Inquiry Form</a>
+            <div class="nav-section-links">
+                <a href="#detail-components" class="nav-link">Overview</a>
+                <a href="#detail-gallery" class="nav-link nav-link-sub">Gallery</a>
+                <a href="#detail-info" class="nav-link nav-link-sub">Info Components</a>
+                <a href="#detail-agent" class="nav-link nav-link-sub">Agent Card</a>
+                <a href="#detail-form" class="nav-link nav-link-sub">Inquiry Form</a>
+            </div>
         </div>
 
         <div class="nav-section">
             <div class="nav-section-title">Utility Components</div>
-            <a href="#wishlist" class="nav-link">Wishlist System</a>
-            <a href="#language-selector" class="nav-link">Language Selector</a>
-            <a href="#share-buttons" class="nav-link">Share Buttons</a>
-            <a href="#currency-selector" class="nav-link">Currency Selector</a>
+            <div class="nav-section-links">
+                <a href="#wishlist" class="nav-link">Wishlist System</a>
+                <a href="#language-selector" class="nav-link">Language Selector</a>
+                <a href="#share-buttons" class="nav-link">Share Buttons</a>
+                <a href="#currency-selector" class="nav-link">Currency Selector</a>
+            </div>
         </div>
 
         <div class="nav-section">
             <div class="nav-section-title">Advanced</div>
-            <a href="#filter-locking" class="nav-link">Filter Locking</a>
-            <a href="#config-reference" class="nav-link">Config Reference</a>
-            <a href="#troubleshooting" class="nav-link">Troubleshooting</a>
+            <div class="nav-section-links">
+                <a href="#filter-locking" class="nav-link">Filter Locking</a>
+                <a href="#config-reference" class="nav-link">Config Reference</a>
+                <a href="#troubleshooting" class="nav-link">Troubleshooting</a>
+            </div>
         </div>
     </nav>
 
@@ -3768,6 +3823,24 @@ RealtySoft.reset();</code></pre>
             overlay.classList.toggle('visible');
         }
 
+        // Accordion navigation
+        document.querySelectorAll('.nav-section-title').forEach(title => {
+            title.addEventListener('click', function() {
+                const section = this.closest('.nav-section');
+                section.classList.toggle('expanded');
+            });
+        });
+
+        // Auto-expand section when clicking a link within it
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.addEventListener('click', function() {
+                const section = this.closest('.nav-section');
+                if (!section.classList.contains('expanded')) {
+                    section.classList.add('expanded');
+                }
+            });
+        });
+
         // Filter navigation
         function filterNav() {
             const filter = document.getElementById('searchInput').value.toLowerCase();
@@ -3784,16 +3857,24 @@ RealtySoft.reset();</code></pre>
                 }
             });
 
-            // Show/hide section titles based on visible links
+            // Show/hide section titles and expand sections with matches
             sections.forEach(section => {
-                const visibleLinks = section.querySelectorAll('.nav-link[style="display: flex"], .nav-link:not([style])');
+                const allLinks = section.querySelectorAll('.nav-link');
+                const visibleLinks = Array.from(allLinks).filter(link => link.style.display !== 'none');
                 const title = section.querySelector('.nav-section-title');
-                if (title) {
-                    if (filter && visibleLinks.length === 0) {
-                        title.style.display = 'none';
+
+                if (filter) {
+                    // When searching, expand sections with matches
+                    if (visibleLinks.length > 0) {
+                        section.classList.add('expanded');
+                        if (title) title.style.display = 'flex';
                     } else {
-                        title.style.display = 'block';
+                        section.classList.remove('expanded');
+                        if (title) title.style.display = 'none';
                     }
+                } else {
+                    // When search cleared, show all titles
+                    if (title) title.style.display = 'flex';
                 }
             });
         }
