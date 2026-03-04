@@ -3774,6 +3774,17 @@ const RealtySoft = (function () {
   }
 
   // Auto-initialize: start as early as possible
+  // Use a flag to prevent double-init from race conditions
+  let autoInitTriggered = false;
+
+  function triggerAutoInit(): void {
+    if (autoInitTriggered) return;
+    autoInitTriggered = true;
+    if (shouldAutoInit()) {
+      init();
+    }
+  }
+
   if (document.readyState === 'loading') {
     // On property detail pages, start init as soon as <body> exists
     // (no need to wait for full DOM — the widget creates its own container).
@@ -3785,23 +3796,22 @@ const RealtySoft = (function () {
 
     if (isDetailUrl && document.body) {
       // Body already exists (script loaded async after <body> tag) — start immediately
-      if (shouldAutoInit()) {
-        init();
-      }
+      triggerAutoInit();
     } else {
       // Listing pages or body not ready — wait for full DOM
-      document.addEventListener('DOMContentLoaded', () => {
-        if (shouldAutoInit()) {
-          init();
+      document.addEventListener('DOMContentLoaded', triggerAutoInit);
+
+      // Fallback: if DOMContentLoaded already fired during script loading,
+      // the listener won't trigger. Check again after microtask.
+      Promise.resolve().then(() => {
+        if (document.readyState !== 'loading') {
+          triggerAutoInit();
         }
       });
     }
   } else {
-    setTimeout(() => {
-      if (shouldAutoInit()) {
-        init();
-      }
-    }, 0);
+    // DOM already ready (interactive or complete) — init immediately
+    setTimeout(triggerAutoInit, 0);
   }
 
   /**
