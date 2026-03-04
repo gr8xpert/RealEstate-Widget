@@ -3777,10 +3777,16 @@ const RealtySoft = (function () {
   // Use a flag to prevent double-init from race conditions
   let autoInitTriggered = false;
 
+  console.log('[RS-DEBUG] Auto-init code reached, readyState:', document.readyState);
+
   function triggerAutoInit(): void {
+    console.log('[RS-DEBUG] triggerAutoInit called, already triggered:', autoInitTriggered);
     if (autoInitTriggered) return;
     autoInitTriggered = true;
-    if (shouldAutoInit()) {
+    const should = shouldAutoInit();
+    console.log('[RS-DEBUG] shouldAutoInit returned:', should);
+    if (should) {
+      console.log('[RS-DEBUG] Calling init()');
       init();
     }
   }
@@ -3794,12 +3800,14 @@ const RealtySoft = (function () {
 
   // 3. Immediate check if DOM is already ready
   if (document.readyState !== 'loading') {
+    console.log('[RS-DEBUG] DOM ready, scheduling immediate init');
     setTimeout(triggerAutoInit, 0);
   }
 
   // 4. Microtask fallback for race conditions
   Promise.resolve().then(() => {
     if (document.readyState !== 'loading') {
+      console.log('[RS-DEBUG] Microtask fallback triggered');
       triggerAutoInit();
     }
   });
