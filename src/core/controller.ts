@@ -3785,34 +3785,27 @@ const RealtySoft = (function () {
     }
   }
 
-  if (document.readyState === 'loading') {
-    // On property detail pages, start init as soon as <body> exists
-    // (no need to wait for full DOM — the widget creates its own container).
-    const cfg = (window as any).RealtySoftConfig || {};
-    const detailSlug = cfg.propertyPageSlug || 'property';
-    const isDetailUrl =
-      new RegExp('/' + detailSlug + '/[^/]+', 'i').test(window.location.pathname) ||
-      /[?&]ref(erence)?=/i.test(window.location.search);
+  // Multiple fallback mechanisms to ensure init() is called
+  // 1. DOMContentLoaded event
+  document.addEventListener('DOMContentLoaded', triggerAutoInit);
 
-    if (isDetailUrl && document.body) {
-      // Body already exists (script loaded async after <body> tag) — start immediately
-      triggerAutoInit();
-    } else {
-      // Listing pages or body not ready — wait for full DOM
-      document.addEventListener('DOMContentLoaded', triggerAutoInit);
+  // 2. window.onload as backup (fires after all resources loaded)
+  window.addEventListener('load', triggerAutoInit);
 
-      // Fallback: if DOMContentLoaded already fired during script loading,
-      // the listener won't trigger. Check again after microtask.
-      Promise.resolve().then(() => {
-        if (document.readyState !== 'loading') {
-          triggerAutoInit();
-        }
-      });
-    }
-  } else {
-    // DOM already ready (interactive or complete) — init immediately
+  // 3. Immediate check if DOM is already ready
+  if (document.readyState !== 'loading') {
     setTimeout(triggerAutoInit, 0);
   }
+
+  // 4. Microtask fallback for race conditions
+  Promise.resolve().then(() => {
+    if (document.readyState !== 'loading') {
+      triggerAutoInit();
+    }
+  });
+
+  // 5. Final safety net - delayed fallback (100ms)
+  setTimeout(triggerAutoInit, 100);
 
   /**
    * Get current widget mode
