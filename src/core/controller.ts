@@ -354,6 +354,38 @@ const RealtySoft = (function () {
   }
 
   /**
+   * Extract owner_email from labels API response.
+   * API returns: { labels: {...}, owner_email: "email@example.com", ... }
+   * Returns null if not present.
+   */
+  function extractOwnerEmail(rawData: unknown): string | null {
+    if (!rawData) return null;
+
+    const raw = rawData as Record<string, unknown>;
+    if (raw.owner_email && typeof raw.owner_email === 'string') {
+      return raw.owner_email;
+    }
+
+    return null;
+  }
+
+  /**
+   * Extract priceRanges from labels API response.
+   * API returns: { labels: {...}, priceRanges: { resale: { min: [...], max: [...] }, ... } }
+   * Returns null if not present (backwards compatibility - use defaults).
+   */
+  function extractPriceRanges(rawData: unknown): Record<string, { min?: number[]; max?: number[] }> | null {
+    if (!rawData) return null;
+
+    const raw = rawData as Record<string, unknown>;
+    if (raw.priceRanges && typeof raw.priceRanges === 'object') {
+      return raw.priceRanges as Record<string, { min?: number[]; max?: number[] }>;
+    }
+
+    return null;
+  }
+
+  /**
    * Extract available language codes from the unfiltered labels API response.
    * API returns: { count, data: [{ code: "location", en_US: "Location", es_ES: "Localidad", ... }, ...] }
    * We scan item keys (excluding "code") to find all language codes present.
@@ -2643,8 +2675,9 @@ const RealtySoft = (function () {
         RealtySoftState.set('config.mapPerPage', defaultMapPerPage);
         RealtySoftState.set('results.perPage', defaultPerPage);
 
-        // Labels mode: 'static' (default), 'api', or 'hybrid'
-        const labelsMode = globalConfig.labelsMode || 'static';
+        // Labels mode: 'api' (default), 'hybrid', or 'static'
+        // API mode fetches labels from dashboard, falls back to static if API fails
+        const labelsMode = globalConfig.labelsMode || 'api';
         Logger.debug('[RealtySoft] Labels mode:', labelsMode);
 
         // Fire getAllLabels early (runs in parallel regardless - needed for language switcher)
@@ -2686,8 +2719,8 @@ const RealtySoft = (function () {
           RealtySoftState.set('data.labels', RealtySoftLabels.getAll());
         }
 
-        // Static mode: still fetch enabledListingTypes from API in background
-        // This ensures listing type filtering works even with static labels
+        // Static mode: still fetch enabledListingTypes and ownerEmail from API in background
+        // This ensures listing type filtering and inquiry forms work even with static labels
         if (labelsMode === 'static') {
           RealtySoftAPI.getLabels()
             .then((labelsData) => {
@@ -2696,6 +2729,18 @@ const RealtySoft = (function () {
               if (enabledTypes !== null) {
                 RealtySoftState.set('data.enabledListingTypes', enabledTypes);
                 Logger.debug('[RealtySoft] Static mode: enabledListingTypes loaded:', enabledTypes);
+              }
+              // Extract and store priceRanges from API
+              const priceRanges = extractPriceRanges(labelsData);
+              if (priceRanges !== null) {
+                RealtySoftState.set('data.priceRanges', priceRanges);
+                Logger.debug('[RealtySoft] Static mode: priceRanges loaded:', priceRanges);
+              }
+              // Extract and store ownerEmail from API (if not already set in config)
+              const ownerEmail = extractOwnerEmail(labelsData);
+              if (ownerEmail && !RealtySoftState.get('config.ownerEmail')) {
+                RealtySoftState.set('config.ownerEmail', ownerEmail);
+                Logger.debug('[RealtySoft] Static mode: ownerEmail loaded from API:', ownerEmail);
               }
             })
             .catch(() => {
@@ -2721,6 +2766,18 @@ const RealtySoft = (function () {
               if (enabledTypes !== null) {
                 RealtySoftState.set('data.enabledListingTypes', enabledTypes);
                 Logger.debug('[RealtySoft] Enabled listing types:', enabledTypes);
+              }
+              // Extract and store priceRanges from API
+              const priceRanges = extractPriceRanges(labelsData);
+              if (priceRanges !== null) {
+                RealtySoftState.set('data.priceRanges', priceRanges);
+                Logger.debug('[RealtySoft] Hybrid mode: priceRanges loaded:', priceRanges);
+              }
+              // Extract and store ownerEmail from API (if not already set in config)
+              const ownerEmail = extractOwnerEmail(labelsData);
+              if (ownerEmail && !RealtySoftState.get('config.ownerEmail')) {
+                RealtySoftState.set('config.ownerEmail', ownerEmail);
+                Logger.debug('[RealtySoft] Hybrid mode: ownerEmail loaded from API:', ownerEmail);
               }
             })
             .catch(() => {
@@ -2755,6 +2812,20 @@ const RealtySoft = (function () {
             if (enabledTypes !== null) {
               RealtySoftState.set('data.enabledListingTypes', enabledTypes);
               Logger.debug('[RealtySoft] Enabled listing types:', enabledTypes);
+            }
+
+            // Extract and store priceRanges from API
+            const priceRanges = extractPriceRanges(labelsData);
+            if (priceRanges !== null) {
+              RealtySoftState.set('data.priceRanges', priceRanges);
+              Logger.debug('[RealtySoft] API mode: priceRanges loaded:', priceRanges);
+            }
+
+            // Extract and store ownerEmail from API (if not already set in config)
+            const ownerEmail = extractOwnerEmail(labelsData);
+            if (ownerEmail && !RealtySoftState.get('config.ownerEmail')) {
+              RealtySoftState.set('config.ownerEmail', ownerEmail);
+              Logger.debug('[RealtySoft] API mode: ownerEmail loaded:', ownerEmail);
             }
           }
 
@@ -3852,7 +3923,7 @@ const RealtySoft = (function () {
     Logger.debug('[RealtySoft] Changing language to:', newLanguage);
 
     const globalConfig = (window.RealtySoftConfig || {}) as ControllerConfig;
-    const labelsMode = globalConfig.labelsMode || 'static';
+    const labelsMode = globalConfig.labelsMode || 'api';
 
     // IMPORTANT: Always reset labels to new language static defaults FIRST (instant)
     // This ensures components get correct labels when their subscriptions fire
@@ -3931,6 +4002,10 @@ const RealtySoft = (function () {
             RealtySoftState.set('data.enabledListingTypes', enabledTypes);
             Logger.debug('[RealtySoft] Static mode: enabledListingTypes refreshed:', enabledTypes);
           }
+          const priceRanges = extractPriceRanges(labelsData);
+          if (priceRanges !== null) {
+            RealtySoftState.set('data.priceRanges', priceRanges);
+          }
         })
         .catch(() => {});
       reRenderComponents();
@@ -3958,6 +4033,11 @@ const RealtySoft = (function () {
           const enabledTypes = extractEnabledListingTypes(labelsData);
           if (enabledTypes !== null) {
             RealtySoftState.set('data.enabledListingTypes', enabledTypes);
+          }
+          // Extract and store priceRanges
+          const priceRanges = extractPriceRanges(labelsData);
+          if (priceRanges !== null) {
+            RealtySoftState.set('data.priceRanges', priceRanges);
           }
         })
         .catch((error) => {
@@ -3988,6 +4068,12 @@ const RealtySoft = (function () {
       const enabledTypes = extractEnabledListingTypes(labelsData);
       if (enabledTypes !== null) {
         RealtySoftState.set('data.enabledListingTypes', enabledTypes);
+      }
+
+      // Extract and store priceRanges
+      const priceRanges = extractPriceRanges(labelsData);
+      if (priceRanges !== null) {
+        RealtySoftState.set('data.priceRanges', priceRanges);
       }
 
       reRenderComponents();

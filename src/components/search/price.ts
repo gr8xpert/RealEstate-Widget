@@ -4,10 +4,11 @@
  */
 
 import { RSBaseComponent } from '../base';
-import type { ComponentOptions, ComponentConstructor, RealtySoftModule } from '../../types/index';
+import type { ComponentOptions, ComponentConstructor, RealtySoftModule, RealtySoftStateModule } from '../../types/index';
 
 // Declare global RealtySoft
 declare const RealtySoft: RealtySoftModule;
+declare const RealtySoftState: RealtySoftStateModule;
 
 interface PriceRanges {
   min: number[];
@@ -96,12 +97,20 @@ class RSPrice extends RSBaseComponent {
     this.subscribe<string | null>('filters.listingType', () => {
       this.updatePriceOptions();
     });
+
+    // Listen for custom price ranges loaded from API (per-client configuration)
+    this.subscribe<Record<string, { min?: number[]; max?: number[] }> | null>('data.priceRanges', () => {
+      this.updatePriceOptions();
+    });
   }
 
   // Get price options based on listing type (filtered by opposite selection)
   private getPriceOptions(forType?: 'min' | 'max'): number[] {
     const type = forType || this.type;
     const listingType = this.getFilter<string>('listingType') || 'resale';
+
+    // Check for custom price ranges from API (per-client configuration)
+    const customPriceRanges = RealtySoftState.get<Record<string, { min?: number[]; max?: number[] }>>('data.priceRanges');
 
     const defaultPriceRanges: DefaultPriceRanges = {
       resale: {
@@ -122,7 +131,19 @@ class RSPrice extends RSBaseComponent {
       }
     };
 
-    const priceRange = defaultPriceRanges[listingType] || defaultPriceRanges.resale;
+    // Use custom ranges if available for this listing type, otherwise use defaults
+    let priceRange: PriceRanges;
+    if (customPriceRanges && customPriceRanges[listingType]) {
+      const customRange = customPriceRanges[listingType];
+      const defaultRange = defaultPriceRanges[listingType] || defaultPriceRanges.resale;
+      priceRange = {
+        min: customRange.min && customRange.min.length > 0 ? customRange.min : defaultRange.min,
+        max: customRange.max && customRange.max.length > 0 ? customRange.max : defaultRange.max
+      };
+    } else {
+      priceRange = defaultPriceRanges[listingType] || defaultPriceRanges.resale;
+    }
+
     let options = priceRange[type] || priceRange.min;
 
     // Filter options based on opposite selection

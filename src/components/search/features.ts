@@ -108,16 +108,14 @@ class RSFeatures extends RSBaseComponent {
   // Build parent-child map from API structure
   // API returns: [{id, name, value_ids: [{id, name}, ...]}, ...]
   private buildFeatureMap(): MappedCategory[] {
+    // Preserve API order (sorted by dashboard preferences) instead of alphabetical
     return this.features
       .filter(category => category.value_ids && category.value_ids.length > 0)
       .map(category => ({
         id: category.id,
         name: category.name,
-        children: (category.value_ids || []).sort((a, b) =>
-          (a.name || '').localeCompare(b.name || '')
-        )
-      }))
-      .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+        children: category.value_ids || []
+      }));
   }
 
   // Filter features by search term

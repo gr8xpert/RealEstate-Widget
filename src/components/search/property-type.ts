@@ -149,14 +149,15 @@ class RSPropertyType extends RSBaseComponent {
     Logger.debug(`[RealtySoft] Property type parents: ${allParents.length} total, ${filtered.length} after filtering`);
     Logger.debug(`[RealtySoft] Filtered out types: ${allParents.filter(p => !filtered.includes(p)).map(p => `${p.name}(${p.property_count})`).join(', ')}`);
 
-    return filtered.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    // Preserve API order (sorted by dashboard preferences) instead of alphabetical
+    return filtered;
   }
 
   // Get child property types for a parent, excluding items with 0 properties
   private getChildTypes(parentId: number | string): ExtendedPropertyType[] {
+    // Preserve API order (sorted by dashboard preferences) instead of alphabetical
     return this.propertyTypes
-      .filter(type => type.parent_id == parentId && hasProperties(type))
-      .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+      .filter(type => type.parent_id == parentId && hasProperties(type));
   }
 
   // Get all child IDs for a parent

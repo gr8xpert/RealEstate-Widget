@@ -251,7 +251,8 @@ class RSLocation extends RSBaseComponent {
       Logger.debug(`[RealtySoft] Filtered out parents: ${filteredOut.map(p => `${p.name}(id:${p.id},count:${p.property_count})`).join(', ')}`);
     }
 
-    return filtered.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    // Preserve API order (sorted by dashboard preferences) instead of alphabetical
+    return filtered;
   }
 
   private getChildLocations(parentId: number | string): ExtendedLocation[] {
@@ -276,7 +277,8 @@ class RSLocation extends RSBaseComponent {
 
     Logger.debug(`[RealtySoft] Child locations for parent ${parentId}: ${allChildren.length} total, ${filtered.length} after filtering`);
 
-    return filtered.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    // Preserve API order (sorted by dashboard preferences) instead of alphabetical
+    return filtered;
   }
 
   // Get all descendants of a location (recursive)
@@ -307,7 +309,8 @@ class RSLocation extends RSBaseComponent {
           matchesParent = pid && String(pid) === String(parentId);
         }
         return matchesParent && hasProperties(loc);
-      }).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+      });
+      // Preserve API order instead of alphabetical
 
       children.forEach(loc => {
         result.push({ ...loc, level });
@@ -317,9 +320,9 @@ class RSLocation extends RSBaseComponent {
 
     buildFlat(null, 0);
 
-    // If hierarchy build found nothing, return all locations with properties sorted alphabetically
+    // If hierarchy build found nothing, return all locations with properties (preserve API order)
     if (result.length === 0 && this.locations.length > 0) {
-      return [...this.locations].filter(loc => hasProperties(loc)).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+      return [...this.locations].filter(loc => hasProperties(loc));
     }
 
     return result;
@@ -563,10 +566,10 @@ class RSLocation extends RSBaseComponent {
 
     // Get municipalities (parents) and cities (children), excluding items with 0 properties
     // For parents, show if they or their children have properties
+    // Preserve API order (sorted by dashboard preferences) instead of alphabetical
     const municipalities = this.locations
       .filter(loc => loc.type && loc.type.toLowerCase() === this.parentType.toLowerCase() &&
-                     hasPropertiesOrChildren(loc, this.locations))
-      .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+                     hasPropertiesOrChildren(loc, this.locations));
 
     municipalities.forEach(municipality => {
       // Add municipality with type label
@@ -585,6 +588,7 @@ class RSLocation extends RSBaseComponent {
       collectDescendants(municipality.id);
 
       // Get cities that are descendants of this municipality, excluding items with 0 properties
+      // Preserve API order (sorted by dashboard preferences) instead of alphabetical
       const cities = this.locations
         .filter(loc => {
           if (!loc.type || loc.type.toLowerCase() !== this.childType.toLowerCase()) return false;
@@ -592,8 +596,7 @@ class RSLocation extends RSBaseComponent {
           // Check if city is direct child or descendant
           return (loc.parent_id && String(loc.parent_id) === String(municipality.id)) ||
                  descendantIds.has(loc.id);
-        })
-        .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+        });
 
       cities.forEach(city => {
         html += `<option value="${city.id}">&nbsp;&nbsp;├─ ${this.escapeHtml(city.name)}</option>`;

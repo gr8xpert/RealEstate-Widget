@@ -916,10 +916,10 @@ const RealtySoftAPI: RealtySoftAPIModule = (function () {
         Logger.debug('[RealtySoft] Labels loaded from PHP prefetch');
         result = prefetched;
       } else {
-        result = await request<Record<string, string>>('v1/plugin_labels');
+        result = await request<Record<string, string>>('v1/widget/labels');
       }
     } else {
-      result = await request<Record<string, string>>('v1/plugin_labels');
+      result = await request<Record<string, string>>('v1/widget/labels');
     }
 
     // Cache the result
@@ -940,7 +940,7 @@ const RealtySoftAPI: RealtySoftAPIModule = (function () {
       return cached;
     }
 
-    const result = await request<unknown>('v1/plugin_labels', {}, 'GET', { skipLang: true });
+    const result = await request<unknown>('v1/widget/labels', {}, 'GET', { skipLang: true });
 
     CacheManager.set(cacheKey, result);
     return result;

@@ -19,6 +19,7 @@ class ProxyCache {
         'v1/property_types' => 900,     // 15 min (reduced from 24h for fresh property_count)
         'v1/property_features' => 3600, // 1 hour (reduced from 24h)
         'v1/plugin_labels' => 86400,    // 24 hours (unchanged - rarely changes)
+        'v1/widget/labels' => 3600,     // 1 hour (client can customize labels)
     ];
 
     // Stale grace period - serve stale data for this long while refreshing
@@ -164,12 +165,12 @@ $domain = preg_replace('/^www\./', '', $domain);
 // ============================================
 // Check cache BEFORE subscription/auth checks for static data
 // This ensures fast responses even when auth has issues
-// NOTE: Domain is NOT included in cache key for static endpoints
-// Client isolation happens at API key level, not domain level
-// This allows cache-warm.php to pre-populate caches that match runtime requests
+// NOTE: Locations, property_types, features are now routed to dashboard for custom preferences
+// so they are excluded from early cache (need per-domain processing)
 $endpoint = $_GET['_endpoint'] ?? $_POST['_endpoint'] ?? '';
-// NOTE: plugin_labels excluded from early cache because enabledListingTypes is per-domain
-$staticEndpoints = ['v1/location', 'v2/location', 'v1/property_types', 'v1/property_features'];
+// Early cache ONLY for endpoints that don't go through dashboard
+// Locations, property_types, features excluded - they route to dashboard API
+$staticEndpoints = []; // All these now go through dashboard - disable early cache
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && in_array($endpoint, $staticEndpoints)) {
     $cacheParams = $_GET;
@@ -315,7 +316,8 @@ $allowedEndpoints = [
     'v1/property_types',
     'v1/property_features',
     'v1/property',
-    'v1/plugin_labels'
+    'v1/plugin_labels',
+    'v1/widget/labels'
 ];
 
 if (!in_array($endpoint, $allowedEndpoints)) {
@@ -336,10 +338,10 @@ if ($cacheTtl && $_SERVER['REQUEST_METHOD'] === 'GET') {
     unset($cacheParams['_endpoint']); // Keep _lang in cache key
     unset($cacheParams['_t']);  // Remove cache-busting timestamp
     unset($cacheParams['_']);   // Remove jQuery cache-buster
-    unset($cacheParams['_domain']); // Domain not used in cache key - isolation via API key
-    // Domain NOT added for most endpoints - static data is per-API-key, not per-domain
-    // EXCEPTION: plugin_labels includes enabledListingTypes which is per-domain
-    if ($endpoint === 'v1/plugin_labels') {
+    unset($cacheParams['_domain']); // Will be added back for per-domain endpoints
+    // Endpoints routed to dashboard need domain in cache key (per-client preferences)
+    $perDomainEndpoints = ['v1/location', 'v2/location', 'v1/property_types', 'v1/property_features', 'v1/plugin_labels', 'v1/widget/labels'];
+    if (in_array($endpoint, $perDomainEndpoints)) {
         $cacheParams['_domain'] = $domain;
     }
     $cacheKey = ProxyCache::getCacheKey($endpoint, $cacheParams);
@@ -361,6 +363,174 @@ if ($cacheTtl && $_SERVER['REQUEST_METHOD'] === 'GET') {
         header('X-Cache: STALE');
     } else {
         header('X-Cache: MISS');
+    }
+}
+
+// ============================================
+// ROUTE LOCATIONS TO DASHBOARD API
+// ============================================
+// Locations come from dashboard to support custom location grouping
+// Dashboard merges custom groups with CRM feed locations
+
+if ($endpoint === 'v1/location' || $endpoint === 'v2/location') {
+    // Load database config for Laravel API settings
+    $dbConfigFile = __DIR__ . '/config/database.local.php';
+    if (!file_exists($dbConfigFile)) {
+        $dbConfigFile = __DIR__ . '/config/database.php';
+    }
+    $dbConfig = file_exists($dbConfigFile) ? require $dbConfigFile : [];
+    $laravelApi = $dbConfig['laravel_api'] ?? [];
+
+    if (!empty($laravelApi['base_url'])) {
+        $dashboardUrl = rtrim($laravelApi['base_url'], '/') . '/api/v1/widget/locations';
+        $dashboardUrl .= '?domain=' . urlencode($domain);
+
+        $ch = curl_init();
+        curl_setopt_array($ch, [
+            CURLOPT_URL => $dashboardUrl,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_TIMEOUT => 15,
+            CURLOPT_HTTPHEADER => [
+                'Accept: application/json',
+            ]
+        ]);
+
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $error = curl_error($ch);
+        curl_close($ch);
+
+        if (!$error && $httpCode === 200) {
+            // Successfully got locations from dashboard
+            // Cache the response
+            if ($cacheTtl && $cacheKey) {
+                $hash = ProxyCache::set($cacheKey, $response, $cacheTtl);
+                if ($hash) {
+                    header('X-Cache-Hash: ' . $hash);
+                }
+            }
+
+            header('Content-Type: application/json');
+            header('Cache-Control: public, max-age=900');  // 15 min cache
+            header('X-Locations-Source: dashboard');
+            http_response_code(200);
+            echo $response;
+            exit;
+        }
+
+        // Dashboard API failed - log and fall through to CRM
+        error_log('Dashboard locations API failed: ' . ($error ?: "HTTP $httpCode") . ' URL: ' . $dashboardUrl);
+    }
+}
+
+// ============================================
+// ROUTE PROPERTY TYPES TO DASHBOARD API
+// ============================================
+// Property types come from dashboard to apply display preferences
+
+if ($endpoint === 'v1/property_types') {
+    // Load database config for Laravel API settings
+    $dbConfigFile = __DIR__ . '/config/database.local.php';
+    if (!file_exists($dbConfigFile)) {
+        $dbConfigFile = __DIR__ . '/config/database.php';
+    }
+    $dbConfig = file_exists($dbConfigFile) ? require $dbConfigFile : [];
+    $laravelApi = $dbConfig['laravel_api'] ?? [];
+
+    if (!empty($laravelApi['base_url'])) {
+        $dashboardUrl = rtrim($laravelApi['base_url'], '/') . '/api/v1/widget/property-types';
+        $dashboardUrl .= '?domain=' . urlencode($domain);
+
+        $ch = curl_init();
+        curl_setopt_array($ch, [
+            CURLOPT_URL => $dashboardUrl,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_TIMEOUT => 15,
+            CURLOPT_HTTPHEADER => [
+                'Accept: application/json',
+            ]
+        ]);
+
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $error = curl_error($ch);
+        curl_close($ch);
+
+        if (!$error && $httpCode === 200) {
+            // Cache the response
+            if ($cacheTtl && $cacheKey) {
+                $hash = ProxyCache::set($cacheKey, $response, $cacheTtl);
+                if ($hash) {
+                    header('X-Cache-Hash: ' . $hash);
+                }
+            }
+
+            header('Content-Type: application/json');
+            header('Cache-Control: public, max-age=900');
+            header('X-PropertyTypes-Source: dashboard');
+            http_response_code(200);
+            echo $response;
+            exit;
+        }
+
+        error_log('Dashboard property-types API failed: ' . ($error ?: "HTTP $httpCode") . ' URL: ' . $dashboardUrl);
+    }
+}
+
+// ============================================
+// ROUTE FEATURES TO DASHBOARD API
+// ============================================
+// Features come from dashboard to apply display preferences
+
+if ($endpoint === 'v1/property_features') {
+    // Load database config for Laravel API settings
+    $dbConfigFile = __DIR__ . '/config/database.local.php';
+    if (!file_exists($dbConfigFile)) {
+        $dbConfigFile = __DIR__ . '/config/database.php';
+    }
+    $dbConfig = file_exists($dbConfigFile) ? require $dbConfigFile : [];
+    $laravelApi = $dbConfig['laravel_api'] ?? [];
+
+    if (!empty($laravelApi['base_url'])) {
+        $dashboardUrl = rtrim($laravelApi['base_url'], '/') . '/api/v1/widget/features';
+        $dashboardUrl .= '?domain=' . urlencode($domain);
+
+        $ch = curl_init();
+        curl_setopt_array($ch, [
+            CURLOPT_URL => $dashboardUrl,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_TIMEOUT => 15,
+            CURLOPT_HTTPHEADER => [
+                'Accept: application/json',
+            ]
+        ]);
+
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $error = curl_error($ch);
+        curl_close($ch);
+
+        if (!$error && $httpCode === 200) {
+            // Cache the response
+            if ($cacheTtl && $cacheKey) {
+                $hash = ProxyCache::set($cacheKey, $response, $cacheTtl);
+                if ($hash) {
+                    header('X-Cache-Hash: ' . $hash);
+                }
+            }
+
+            header('Content-Type: application/json');
+            header('Cache-Control: public, max-age=900');
+            header('X-Features-Source: dashboard');
+            http_response_code(200);
+            echo $response;
+            exit;
+        }
+
+        error_log('Dashboard features API failed: ' . ($error ?: "HTTP $httpCode") . ' URL: ' . $dashboardUrl);
     }
 }
 
@@ -421,6 +591,74 @@ if ($endpoint === 'v1/plugin_labels') {
         // Dashboard API failed - log and fall through to CRM
         error_log('Dashboard labels API failed: ' . ($error ?: "HTTP $httpCode"));
     }
+}
+
+// ============================================
+// ROUTE WIDGET LABELS TO DASHBOARD PUBLIC API
+// ============================================
+// Public labels endpoint - returns merged labels (defaults + client overrides)
+// No internal API key required - uses domain-based authentication
+
+if ($endpoint === 'v1/widget/labels') {
+    // Load database config for Laravel API settings
+    $dbConfigFile = __DIR__ . '/config/database.local.php';
+    if (!file_exists($dbConfigFile)) {
+        $dbConfigFile = __DIR__ . '/config/database.php';
+    }
+    $dbConfig = file_exists($dbConfigFile) ? require $dbConfigFile : [];
+    $laravelApi = $dbConfig['laravel_api'] ?? [];
+
+    if (!empty($laravelApi['base_url'])) {
+        $dashboardUrl = rtrim($laravelApi['base_url'], '/') . '/api/v1/widget/labels';
+        $dashboardUrl .= '?domain=' . urlencode($domain) . '&lang=' . urlencode($language);
+
+        $ch = curl_init();
+        curl_setopt_array($ch, [
+            CURLOPT_URL => $dashboardUrl,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_TIMEOUT => 15,
+            CURLOPT_HTTPHEADER => [
+                'Accept: application/json',
+            ]
+        ]);
+
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $error = curl_error($ch);
+        curl_close($ch);
+
+        if (!$error && $httpCode === 200) {
+            // Successfully got labels from dashboard
+            // Cache the response
+            if ($cacheTtl && $cacheKey) {
+                $hash = ProxyCache::set($cacheKey, $response, $cacheTtl);
+                if ($hash) {
+                    header('X-Cache-Hash: ' . $hash);
+                }
+            }
+
+            header('Content-Type: application/json');
+            header('Cache-Control: public, max-age=3600');
+            header('X-Labels-Source: dashboard-public');
+            http_response_code(200);
+            echo $response;
+            exit;
+        }
+
+        // Dashboard API failed - log error
+        error_log('Dashboard public labels API failed: ' . ($error ?: "HTTP $httpCode") . ' URL: ' . $dashboardUrl);
+
+        // Return error response (no CRM fallback for labels)
+        http_response_code($httpCode ?: 500);
+        echo json_encode(['error' => 'Failed to fetch labels from dashboard']);
+        exit;
+    }
+
+    // No Laravel API configured - return error
+    http_response_code(500);
+    echo json_encode(['error' => 'Labels API not configured']);
+    exit;
 }
 
 // ============================================
