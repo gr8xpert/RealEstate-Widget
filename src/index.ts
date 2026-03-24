@@ -19,6 +19,7 @@ import { RealtySoftLabels } from './core/labels';
 import { RealtySoftAnalytics } from './core/analytics';
 import { RealtySoftToast } from './core/toast';
 import { WishlistManager } from './core/wishlist-manager';
+import { RealtySoftRecaptchaHelper } from './core/recaptcha';
 
 // Import controller (main coordination module)
 import { RealtySoft } from './core/controller';
@@ -45,6 +46,7 @@ void RealtySoftToast;
 void WishlistManager;
 void RealtySoftRouter;
 void RSBaseComponent;
+void RealtySoftRecaptchaHelper;
 
 // Default export only — prevents the IIFE wrapper from overriding
 // window.RealtySoft (which the controller sets to the correct object).

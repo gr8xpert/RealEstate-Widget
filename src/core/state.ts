@@ -6,6 +6,7 @@
 import type {
   FilterState,
   LockedFilters,
+  DefaultFilters,
   ResultsState,
   UIState,
   AppState,
@@ -48,10 +49,14 @@ const RealtySoftState: RealtySoftStateModule = (function () {
       plotMax: null,
       features: [],
       ref: '',
+      featured: null,
     },
 
     // Locked filters (from data attributes)
     lockedFilters: {},
+
+    // Default filters (pre-filled but changeable)
+    defaultFilters: {},
 
     // Results
     results: {
@@ -258,6 +263,7 @@ const RealtySoftState: RealtySoftStateModule = (function () {
       plotMax: null,
       features: [],
       ref: '',
+      featured: null,
     };
 
     // Apply defaults but keep locked values
@@ -284,6 +290,34 @@ const RealtySoftState: RealtySoftStateModule = (function () {
     for (const [key, value] of Object.entries(locked)) {
       if (value !== null && value !== undefined) {
         set(`filters.${key}`, value);
+      }
+    }
+  }
+
+  /**
+   * Set default filters from data attributes (pre-filled but changeable)
+   * Only applies to filters not already set by URL or locked filters
+   */
+  function setDefaultFilters(defaults: DefaultFilters): void {
+    state.defaultFilters = { ...defaults };
+
+    // Apply default filters only if filter not already set
+    for (const [key, value] of Object.entries(defaults)) {
+      if (value !== null && value !== undefined) {
+        // Skip if filter is locked
+        if (isFilterLocked(key)) continue;
+
+        // Skip if filter already has a value from URL params
+        const currentValue = state.filters[key as keyof FilterState];
+        const hasValue =
+          currentValue !== null &&
+          currentValue !== undefined &&
+          currentValue !== '' &&
+          !(Array.isArray(currentValue) && currentValue.length === 0);
+
+        if (!hasValue) {
+          set(`filters.${key}`, value);
+        }
       }
     }
   }
@@ -353,10 +387,19 @@ const RealtySoftState: RealtySoftStateModule = (function () {
     // Reference - API expects 'ref_no'
     if (f.ref) params.ref_no = f.ref;
 
+    // Featured - API expects 'status=sale'
+    if (f.featured) params.status = 'sale';
+
     // Pagination and sorting
     params.page = state.results.page;
     params.limit = state.results.perPage;
-    params.order = state.ui.sort;
+
+    // Map internal sort names to CRM API parameter names
+    const sortMapping: Record<string, string> = {
+      'last_date_desc': 'write_date_desc',  // Recently updated
+      'last_date': 'write_date',            // Oldest updated
+    };
+    params.order = sortMapping[state.ui.sort] || state.ui.sort;
 
     return params as SearchParams;
   }
@@ -416,6 +459,7 @@ const RealtySoftState: RealtySoftStateModule = (function () {
     subscribe,
     resetFilters,
     setLockedFilters,
+    setDefaultFilters,
     isFilterLocked,
     getSearchParams,
     addToWishlist,

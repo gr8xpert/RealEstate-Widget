@@ -4,10 +4,11 @@
  */
 
 import { RSBaseComponent } from '../base';
-import type { ComponentOptions, ComponentConstructor, RealtySoftModule } from '../../types/index';
+import type { ComponentOptions, ComponentConstructor, RealtySoftModule, RealtySoftStateModule } from '../../types/index';
 
-// Declare global RealtySoft
+// Declare globals
 declare const RealtySoft: RealtySoftModule;
+declare const RealtySoftState: RealtySoftStateModule;
 
 class RSPagination extends RSBaseComponent {
   private currentPage: number = 1;
@@ -20,9 +21,10 @@ class RSPagination extends RSBaseComponent {
   }
 
   init(): void {
-    this.currentPage = 1;
-    this.totalPages = 0;
-    this.loading = false;
+    // Get initial values from state (important when component is created after state is set)
+    this.currentPage = RealtySoftState.get<number>('results.page') || 1;
+    this.totalPages = RealtySoftState.get<number>('results.totalPages') || 0;
+    this.loading = RealtySoftState.get<boolean>('ui.loading') || false;
 
     this.render();
     this.bindEvents();

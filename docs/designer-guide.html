@@ -1255,6 +1255,7 @@
                 <a href="#detail-info" class="nav-link nav-link-sub">Info Components</a>
                 <a href="#detail-agent" class="nav-link nav-link-sub">Agent Card</a>
                 <a href="#detail-form" class="nav-link nav-link-sub">Inquiry Form</a>
+                <a href="#similar-properties" class="nav-link nav-link-sub">Similar Properties</a>
             </div>
         </div>
 
@@ -1265,6 +1266,7 @@
                 <a href="#language-selector" class="nav-link">Language Selector</a>
                 <a href="#share-buttons" class="nav-link">Share Buttons</a>
                 <a href="#currency-selector" class="nav-link">Currency Selector</a>
+                <a href="#price-placeholders" class="nav-link">Price Placeholders</a>
             </div>
         </div>
 
@@ -1444,10 +1446,12 @@ window.RealtySoftConfig = {
     labelOverrides: {
         _default: {
             search_button: 'Find Properties',
-            reset_button: 'Clear All'
+            reset_button: 'Clear All',
+            detail_back: 'Go Back'
         },
         es_ES: {
-            search_button: 'Buscar Propiedades'
+            search_button: 'Buscar Propiedades',
+            detail_back: 'Volver'
         }
     }
 };</code></pre>
@@ -2346,6 +2350,11 @@ window.RealtySoftConfig = {
                             <td>"1", "6"</td>
                         </tr>
                         <tr>
+                            <td><code class="inline-code">data-rs-sort</code></td>
+                            <td>Sort order for properties</td>
+                            <td>"create_date_desc", "list_price"</td>
+                        </tr>
+                        <tr>
                             <td colspan="3" style="background: var(--bg); font-weight: 600;">Property Source</td>
                         </tr>
                         <tr>
@@ -2452,6 +2461,53 @@ window.RealtySoftConfig = {
                             <td><code class="inline-code">data-rs-features</code></td>
                             <td>Filter by feature IDs (comma-separated)</td>
                             <td>"1,5,12"</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h4>Sort Values Reference</h4>
+            <p>Available values for <code class="inline-code">data-rs-sort</code>:</p>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Value</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code class="inline-code">create_date_desc</code></td>
+                            <td>Newest listings first (default)</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">create_date</code></td>
+                            <td>Oldest listings first</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">last_date_desc</code></td>
+                            <td>Recently updated first</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">last_date</code></td>
+                            <td>Oldest updated first</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">list_price</code></td>
+                            <td>Price: Low to High</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">list_price_desc</code></td>
+                            <td>Price: High to Low</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">is_featured_desc</code></td>
+                            <td>Featured properties first</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">location_id</code></td>
+                            <td>Sort by location</td>
                         </tr>
                     </tbody>
                 </table>
@@ -2881,8 +2937,8 @@ window.RealtySoftConfig = {
                         </tr>
                         <tr>
                             <td><code class="inline-code">rs_detail_related</code></td>
-                            <td>Similar properties</td>
-                            <td><code class="inline-code">data-limit="6"</code></td>
+                            <td>Similar properties (see <a href="#similar-properties">Similar Properties</a> section)</td>
+                            <td><code class="inline-code">data-limit="6"</code>, <code class="inline-code">data-min-results="3"</code>, <code class="inline-code">data-price-range="0.3"</code></td>
                         </tr>
                         <tr>
                             <td><code class="inline-code">rs_detail_resources</code></td>
@@ -2921,8 +2977,8 @@ window.RealtySoftConfig = {
                         </tr>
                         <tr>
                             <td><code class="inline-code">rs_detail_back</code></td>
-                            <td>Back button</td>
-                            <td></td>
+                            <td>Back button - navigates to previous page</td>
+                            <td>Label: <code class="inline-code">detail_back</code></td>
                         </tr>
                         <tr>
                             <td><code class="inline-code">rs_mortgage_calculator</code></td>
@@ -3116,8 +3172,128 @@ window.RealtySoftConfig = {
     &lt;/div&gt;
 
     &lt;!-- Related Properties --&gt;
-    &lt;div class="rs_detail_related" data-limit="6"&gt;&lt;/div&gt;
+    &lt;div class="rs_detail_related" data-limit="6" data-min-results="3"&gt;&lt;/div&gt;
 &lt;/div&gt;</code></pre>
+            </div>
+        </section>
+
+        <!-- Similar Properties -->
+        <section id="similar-properties">
+            <h2>Similar Properties</h2>
+
+            <p>The Similar Properties component displays related properties on detail pages. It uses a smart fallback system:</p>
+
+            <div class="info-box">
+                <strong>How it works:</strong>
+                <ol style="margin: 10px 0 0 20px; padding: 0;">
+                    <li><strong>Priority 1:</strong> If the CRM provides <code class="inline-code">similar_property_ids</code> (manually curated), those are shown first</li>
+                    <li><strong>Priority 2:</strong> Otherwise, automatically searches for similar properties based on location, type, and price range</li>
+                </ol>
+            </div>
+
+            <h3>Basic Usage</h3>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">HTML</span>
+                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code>&lt;div class="rs_detail_related"&gt;&lt;/div&gt;</code></pre>
+            </div>
+
+            <h3>Data Attributes</h3>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Attribute</th>
+                            <th>Default</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code class="inline-code">data-limit</code></td>
+                            <td>6</td>
+                            <td>Maximum number of properties to display</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">data-min-results</code></td>
+                            <td>3</td>
+                            <td>Minimum required to show section (hides if fewer found)</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">data-price-range</code></td>
+                            <td>0.3</td>
+                            <td>Price range for fallback search (0.3 = ±30% of current property price)</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3>Examples</h3>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">HTML</span>
+                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code>&lt;!-- Default: max 6, min 3 required --&gt;
+&lt;div class="rs_detail_related"&gt;&lt;/div&gt;
+
+&lt;!-- Custom: max 8, min 4 required, wider price range --&gt;
+&lt;div class="rs_detail_related"
+     data-limit="8"
+     data-min-results="4"
+     data-price-range="0.5"&gt;&lt;/div&gt;</code></pre>
+            </div>
+
+            <h3>Global Configuration</h3>
+            <p>Set defaults via the init config (data attributes override these):</p>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">JavaScript</span>
+                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code>window.RealtySoftConfig = {
+    // ... other config
+
+    similarProperties: {
+        limit: 6,        // Max properties to show
+        minResults: 3,   // Min required to show section
+        priceRange: 0.3  // ±30% price range
+    }
+};</code></pre>
+            </div>
+
+            <h3>Fallback Search Strategy</h3>
+            <p>When no CRM-curated similar properties exist, the widget searches using progressive relaxation:</p>
+            <ol>
+                <li><strong>Strategy 1:</strong> Same location + type + listing type + price range (most specific)</li>
+                <li><strong>Strategy 2:</strong> Same location + listing type + price range</li>
+                <li><strong>Strategy 3:</strong> Same location + listing type</li>
+                <li><strong>Strategy 4:</strong> Same type + listing type + price range</li>
+                <li><strong>Strategy 5:</strong> Same listing type + price range</li>
+                <li><strong>Strategy 6:</strong> Same listing type only (broadest)</li>
+            </ol>
+            <p>The search continues through strategies until it finds at least <code class="inline-code">minResults</code> properties.</p>
+
+            <h3>Styling</h3>
+            <p>The component uses these CSS classes:</p>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">CSS</span>
+                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code>.rs-detail-related { }
+.rs-detail-related__title { }
+.rs-detail-related__loader { }
+.rs-detail-related__grid { }
+.rs-detail-related__card { }
+.rs-detail-related__card-image { }
+.rs-detail-related__card-content { }
+.rs-detail-related__card-price { }
+.rs-detail-related__card-title { }
+.rs-detail-related__card-location { }
+.rs-detail-related__card-specs { }</code></pre>
             </div>
         </section>
 
@@ -3333,11 +3509,95 @@ window.RealtySoftConfig = {
             </div>
         </section>
 
-        <!-- Filter Locking -->
-        <section id="filter-locking">
-            <h2>Filter Locking</h2>
+        <!-- Price Placeholders -->
+        <section id="price-placeholders">
+            <h3>Price Placeholders</h3>
+            <p>Display dynamic price statistics from search results anywhere on your page. Perfect for intro text, marketing copy, or informational sections outside the widget.</p>
 
-            <p>Lock or preset filters using <code class="inline-code">data-rs-*</code> attributes. Locked filters cannot be changed by visitors.</p>
+            <h4>How It Works</h4>
+            <p>Add placeholder tokens to any text on your page. When the widget performs a search, it automatically calculates price statistics from the results and replaces the placeholders with formatted values.</p>
+
+            <h4>Available Placeholders</h4>
+            <table style="width: 100%; border-collapse: collapse; margin: 16px 0;">
+                <thead>
+                    <tr style="background: var(--bg-alt); text-align: left;">
+                        <th style="padding: 12px; border: 1px solid var(--border);">Placeholder</th>
+                        <th style="padding: 12px; border: 1px solid var(--border);">Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td style="padding: 12px; border: 1px solid var(--border);"><code class="inline-code">#MINPRICE#</code></td>
+                        <td style="padding: 12px; border: 1px solid var(--border);">Lowest price among filtered results</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 12px; border: 1px solid var(--border);"><code class="inline-code">#MAXPRICE#</code></td>
+                        <td style="padding: 12px; border: 1px solid var(--border);">Highest price among filtered results</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 12px; border: 1px solid var(--border);"><code class="inline-code">#AVGPRICE#</code></td>
+                        <td style="padding: 12px; border: 1px solid var(--border);">Average price of all filtered results</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h4>Basic Usage</h4>
+            <p>Add the <code class="inline-code">rs-price-stats</code> class to any element containing placeholders:</p>
+
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">HTML</span>
+                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code>&lt;!-- Intro paragraph above the widget --&gt;
+&lt;p class="rs-price-stats"&gt;
+    We offer properties starting from #MINPRICE# up to #MAXPRICE#,
+    with an average price of #AVGPRICE#.
+&lt;/p&gt;
+
+&lt;!-- Widget below --&gt;
+&lt;div class="rs-search-template-01"&gt;&lt;/div&gt;
+&lt;div class="rs-listing-template-01"&gt;&lt;/div&gt;</code></pre>
+            </div>
+
+            <h4>Example Output</h4>
+            <p>After search returns results, the placeholders are replaced:</p>
+            <div style="background: var(--bg-alt); padding: 16px 20px; border-radius: 8px; border-left: 4px solid var(--primary); margin: 16px 0;">
+                <p style="margin: 0; color: var(--text);">We offer properties starting from <strong>€125,000</strong> up to <strong>€2,500,000</strong>, with an average price of <strong>€450,000</strong>.</p>
+            </div>
+
+            <h4>Custom Selector</h4>
+            <p>To use a different class or multiple elements, configure the selector:</p>
+
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">JavaScript</span>
+                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code>window.RealtySoftConfig = {
+    // Use custom selector (default: '.rs-price-stats')
+    pricePlaceholderSelector: '.intro-text, .price-summary, #hero-stats'
+};</code></pre>
+            </div>
+
+            <h4>Behavior</h4>
+            <ul style="margin: 16px 0; padding-left: 24px; color: var(--text);">
+                <li style="margin-bottom: 8px;">Placeholders update automatically when filters change</li>
+                <li style="margin-bottom: 8px;">Prices are formatted according to the current language/locale</li>
+                <li style="margin-bottom: 8px;">"Price on Request" properties are excluded from calculations</li>
+                <li style="margin-bottom: 8px;">If no valid prices found, original placeholder text is preserved</li>
+            </ul>
+
+            <div class="callout">
+                <strong>Tip:</strong> Place price statistics in your page's intro section to give visitors an immediate overview of the price range for their search criteria.
+            </div>
+        </section>
+
+        <!-- Pre-filled & Locked Filters -->
+        <section id="filter-locking">
+            <h2>Pre-filled & Locked Filters</h2>
+
+            <p>Pre-fill or lock filters using <code class="inline-code">data-rs-*</code> attributes. By default, pre-filled filters can be changed by visitors. Use <code class="inline-code">data-rs-lock-*</code> to create truly locked filters.</p>
 
             <div class="callout" style="background: linear-gradient(135deg, #e8f4fd 0%, #f0f7ff 100%); border-left: 4px solid #2271b1; padding: 20px 24px; border-radius: 8px; margin: 24px 0;">
                 <h4 style="margin: 0 0 8px; color: #1d4ed8; font-size: 16px; display: flex; align-items: center; gap: 8px;">
@@ -3345,7 +3605,7 @@ window.RealtySoftConfig = {
                     Finding Your Filter IDs
                 </h4>
                 <p style="margin: 0 0 12px; color: #334155;">
-                    To lock filters, you need the IDs for your locations, property types, and features.
+                    To set filters, you need the IDs for your locations, property types, and features.
                 </p>
                 <div style="display: grid; gap: 12px; margin-top: 12px;">
                     <div style="background: white; padding: 12px 16px; border-radius: 6px; border: 1px solid #e2e8f0;">
@@ -3365,6 +3625,9 @@ window.RealtySoftConfig = {
                 </div>
             </div>
 
+            <h3>Pre-filled Filter Attributes (Changeable)</h3>
+            <p>These attributes set initial filter values that <strong>users can change</strong>:</p>
+
             <div class="table-wrapper">
                 <table>
                     <thead>
@@ -3377,13 +3640,13 @@ window.RealtySoftConfig = {
                     <tbody>
                         <tr>
                             <td><code class="inline-code">data-rs-location</code></td>
-                            <td>Location ID</td>
-                            <td>"505", "123"</td>
+                            <td>Location ID (single or comma-separated)</td>
+                            <td>"505", "505,506,507"</td>
                         </tr>
                         <tr>
                             <td><code class="inline-code">data-rs-property-type</code></td>
-                            <td>Property type ID</td>
-                            <td>"76", "77"</td>
+                            <td>Property type ID (single or comma-separated)</td>
+                            <td>"76", "1,2,3,4"</td>
                         </tr>
                         <tr>
                             <td><code class="inline-code">data-rs-listing-type</code></td>
@@ -3457,6 +3720,105 @@ window.RealtySoftConfig = {
                         </tr>
                     </tbody>
                 </table>
+            </div>
+
+            <h3>Default vs Locked Filters</h3>
+            <p>
+                By default, the <code class="inline-code">data-rs-*</code> attributes pre-fill filters but <strong>users can change them</strong>.
+                This is ideal for landing pages like "Apartments in Costa del Sol" where you want to show a filtered view but allow users to refine their search.
+            </p>
+            <p>
+                For pages where users should <strong>not</strong> be able to change filters, use the <code class="inline-code">data-rs-lock-*</code> prefix instead:
+            </p>
+
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Attribute Type</th>
+                            <th>User Can Change?</th>
+                            <th>Use Case</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code class="inline-code">data-rs-property-type="76"</code></td>
+                            <td>Yes (changeable)</td>
+                            <td>Landing pages, pre-filtered searches</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">data-rs-lock-property-type="76"</code></td>
+                            <td>No (locked)</td>
+                            <td>Dedicated property type pages, embedded widgets</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h4>Locked Filter Attributes</h4>
+            <p>All filter attributes have a locked version with the <code class="inline-code">-lock-</code> prefix:</p>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Changeable (Default)</th>
+                            <th>Locked</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code class="inline-code">data-rs-location</code></td>
+                            <td><code class="inline-code">data-rs-lock-location</code></td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">data-rs-property-type</code></td>
+                            <td><code class="inline-code">data-rs-lock-property-type</code></td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">data-rs-listing-type</code></td>
+                            <td><code class="inline-code">data-rs-lock-listing-type</code></td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">data-rs-beds-min</code></td>
+                            <td><code class="inline-code">data-rs-lock-beds-min</code></td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">data-rs-price-min</code></td>
+                            <td><code class="inline-code">data-rs-lock-price-min</code></td>
+                        </tr>
+                        <tr>
+                            <td colspan="2"><em>...and all other filter attributes</em></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h4>Example: Changeable Pre-filled Filter (Landing Page)</h4>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">HTML</span>
+                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code>&lt;!-- Pre-filled with Apartments, but users can change to other types --&gt;
+&lt;div class="rs-search-template-01"&gt;&lt;/div&gt;
+
+&lt;div class="rs-listing-template-01"
+     data-rs-property-type="1,2,3,4"
+     data-rs-listing-type="resale"&gt;&lt;/div&gt;</code></pre>
+            </div>
+
+            <h4>Example: Locked Filter (Dedicated Page)</h4>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">HTML</span>
+                    <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                </div>
+                <pre><code>&lt;!-- Only Villas - users cannot change this filter --&gt;
+&lt;div class="rs-search-template-01"&gt;&lt;/div&gt;
+
+&lt;div class="rs-listing-template-01"
+     data-rs-lock-property-type="76"
+     data-rs-lock-listing-type="resale"&gt;&lt;/div&gt;</code></pre>
             </div>
 
             <h3>Example: Luxury Villas Page</h3>
@@ -3607,6 +3969,30 @@ window.RealtySoftConfig = {
                             <td>(primaryColor)</td>
                             <td>Email header background color</td>
                         </tr>
+                        <tr>
+                            <td><code class="inline-code">similarProperties</code></td>
+                            <td>object</td>
+                            <td>{}</td>
+                            <td>Similar properties configuration (see <a href="#similar-properties">Similar Properties</a>)</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">similarProperties.limit</code></td>
+                            <td>number</td>
+                            <td>6</td>
+                            <td>Maximum number of similar properties to display</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">similarProperties.minResults</code></td>
+                            <td>number</td>
+                            <td>3</td>
+                            <td>Minimum required to show section (hides if fewer found)</td>
+                        </tr>
+                        <tr>
+                            <td><code class="inline-code">similarProperties.priceRange</code></td>
+                            <td>number</td>
+                            <td>0.3</td>
+                            <td>Price range for fallback search (0.3 = ±30%)</td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
@@ -3659,6 +4045,13 @@ window.RealtySoftConfig = {
         websiteUrl: 'https://myrealestate.com',
         primaryColor: '#0066cc',
         emailHeaderColor: '#1a1a1a'
+    },
+
+    // Similar properties on detail page
+    similarProperties: {
+        limit: 6,        // Max properties to show
+        minResults: 3,   // Min required to show section
+        priceRange: 0.3  // ±30% price range for fallback search
     }
 };
 &lt;/script&gt;</code></pre>
@@ -3839,11 +4232,21 @@ RealtySoft.reset();</code></pre>
             overlay.classList.toggle('visible');
         }
 
-        // Accordion navigation
+        // Accordion navigation - only one section open at a time
         document.querySelectorAll('.nav-section-title').forEach(title => {
             title.addEventListener('click', function() {
                 const section = this.closest('.nav-section');
-                section.classList.toggle('expanded');
+                const isExpanded = section.classList.contains('expanded');
+
+                // Close all sections first
+                document.querySelectorAll('.nav-section').forEach(s => {
+                    s.classList.remove('expanded');
+                });
+
+                // If the clicked section wasn't expanded, expand it
+                if (!isExpanded) {
+                    section.classList.add('expanded');
+                }
             });
         });
 

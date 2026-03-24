@@ -34,13 +34,31 @@ class RSCardBeds extends RSBaseComponent {
   }
 
   render(): void {
-    if (!this.property || !this.property.beds || this.property.beds <= 0) {
+    // Check for range values first (development properties)
+    const hasRange = this.property?.beds_min && this.property?.beds_max && this.property.beds_min !== this.property.beds_max;
+    const hasMin = this.property?.beds_min && this.property.beds_min > 0;
+    const hasSingle = this.property?.beds && this.property.beds > 0;
+
+    if (!this.property || (!hasRange && !hasMin && !hasSingle)) {
       this.element.style.display = 'none';
       return;
     }
 
-    const bedLabel = this.property.beds === 1 ? this.label('card_bed') : this.label('card_beds');
-    this.element.innerHTML = `${SVG_ICONS.bed} ${this.property.beds} ${bedLabel}`;
+    let bedsDisplay: string;
+    if (hasRange) {
+      // Show range: "2-4 Beds"
+      bedsDisplay = `${this.property.beds_min}-${this.property.beds_max}`;
+    } else if (hasMin && this.property.listing_type === 'development') {
+      // Development with only min: "2+ Beds"
+      bedsDisplay = `${this.property.beds_min}+`;
+    } else {
+      bedsDisplay = `${this.property.beds}`;
+    }
+
+    const bedLabel = (hasRange || (hasMin && this.property.listing_type === 'development') || this.property.beds !== 1)
+      ? this.label('card_beds')
+      : this.label('card_bed');
+    this.element.innerHTML = `${SVG_ICONS.bed} ${bedsDisplay} ${bedLabel}`;
   }
 }
 

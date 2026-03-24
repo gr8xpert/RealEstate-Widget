@@ -34,12 +34,28 @@ class RSCardBuilt extends RSBaseComponent {
   }
 
   render(): void {
-    if (!this.property || !this.property.built_area || this.property.built_area <= 0) {
+    // Check for range values first (development properties)
+    const hasRange = this.property?.built_area_min && this.property?.built_area_max && this.property.built_area_min !== this.property.built_area_max;
+    const hasMin = this.property?.built_area_min && this.property.built_area_min > 0;
+    const hasSingle = this.property?.built_area && this.property.built_area > 0;
+
+    if (!this.property || (!hasRange && !hasMin && !hasSingle)) {
       this.element.style.display = 'none';
       return;
     }
 
-    this.element.innerHTML = `${SVG_ICONS.builtArea} ${this.property.built_area} ${this.label('card_built')}`;
+    let areaDisplay: string;
+    if (hasRange) {
+      // Show range: "100-250 m²"
+      areaDisplay = `${this.property.built_area_min}-${this.property.built_area_max}`;
+    } else if (hasMin && this.property.listing_type === 'development') {
+      // Development with only min: "100+ m²"
+      areaDisplay = `${this.property.built_area_min}+`;
+    } else {
+      areaDisplay = `${this.property.built_area}`;
+    }
+
+    this.element.innerHTML = `${SVG_ICONS.builtArea} ${areaDisplay} ${this.label('card_built')}`;
   }
 }
 

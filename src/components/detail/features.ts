@@ -73,23 +73,31 @@ class RSDetailFeatures extends RSBaseComponent {
   }
 
   /**
-   * Button mode: Compact button that opens modal
+   * Button mode: Compact button that opens modal, with Back button beside it
    */
   private renderButtonMode(): void {
     const grouped = this.groupFeatures();
     const totalFeatures = this.features.length;
 
     this.element.innerHTML = `
-      <button type="button" class="rs-detail-features__btn">
-        <span class="rs-detail-features__btn-icon">
+      <div class="rs-detail-features__row">
+        <button type="button" class="rs-detail-features__back-btn">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="9 11 12 14 22 4"></polyline>
-            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+            <polyline points="15 18 9 12 15 6"></polyline>
           </svg>
-        </span>
-        <span class="rs-detail-features__btn-label">${this.label('detail_features') || 'Features'}</span>
-        <span class="rs-detail-features__btn-count">${totalFeatures}</span>
-      </button>
+          <span class="rs-detail-features__back-label">${this.label('detail_back') || 'Back'}</span>
+        </button>
+        <button type="button" class="rs-detail-features__btn">
+          <span class="rs-detail-features__btn-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="9 11 12 14 22 4"></polyline>
+              <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+            </svg>
+          </span>
+          <span class="rs-detail-features__btn-label">${this.label('detail_features') || 'Features'}</span>
+          <span class="rs-detail-features__btn-count">${totalFeatures}</span>
+        </button>
+      </div>
 
       <div class="rs-detail-features__modal" style="display: none;">
         <div class="rs-detail-features__modal-backdrop"></div>
@@ -194,6 +202,11 @@ class RSDetailFeatures extends RSBaseComponent {
   bindEvents(): void {
     if (this.mode !== 'button') return;
 
+    // Back button - navigate back
+    this.element.querySelector('.rs-detail-features__back-btn')?.addEventListener('click', () => {
+      this.navigateBack();
+    });
+
     // Open modal button
     this.element.querySelector('.rs-detail-features__btn')?.addEventListener('click', () => {
       this.openModal();
@@ -230,9 +243,38 @@ class RSDetailFeatures extends RSBaseComponent {
     }
   }
 
+  private navigateBack(): void {
+    // Check session storage for last search URL
+    const lastSearch = sessionStorage.getItem('rs_last_search_url');
+    if (lastSearch) {
+      window.location.href = lastSearch;
+      return;
+    }
+
+    // Check referrer
+    const referrer = document.referrer;
+    if (referrer && referrer.includes(window.location.hostname)) {
+      window.location.href = referrer;
+      return;
+    }
+
+    // Fallback to history.back()
+    if (window.history.length > 1) {
+      window.history.back();
+    } else {
+      window.location.href = '/';
+    }
+  }
+
   private updateLabelsInPlace(): void {
     if (this.mode === 'button') {
-      // Update button label
+      // Update back button label
+      const backLabel = this.element.querySelector('.rs-detail-features__back-label');
+      if (backLabel) {
+        backLabel.textContent = this.label('detail_back') || 'Back';
+      }
+
+      // Update features button label
       const btnLabel = this.element.querySelector('.rs-detail-features__btn-label');
       if (btnLabel) {
         btnLabel.textContent = this.label('detail_features') || 'Features';

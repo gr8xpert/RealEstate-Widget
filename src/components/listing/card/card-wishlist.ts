@@ -62,7 +62,7 @@ class RSCardWishlist extends RSBaseComponent {
       this.element.setAttribute('role', 'button');
     }
     this.element.setAttribute('aria-label', this.label('wishlist_add'));
-    this.element.innerHTML = isInWishlist ? SVG_ICONS.heartFilled : SVG_ICONS.heart;
+    this.element.innerHTML = this.getWishlistIconSvg(isInWishlist);
   }
 
   bindEvents(): void {
@@ -83,7 +83,7 @@ class RSCardWishlist extends RSBaseComponent {
       if (wmAvailable && WishlistManager!.has(refNo)) {
         WishlistManager!.remove(refNo);
         this.element.classList.remove('rs-card__wishlist--active');
-        this.element.innerHTML = SVG_ICONS.heart;
+        this.element.innerHTML = this.getWishlistIconSvg(false);
 
         try { RealtySoftAnalytics.trackWishlistRemove(this.property.id); } catch (_) { /* analytics non-critical */ }
 
@@ -113,7 +113,7 @@ class RSCardWishlist extends RSBaseComponent {
 
         if (addSuccess) {
           this.element.classList.add('rs-card__wishlist--active');
-          this.element.innerHTML = SVG_ICONS.heartFilled;
+          this.element.innerHTML = this.getWishlistIconSvg(true);
 
           try { RealtySoftAnalytics.trackWishlistAdd(this.property.id); } catch (_) { /* analytics non-critical */ }
 

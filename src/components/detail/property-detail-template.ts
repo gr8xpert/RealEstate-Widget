@@ -204,9 +204,21 @@ class RSPropertyDetailTemplate extends RSBaseComponent {
       const subpath = slugMatch[1];
 
       // SEO URL: last hyphen-separated part (e.g., villa-marbella-R123 → R123)
+      // Handles refs with type suffix: R4949605-L (rental), R4949605-S (short), R4949605-N (dev)
       const parts = subpath.split('-');
       if (parts.length > 1) {
         const lastPart = parts[parts.length - 1];
+
+        // Check if last part is a single letter type suffix (L, S, N, etc.)
+        // and second-to-last is a base ref (letter(s) + digits)
+        if (/^[A-Z]$/i.test(lastPart) && parts.length >= 2) {
+          const secondToLast = parts[parts.length - 2];
+          if (/^[A-Z]{1,4}\d+$/i.test(secondToLast)) {
+            return secondToLast + '-' + lastPart.toUpperCase();
+          }
+        }
+
+        // Standard ref without suffix
         if (/^[A-Z0-9]{3,}$/i.test(lastPart) && !/^\d+$/.test(lastPart)) return lastPart;
       }
 
@@ -384,7 +396,7 @@ class RSPropertyDetailTemplate extends RSBaseComponent {
         </div>
         <div class="rs-template__header-actions">
           <div class="rs-template__price ${p.price_on_request ? 'rs-template__price--por' : ''}">
-            ${p.price_on_request ? this.label('detail_price_on_request') : RealtySoftLabels.formatPrice(p.price)}
+            ${p.price_on_request ? this.label('detail_price_on_request') : this.formatPriceWithPeriod(p)}
           </div>
         </div>
       </div>
@@ -513,23 +525,41 @@ class RSPropertyDetailTemplate extends RSBaseComponent {
       items.push({ label: this.label('detail_property_type') || 'Property Type', value: p.type });
     }
 
-    // Bedrooms
-    if (p.beds && parseFloat(String(p.beds)) > 0) {
+    // Bedrooms (with range support for developments)
+    const pExt = p as Property & { beds_min?: number; beds_max?: number; baths_min?: number; baths_max?: number; built_area_min?: number; built_area_max?: number };
+    if (pExt.beds_min && pExt.beds_max && pExt.beds_min !== pExt.beds_max) {
+      items.push({ label: this.label('card_beds') || 'Bedrooms', value: `${pExt.beds_min} - ${pExt.beds_max}` });
+    } else if (pExt.beds_min && p.listing_type === 'development') {
+      items.push({ label: this.label('card_beds') || 'Bedrooms', value: `${pExt.beds_min}+` });
+    } else if (p.beds && parseFloat(String(p.beds)) > 0) {
       items.push({ label: this.label('card_beds') || 'Bedrooms', value: String(p.beds) });
     }
 
-    // Bathrooms
-    if (p.baths && parseFloat(String(p.baths)) > 0) {
+    // Bathrooms (with range support for developments)
+    if (pExt.baths_min && pExt.baths_max && pExt.baths_min !== pExt.baths_max) {
+      items.push({ label: this.label('card_baths') || 'Bathrooms', value: `${pExt.baths_min} - ${pExt.baths_max}` });
+    } else if (pExt.baths_min && p.listing_type === 'development') {
+      items.push({ label: this.label('card_baths') || 'Bathrooms', value: `${pExt.baths_min}+` });
+    } else if (p.baths && parseFloat(String(p.baths)) > 0) {
       items.push({ label: this.label('card_baths') || 'Bathrooms', value: String(p.baths) });
     }
 
-    // Plot Size
-    if (p.plot_size && parseFloat(String(p.plot_size)) > 0) {
+    // Plot Size (with range support for developments)
+    const pPlot = p as Property & { plot_size_min?: number; plot_size_max?: number };
+    if (pPlot.plot_size_min && pPlot.plot_size_max && pPlot.plot_size_min !== pPlot.plot_size_max) {
+      items.push({ label: this.label('detail_plot_size') || 'Plot Size', value: `${pPlot.plot_size_min} - ${pPlot.plot_size_max} m²` });
+    } else if (pPlot.plot_size_min && p.listing_type === 'development') {
+      items.push({ label: this.label('detail_plot_size') || 'Plot Size', value: `${pPlot.plot_size_min}+ m²` });
+    } else if (p.plot_size && parseFloat(String(p.plot_size)) > 0) {
       items.push({ label: this.label('detail_plot_size') || 'Plot Size', value: `${p.plot_size} m²` });
     }
 
-    // Built Area
-    if (p.built_area && parseFloat(String(p.built_area)) > 0) {
+    // Built Area (with range support for developments)
+    if (pExt.built_area_min && pExt.built_area_max && pExt.built_area_min !== pExt.built_area_max) {
+      items.push({ label: this.label('detail_built_area') || 'Built', value: `${pExt.built_area_min} - ${pExt.built_area_max} m²` });
+    } else if (pExt.built_area_min && p.listing_type === 'development') {
+      items.push({ label: this.label('detail_built_area') || 'Built', value: `${pExt.built_area_min}+ m²` });
+    } else if (p.built_area && parseFloat(String(p.built_area)) > 0) {
       items.push({ label: this.label('detail_built_area') || 'Built', value: `${p.built_area} m²` });
     }
 
@@ -838,24 +868,53 @@ class RSPropertyDetailTemplate extends RSBaseComponent {
 
   private renderSidebarPdf(p: Property): string {
     const orig = (p._original || {}) as Record<string, unknown>;
+    // Get documents array from CRM API (floor plans, etc.)
+    const documents = orig.documents as string[] | undefined;
+
+    // Get main PDF URL (brochure)
     const pdfUrl = p.pdf_url || (orig.pdf_url as string) || (orig.pdf as string) ||
                    (orig.brochure_url as string) || (orig.brochure as string) ||
                    (orig.pdf_link as string) || (orig.document_url as string) ||
                    (orig.flyer_url as string) || (orig.flyer as string) || null;
 
-    if (!pdfUrl) return '';
+    let html = '';
 
-    return `
-      <a href="${pdfUrl}" target="_blank" rel="noopener" class="rs-template__sidebar-pdf">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-          <path d="M14 2v6h6"></path>
-          <path d="M12 18v-6"></path>
-          <path d="M9 15l3 3 3-3"></path>
-        </svg>
-        <span class="rs-template__sidebar-pdf-text">${this.label('detail_download_pdf') || 'Download PDF'}</span>
-      </a>
-    `;
+    // Main PDF button
+    if (pdfUrl) {
+      html += `
+        <a href="${pdfUrl}" target="_blank" rel="noopener" class="rs-template__sidebar-pdf">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <path d="M14 2v6h6"></path>
+            <path d="M12 18v-6"></path>
+            <path d="M9 15l3 3 3-3"></path>
+          </svg>
+          <span class="rs-template__sidebar-pdf-text">${this.label('detail_download_pdf') || 'Download PDF'}</span>
+        </a>
+      `;
+    }
+
+    // Document buttons (Floor Plans)
+    if (Array.isArray(documents) && documents.length > 0) {
+      const floorPlanLabel = this.label('detail_floor_plans') || 'Floor Plans';
+      documents.forEach((docUrl, index) => {
+        if (docUrl) {
+          const label = documents.length > 1 ? `${floorPlanLabel} ${index + 1}` : floorPlanLabel;
+          html += `
+            <a href="${docUrl}" target="_blank" rel="noopener" class="rs-template__sidebar-pdf rs-template__sidebar-document">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <path d="M14 2v6h6"></path>
+                <rect x="8" y="12" width="8" height="6" rx="1"></rect>
+              </svg>
+              <span class="rs-template__sidebar-pdf-text">${label}</span>
+            </a>
+          `;
+        }
+      });
+    }
+
+    return html;
   }
 
   private renderAgentCard(p: Property): string {
@@ -956,7 +1015,7 @@ class RSPropertyDetailTemplate extends RSBaseComponent {
     if (priceEl) {
       priceEl.textContent = p.price_on_request
         ? this.label('detail_price_on_request')
-        : RealtySoftLabels.formatPrice(p.price);
+        : this.formatPriceWithPeriod(p);
     }
 
     // Update spec labels
@@ -1113,19 +1172,22 @@ class RSPropertyDetailTemplate extends RSBaseComponent {
     const totalFeatures = features.length;
 
     if (mode === 'button') {
-      // Compact button that opens a popup modal
+      // Compact button that opens a popup modal, with Back button beside it
       return `
         <div class="rs-template__section rs-template__section--features rs-template__section--features-button">
-          <button type="button" class="rs-template__features-btn" id="rs-template-features-btn">
-            <span class="rs-template__features-btn-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="9 11 12 14 22 4"></polyline>
-                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
-              </svg>
-            </span>
-            <span class="rs-template__features-btn-label">${this.label('detail_features') || 'Features'}</span>
-            <span class="rs-template__features-btn-count">${totalFeatures}</span>
-          </button>
+          <div class="rs-template__features-row">
+            <button type="button" class="rs-template__back-btn" id="rs-template-back-btn">${this.label('detail_back') || 'Back'}</button>
+            <button type="button" class="rs-template__features-btn" id="rs-template-features-btn">
+              <span class="rs-template__features-btn-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="9 11 12 14 22 4"></polyline>
+                  <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                </svg>
+              </span>
+              <span class="rs-template__features-btn-label">${this.label('detail_features') || 'Features'}</span>
+              <span class="rs-template__features-btn-count">${totalFeatures}</span>
+            </button>
+          </div>
 
           <div class="rs-template__features-modal" id="rs-template-features-modal" style="display: none;">
             <div class="rs-template__features-modal-backdrop"></div>
@@ -1271,6 +1333,37 @@ class RSPropertyDetailTemplate extends RSBaseComponent {
         }
       });
     }
+
+    // Back button - navigate back
+    const backBtn = this.element.querySelector<HTMLButtonElement>('#rs-template-back-btn');
+    if (backBtn) {
+      backBtn.addEventListener('click', () => {
+        this.navigateBack();
+      });
+    }
+  }
+
+  private navigateBack(): void {
+    // Check session storage for last search URL
+    const lastSearch = sessionStorage.getItem('rs_last_search_url');
+    if (lastSearch) {
+      window.location.href = lastSearch;
+      return;
+    }
+
+    // Check referrer
+    const referrer = document.referrer;
+    if (referrer && referrer.includes(window.location.hostname)) {
+      window.location.href = referrer;
+      return;
+    }
+
+    // Fallback to history.back()
+    if (window.history.length > 1) {
+      window.history.back();
+    } else {
+      window.location.href = '/';
+    }
   }
 
   private formatDescription(text: string): string {
@@ -1279,6 +1372,34 @@ class RSPropertyDetailTemplate extends RSBaseComponent {
     if (hasHtml) return text;
     const escaped = this.escapeHtml(text);
     return escaped.replace(/\r\n/g, '<br>').replace(/\n/g, '<br>').replace(/\r/g, '<br>');
+  }
+
+  private formatPriceWithPeriod(property: Property): string {
+    // Check for price range (common in development properties)
+    let priceDisplay: string;
+    const p = property as Property & { price_min?: number; price_max?: number };
+    if (p.price_min && p.price_max && p.price_min !== p.price_max) {
+      const minPrice = RealtySoftLabels.formatPrice(p.price_min);
+      const maxPrice = RealtySoftLabels.formatPrice(p.price_max);
+      priceDisplay = `${minPrice} - ${maxPrice}`;
+    } else if (p.price_min && property.listing_type === 'development') {
+      const fromLabel = this.label('price_from') || 'From';
+      priceDisplay = `${fromLabel} ${RealtySoftLabels.formatPrice(p.price_min)}`;
+    } else {
+      priceDisplay = RealtySoftLabels.formatPrice(property.price);
+    }
+
+    const listingType = property.listing_type?.toLowerCase();
+    let period = '';
+    if (listingType === 'long_rental') {
+      period = this.label('per_month') || this.label('detail_per_month') || 'month';
+    } else if (listingType === 'short_rental') {
+      period = this.label('per_week') || this.label('detail_per_week') || 'week';
+    }
+    if (!period) return priceDisplay;
+    // Ensure period starts with /
+    const formattedPeriod = period.startsWith('/') ? period : '/' + period;
+    return `${priceDisplay}${formattedPeriod}`;
   }
 
   private escapeHtml(text: string): string {

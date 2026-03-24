@@ -1,12 +1,18 @@
 /**
  * RealtySoft Widget v3 - Detail Related Component
  * Shows related/similar properties
+ *
+ * Priority:
+ * 1. If CRM provides similar_property_ids (manually curated), show those
+ * 2. Fallback: Auto-find similar properties based on location + type + price
  */
 
 import { RSBaseComponent } from '../base';
 import type {
   ComponentOptions,
   Property,
+  SearchParams,
+  SimilarPropertiesConfig,
   RealtySoftAPIModule,
   RealtySoftLabelsModule,
   RealtySoftAnalyticsModule,
@@ -23,9 +29,11 @@ class RSDetailRelated extends RSBaseComponent {
   private property: Property | null = null;
   private relatedProperties: Property[] = [];
   private limit: number = 6;
+  private minResults: number = 3; // Minimum results required to show section
   private loader: HTMLElement | null = null;
   private grid: HTMLElement | null = null;
   private hasInitiallyRendered: boolean = false;
+  private priceRange: number = 0.3; // ±30% price range for fallback search
 
   constructor(element: HTMLElement, options: ComponentOptions = {}) {
     super(element, options);
@@ -41,15 +49,13 @@ class RSDetailRelated extends RSBaseComponent {
       return;
     }
 
-    // Check if similar_property_ids exists and has values - if not, hide entire section
-    const similarIds = this.property.similar_property_ids || [];
-    if (similarIds.length === 0) {
-      this.element.style.display = 'none';
-      return;
-    }
-
     this.relatedProperties = [];
-    this.limit = parseInt(this.element.dataset.limit || '6') || 6;
+
+    // Get config: data attributes > global config > defaults
+    const globalConfig = RealtySoftState.get<SimilarPropertiesConfig>('config.similarProperties') || {};
+    this.limit = parseInt(this.element.dataset.limit || '') || globalConfig.limit || 6;
+    this.minResults = parseInt(this.element.dataset.minResults || '') || globalConfig.minResults || 3;
+    this.priceRange = parseFloat(this.element.dataset.priceRange || '') || globalConfig.priceRange || 0.3;
 
     this.render();
     this.loadRelated();
@@ -100,14 +106,23 @@ class RSDetailRelated extends RSBaseComponent {
 
   private async loadRelated(): Promise<void> {
     try {
-      // similar_property_ids already validated in init() - fetch those properties
+      // Priority 1: Check if CRM provided similar_property_ids (manually curated)
       const similarIds = this.property!.similar_property_ids || [];
-      const idsToFetch = similarIds.slice(0, this.limit);
-      const result = await RealtySoftAPI.getWishlistProperties(idsToFetch);
 
-      this.relatedProperties = (result.data || []) as Property[];
+      if (similarIds.length > 0) {
+        // Use manually curated similar properties from CRM
+        const idsToFetch = similarIds.slice(0, this.limit);
+        const result = await RealtySoftAPI.getWishlistProperties(idsToFetch);
+        this.relatedProperties = (result.data || []) as Property[];
+      }
 
+      // Priority 2: If no curated properties, search for similar based on criteria
       if (this.relatedProperties.length === 0) {
+        this.relatedProperties = await this.searchSimilarProperties();
+      }
+
+      // Only show section if we have at least the minimum required
+      if (this.relatedProperties.length < this.minResults) {
         this.element.style.display = 'none';
         return;
       }
@@ -119,6 +134,96 @@ class RSDetailRelated extends RSBaseComponent {
     } finally {
       if (this.loader) this.loader.style.display = 'none';
     }
+  }
+
+  /**
+   * Search for similar properties based on location, type, and price range
+   * Uses progressive relaxation: accumulates results until minimum is reached
+   */
+  private async searchSimilarProperties(): Promise<Property[]> {
+    const property = this.property!;
+    const collectedProperties: Property[] = [];
+    const seenIds = new Set<number>([property.id]); // Track seen IDs to avoid duplicates, include current property
+
+    // Try multiple search strategies, from most specific to least
+    const searchStrategies = [
+      // Strategy 1: Same location + type + listing_type + price range
+      this.buildSearchParams(property, { location: true, type: true, listingType: true, price: true }),
+      // Strategy 2: Same location + listing_type + price range (drop type)
+      this.buildSearchParams(property, { location: true, type: false, listingType: true, price: true }),
+      // Strategy 3: Same location + listing_type (drop price range)
+      this.buildSearchParams(property, { location: true, type: false, listingType: true, price: false }),
+      // Strategy 4: Same type + listing_type + price range (drop location)
+      this.buildSearchParams(property, { location: false, type: true, listingType: true, price: true }),
+      // Strategy 5: Same listing_type + price range only
+      this.buildSearchParams(property, { location: false, type: false, listingType: true, price: true }),
+      // Strategy 6: Same listing_type only (broadest search)
+      this.buildSearchParams(property, { location: false, type: false, listingType: true, price: false }),
+    ];
+
+    for (const searchParams of searchStrategies) {
+      // Stop if we have enough properties
+      if (collectedProperties.length >= this.minResults) {
+        break;
+      }
+
+      try {
+        const result = await RealtySoftAPI.searchProperties(searchParams);
+        const properties = (result.data || []) as Property[];
+
+        // Add new properties (not already collected)
+        for (const p of properties) {
+          if (!seenIds.has(p.id)) {
+            seenIds.add(p.id);
+            collectedProperties.push(p);
+
+            // Stop if we have enough
+            if (collectedProperties.length >= this.limit) {
+              break;
+            }
+          }
+        }
+      } catch (error) {
+        // Silently continue to next strategy
+      }
+    }
+
+    return collectedProperties.slice(0, this.limit);
+  }
+
+  /**
+   * Build search params based on which criteria to include
+   */
+  private buildSearchParams(
+    property: Property,
+    options: { location: boolean; type: boolean; listingType: boolean; price: boolean }
+  ): Partial<SearchParams> {
+    const searchParams: Partial<SearchParams> = {
+      page: 1,
+      limit: this.limit + 5, // Fetch extra to have options after filtering
+      order: 'create_date_desc', // Most recent first
+    };
+
+    if (options.location && property.location_id) {
+      searchParams.location_id = property.location_id;
+    }
+
+    if (options.type && property.type_id) {
+      searchParams.type_id = property.type_id;
+    }
+
+    if (options.listingType && property.listing_type) {
+      searchParams.listing_type = property.listing_type;
+    }
+
+    if (options.price && property.price && property.price > 0) {
+      const priceMin = Math.floor(property.price * (1 - this.priceRange));
+      const priceMax = Math.ceil(property.price * (1 + this.priceRange));
+      searchParams.list_price_min = priceMin;
+      searchParams.list_price_max = priceMax;
+    }
+
+    return searchParams;
   }
 
   private renderProperties(): void {

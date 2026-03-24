@@ -1,6 +1,7 @@
 /**
  * RealtySoft Widget v3 - Central Controller
  * Main entry point that initializes and coordinates all modules
+ * BUILD: 2026-03-14-debug-wishlist
  */
 
 // Import TypeScript modules
@@ -22,6 +23,7 @@ import type {
   WidgetConfig,
   ComponentOptions,
   LockedFilters,
+  DefaultFilters,
 } from '../types/index';
 
 // Extended config type for controller-specific options
@@ -186,6 +188,113 @@ const RealtySoft = (function () {
   // Initialization state
   let initialized = false;
   let initPromise: Promise<boolean> | null = null;
+
+  // Price placeholder storage
+  // Stores original HTML content of elements with price placeholders
+  const pricePlaceholderElements: Map<HTMLElement, string> = new Map();
+
+  /**
+   * Interface for price statistics
+   */
+  interface PriceStats {
+    min: number;
+    max: number;
+    avg: number;
+  }
+
+  /**
+   * Initialize price placeholders - scan page for elements with placeholder tokens
+   * and store their original HTML content for later replacement
+   */
+  function initPricePlaceholders(): void {
+    const globalConfig = (window.RealtySoftConfig || {}) as ControllerConfig & { pricePlaceholderSelector?: string };
+    // Default to .rs-price-stats if not configured
+    const selector = globalConfig.pricePlaceholderSelector || '.rs-price-stats';
+
+    try {
+      const elements = document.querySelectorAll<HTMLElement>(selector);
+      if (elements.length === 0) {
+        Logger.debug('[RealtySoft] No elements found matching pricePlaceholderSelector:', selector);
+        return;
+      }
+
+      // Clear previous stored elements
+      pricePlaceholderElements.clear();
+
+      // Store original HTML for each element that contains placeholders
+      const placeholderPattern = /#(MIN|MAX|AVG)PRICE#/;
+      elements.forEach((el) => {
+        if (placeholderPattern.test(el.innerHTML)) {
+          pricePlaceholderElements.set(el, el.innerHTML);
+          Logger.debug('[RealtySoft] Stored price placeholder element:', el);
+        }
+      });
+
+      Logger.debug('[RealtySoft] Initialized', pricePlaceholderElements.size, 'price placeholder elements');
+    } catch (error) {
+      Logger.warn('Error initializing price placeholders:', error);
+    }
+  }
+
+  /**
+   * Calculate price statistics from property results
+   * @param properties - Array of properties to calculate stats from
+   * @returns PriceStats object or null if no valid prices found
+   */
+  function calculatePriceStats(properties: Property[]): PriceStats | null {
+    // Filter to get valid prices (not "price on request" and price > 0)
+    const validPrices = properties
+      .filter(p => !p.price_on_request && p.price > 0)
+      .map(p => p.price);
+
+    if (validPrices.length === 0) {
+      Logger.debug('[RealtySoft] No valid prices found for stats calculation');
+      return null;
+    }
+
+    const min = Math.min(...validPrices);
+    const max = Math.max(...validPrices);
+    const avg = Math.round(validPrices.reduce((a, b) => a + b, 0) / validPrices.length);
+
+    Logger.debug('[RealtySoft] Calculated price stats:', { min, max, avg, count: validPrices.length });
+
+    return { min, max, avg };
+  }
+
+  /**
+   * Update price placeholders with formatted values from search results
+   * @param properties - Array of properties from search results
+   */
+  function updatePricePlaceholders(properties: Property[]): void {
+    if (pricePlaceholderElements.size === 0) {
+      return; // No placeholders to update
+    }
+
+    const stats = calculatePriceStats(properties);
+
+    pricePlaceholderElements.forEach((originalHtml, element) => {
+      let updatedHtml = originalHtml;
+
+      if (stats) {
+        // Replace placeholders with formatted prices
+        updatedHtml = updatedHtml
+          .replace(/#MINPRICE#/g, RealtySoftLabels.formatPrice(stats.min))
+          .replace(/#MAXPRICE#/g, RealtySoftLabels.formatPrice(stats.max))
+          .replace(/#AVGPRICE#/g, RealtySoftLabels.formatPrice(stats.avg));
+      } else {
+        // No valid prices - replace with N/A or keep original
+        // Keeping original placeholder text so user knows data is missing
+        Logger.debug('[RealtySoft] No price stats available, keeping original placeholders');
+      }
+
+      // Only update DOM if content changed
+      if (element.innerHTML !== updatedHtml) {
+        element.innerHTML = updatedHtml;
+      }
+    });
+
+    Logger.debug('[RealtySoft] Updated', pricePlaceholderElements.size, 'price placeholder elements');
+  }
 
   /**
    * Transform API labels response into widget label format.
@@ -386,6 +495,66 @@ const RealtySoft = (function () {
   }
 
   /**
+   * Extract location hierarchy types from labels API response.
+   * API returns: { labels: {...}, location_parent_type: "area", location_child_types: ["municipality", "city"], ... }
+   * Returns { parentType, childTypes } or null if not present (use defaults).
+   */
+  function extractLocationTypes(rawData: unknown): { parentType: string; childTypes: string[] } | null {
+    if (!rawData) return null;
+
+    const raw = rawData as Record<string, unknown>;
+    const parentType = raw.location_parent_type;
+    // Support both new array format (location_child_types) and legacy string format (location_child_type)
+    let childTypes: string[] = [];
+    if (Array.isArray(raw.location_child_types)) {
+      childTypes = raw.location_child_types.filter((t): t is string => typeof t === 'string');
+    } else if (typeof raw.location_child_type === 'string') {
+      // Legacy: single string, possibly comma-separated
+      childTypes = raw.location_child_type.split(',').map(s => s.trim()).filter(Boolean);
+    }
+
+    // Only return if at least one type is present
+    if (
+      (parentType && typeof parentType === 'string') ||
+      childTypes.length > 0
+    ) {
+      return {
+        parentType: (typeof parentType === 'string' ? parentType : 'municipality'),
+        childTypes: childTypes.length > 0 ? childTypes : ['city'],
+      };
+    }
+
+    return null;
+  }
+
+  /**
+   * Extract customization options from labels API response.
+   * API returns: { wishlistIcon: "star", recaptchaSiteKey: "6Lc...", branding: {...}, ... }
+   */
+  function extractCustomizationOptions(rawData: unknown): {
+    wishlistIcon?: string;
+    recaptchaSiteKey?: string;
+    branding?: Record<string, string>;
+  } | null {
+    if (!rawData) return null;
+
+    const raw = rawData as Record<string, unknown>;
+    const result: { wishlistIcon?: string; recaptchaSiteKey?: string; branding?: Record<string, string> } = {};
+
+    if (raw.wishlistIcon && typeof raw.wishlistIcon === 'string') {
+      result.wishlistIcon = raw.wishlistIcon;
+    }
+    if (raw.recaptchaSiteKey && typeof raw.recaptchaSiteKey === 'string') {
+      result.recaptchaSiteKey = raw.recaptchaSiteKey;
+    }
+    if (raw.branding && typeof raw.branding === 'object') {
+      result.branding = raw.branding as Record<string, string>;
+    }
+
+    return Object.keys(result).length > 0 ? result : null;
+  }
+
+  /**
    * Extract available language codes from the unfiltered labels API response.
    * API returns: { count, data: [{ code: "location", en_US: "Location", es_ES: "Localidad", ... }, ...] }
    * We scan item keys (excluding "code") to find all language codes present.
@@ -426,27 +595,31 @@ const RealtySoft = (function () {
   }
 
   /**
-   * Parse data attributes for locked filters
+   * Parse data attributes for locked filters (data-rs-lock-*)
+   * Locked filters cannot be changed by the user
    */
   function parseLockedFilters(container: HTMLElement): LockedFilters {
     const locked: LockedFilters = {};
     const attrMap: Record<string, string> = {
-      'rs-location': 'location',
-      'rs-property-type': 'propertyType',
-      'rs-listing-type': 'listingType',
-      'rs-beds-min': 'bedsMin',
-      'rs-beds-max': 'bedsMax',
-      'rs-baths-min': 'bathsMin',
-      'rs-baths-max': 'bathsMax',
-      'rs-price-min': 'priceMin',
-      'rs-price-max': 'priceMax',
-      'rs-built-min': 'builtMin',
-      'rs-built-max': 'builtMax',
-      'rs-plot-min': 'plotMin',
-      'rs-plot-max': 'plotMax',
-      'rs-features': 'features',
-      'rs-ref': 'ref',
+      'rs-lock-location': 'location',
+      'rs-lock-property-type': 'propertyType',
+      'rs-lock-listing-type': 'listingType',
+      'rs-lock-beds-min': 'bedsMin',
+      'rs-lock-beds-max': 'bedsMax',
+      'rs-lock-baths-min': 'bathsMin',
+      'rs-lock-baths-max': 'bathsMax',
+      'rs-lock-price-min': 'priceMin',
+      'rs-lock-price-max': 'priceMax',
+      'rs-lock-built-min': 'builtMin',
+      'rs-lock-built-max': 'builtMax',
+      'rs-lock-plot-min': 'plotMin',
+      'rs-lock-plot-max': 'plotMax',
+      'rs-lock-features': 'features',
+      'rs-lock-ref': 'ref',
+      'rs-lock-featured': 'featured',
     };
+
+    const booleanKeys = ['featured'];
 
     const numericKeys = [
       'bedsMin',
@@ -467,10 +640,20 @@ const RealtySoft = (function () {
       const datasetKey = attr.replace(/-([a-z])/g, (g) => g[1].toUpperCase());
       const value = container.dataset[datasetKey];
       if (value !== undefined && value !== '') {
-        if (numericKeys.includes(key)) {
-          locked[key] = parseInt(value, 10);
-        } else if (key === 'features') {
+        if (key === 'features') {
+          // Features is always an array
           locked[key] = value.split(',').map((v) => parseInt(v.trim(), 10));
+        } else if (key === 'location' || key === 'propertyType') {
+          // Location and propertyType can be single or comma-separated
+          if (value.includes(',')) {
+            locked[key] = value.split(',').map((v) => parseInt(v.trim(), 10));
+          } else {
+            locked[key] = parseInt(value, 10);
+          }
+        } else if (numericKeys.includes(key)) {
+          locked[key] = parseInt(value, 10);
+        } else if (booleanKeys.includes(key)) {
+          locked[key] = value === 'true' || value === '1' ? true : null;
         } else {
           locked[key] = value;
         }
@@ -478,6 +661,75 @@ const RealtySoft = (function () {
     }
 
     return locked;
+  }
+
+  /**
+   * Parse data attributes for default (pre-filled but changeable) filters (data-rs-*)
+   * These are the standard filter attributes - users can change these values
+   */
+  function parseDefaultFilters(container: HTMLElement): DefaultFilters {
+    const defaults: DefaultFilters = {};
+    const attrMap: Record<string, string> = {
+      'rs-location': 'location',
+      'rs-property-type': 'propertyType',
+      'rs-listing-type': 'listingType',
+      'rs-beds-min': 'bedsMin',
+      'rs-beds-max': 'bedsMax',
+      'rs-baths-min': 'bathsMin',
+      'rs-baths-max': 'bathsMax',
+      'rs-price-min': 'priceMin',
+      'rs-price-max': 'priceMax',
+      'rs-built-min': 'builtMin',
+      'rs-built-max': 'builtMax',
+      'rs-plot-min': 'plotMin',
+      'rs-plot-max': 'plotMax',
+      'rs-features': 'features',
+      'rs-ref': 'ref',
+      'rs-featured': 'featured',
+    };
+
+    const booleanKeys = ['featured'];
+
+    const numericKeys = [
+      'bedsMin',
+      'bedsMax',
+      'bathsMin',
+      'bathsMax',
+      'priceMin',
+      'priceMax',
+      'builtMin',
+      'builtMax',
+      'plotMin',
+      'plotMax',
+      'location',
+      'propertyType',
+    ];
+
+    for (const [attr, key] of Object.entries(attrMap)) {
+      const datasetKey = attr.replace(/-([a-z])/g, (g) => g[1].toUpperCase());
+      const value = container.dataset[datasetKey];
+      if (value !== undefined && value !== '') {
+        if (key === 'features') {
+          // Features is always an array
+          defaults[key] = value.split(',').map((v) => parseInt(v.trim(), 10));
+        } else if (key === 'location' || key === 'propertyType') {
+          // Location and propertyType can be single or comma-separated
+          if (value.includes(',')) {
+            defaults[key] = value.split(',').map((v) => parseInt(v.trim(), 10));
+          } else {
+            defaults[key] = parseInt(value, 10);
+          }
+        } else if (numericKeys.includes(key)) {
+          defaults[key] = parseInt(value, 10);
+        } else if (booleanKeys.includes(key)) {
+          defaults[key] = value === 'true' || value === '1' ? true : null;
+        } else {
+          defaults[key] = value;
+        }
+      }
+    }
+
+    return defaults;
   }
 
   /**
@@ -710,6 +962,7 @@ const RealtySoft = (function () {
     if (filters.locationName) params.set('locationName', encodeURIComponent(filters.locationName));
     if (filters.sublocation) params.set('sublocation', String(filters.sublocation));
     if (filters.propertyType) params.set('type', String(filters.propertyType));
+    if (filters.propertyTypeName) params.set('typeName', encodeURIComponent(filters.propertyTypeName));
     if (filters.listingType) params.set('listing', filters.listingType);
     if (filters.bedsMin) params.set('beds', String(filters.bedsMin));
     if (filters.bathsMin) params.set('baths', String(filters.bathsMin));
@@ -726,6 +979,75 @@ const RealtySoft = (function () {
 
     const queryString = params.toString();
     return queryString ? `${baseURL}?${queryString}` : baseURL;
+  }
+
+  /**
+   * Update the current URL with search filters (without page reload).
+   * Uses history.replaceState so back button preserves search state.
+   */
+  function updateURLWithFilters(): void {
+    try {
+      const filters = RealtySoftState.get('filters') as Partial<FilterState>;
+      const page = RealtySoftState.get('results.page') as number || 1;
+      const params = new URLSearchParams();
+
+      // Add filter parameters
+      if (filters.location) params.set('location', String(filters.location));
+      if (filters.locationName) params.set('locationName', filters.locationName);
+      if (filters.sublocation) params.set('sublocation', String(filters.sublocation));
+      if (filters.propertyType) params.set('type', String(filters.propertyType));
+      if (filters.propertyTypeName) params.set('typeName', filters.propertyTypeName);
+      if (filters.listingType) params.set('listing', filters.listingType);
+      if (filters.bedsMin) params.set('beds', String(filters.bedsMin));
+      if (filters.bedsMax) params.set('beds_max', String(filters.bedsMax));
+      if (filters.bathsMin) params.set('baths', String(filters.bathsMin));
+      if (filters.bathsMax) params.set('baths_max', String(filters.bathsMax));
+      if (filters.priceMin) params.set('price_min', String(filters.priceMin));
+      if (filters.priceMax) params.set('price_max', String(filters.priceMax));
+      if (filters.builtMin) params.set('built_min', String(filters.builtMin));
+      if (filters.builtMax) params.set('built_max', String(filters.builtMax));
+      if (filters.plotMin) params.set('plot_min', String(filters.plotMin));
+      if (filters.plotMax) params.set('plot_max', String(filters.plotMax));
+      if (filters.ref) params.set('ref', filters.ref);
+      if (filters.features && filters.features.length > 0) {
+        params.set('features', filters.features.join(','));
+      }
+
+      // Add page if not on first page
+      if (page > 1) params.set('page', String(page));
+
+      // Build new URL
+      const queryString = params.toString();
+      const newURL = queryString
+        ? `${window.location.pathname}?${queryString}`
+        : window.location.pathname;
+
+      // Update browser URL without reload
+      // Use pushState to create new history entries so back button works correctly
+      if (window.history && window.history.pushState) {
+        // Only push if URL actually changed (avoid duplicate history entries)
+        const currentURL = window.location.pathname + window.location.search;
+        if (newURL !== currentURL) {
+          window.history.pushState(
+            { rsFilters: filters, rsPage: page },
+            document.title,
+            newURL
+          );
+        }
+      }
+
+      // Save current search URL to sessionStorage for back button support
+      // This is used by the back-button component on property detail pages
+      try {
+        const fullURL = window.location.origin + newURL;
+        sessionStorage.setItem('rs_last_search_url', fullURL);
+      } catch (e) {
+        // sessionStorage not available
+      }
+    } catch (e) {
+      // Non-critical - URL update failed but search still works
+      Logger.debug('[RealtySoft] URL update failed:', e);
+    }
   }
 
   /**
@@ -750,6 +1072,9 @@ const RealtySoft = (function () {
       const val = parseInt(urlParams.get('type') || '', 10);
       if (!isNaN(val)) filters.propertyType = val;
     }
+    if (urlParams.has('typeName')) {
+      filters.propertyTypeName = decodeURIComponent(urlParams.get('typeName') || '');
+    }
     if (urlParams.has('listing')) {
       filters.listingType = urlParams.get('listing') || undefined;
     }
@@ -757,9 +1082,17 @@ const RealtySoft = (function () {
       const val = parseInt(urlParams.get('beds') || '', 10);
       if (!isNaN(val)) filters.bedsMin = val;
     }
+    if (urlParams.has('beds_max')) {
+      const val = parseInt(urlParams.get('beds_max') || '', 10);
+      if (!isNaN(val)) filters.bedsMax = val;
+    }
     if (urlParams.has('baths')) {
       const val = parseInt(urlParams.get('baths') || '', 10);
       if (!isNaN(val)) filters.bathsMin = val;
+    }
+    if (urlParams.has('baths_max')) {
+      const val = parseInt(urlParams.get('baths_max') || '', 10);
+      if (!isNaN(val)) filters.bathsMax = val;
     }
     if (urlParams.has('price_min')) {
       const val = parseInt(urlParams.get('price_min') || '', 10);
@@ -802,6 +1135,92 @@ const RealtySoft = (function () {
       Logger.debug('[RealtySoft] Applying URL filters:', filters);
       for (const [key, value] of Object.entries(filters)) {
         RealtySoftState.set(`filters.${key}`, value);
+      }
+    }
+
+    // Parse and apply page number
+    if (urlParams.has('page')) {
+      const page = parseInt(urlParams.get('page') || '', 10);
+      if (!isNaN(page) && page > 0) {
+        RealtySoftState.set('results.page', page);
+        Logger.debug('[RealtySoft] Restoring page from URL:', page);
+      }
+    } else {
+      // No page in URL - check if we should restore from sessionStorage
+      // This handles the case where browser back button loses the page parameter
+      try {
+        const savedUrl = sessionStorage.getItem('rs_last_search_url');
+
+        if (savedUrl) {
+          const savedUrlObj = new URL(savedUrl);
+          const currentPath = window.location.pathname;
+          const savedPath = savedUrlObj.pathname;
+
+          // Check if we're on the same page (same path)
+          if (currentPath === savedPath) {
+            const savedParams = new URLSearchParams(savedUrlObj.search);
+            const savedPage = savedParams.get('page');
+
+            if (savedPage) {
+              // Check if other filters match (to avoid restoring stale page)
+              const savedType = savedParams.get('type');
+              const savedListing = savedParams.get('listing');
+              const savedLocation = savedParams.get('location');
+
+              const currentType = urlParams.get('type');
+              const currentListing = urlParams.get('listing');
+              const currentLocation = urlParams.get('location');
+
+              // If main filters match, restore the page
+              if (savedType === currentType &&
+                  savedListing === currentListing &&
+                  savedLocation === currentLocation) {
+                const page = parseInt(savedPage, 10);
+                if (!isNaN(page) && page > 1) {
+                  RealtySoftState.set('results.page', page);
+
+                  // Update URL to include the page (so it's visible in address bar)
+                  const newParams = new URLSearchParams(window.location.search);
+                  newParams.set('page', savedPage);
+                  const newUrl = window.location.pathname + '?' + newParams.toString();
+                  window.history.replaceState(null, '', newUrl);
+                }
+              }
+            }
+          }
+        }
+      } catch (e) {
+        // sessionStorage restoration failed - continue without page restoration
+      }
+    }
+  }
+
+  /**
+   * Resolve filter names from IDs using loaded data
+   * Called after data is loaded to ensure names are available for analytics
+   */
+  function resolveFilterNames(): void {
+    const filters = RealtySoftState.get('filters') as Partial<FilterState>;
+    const propertyTypes = RealtySoftState.get('data.propertyTypes') as Array<{ id: number; name: string }> || [];
+    const locations = RealtySoftState.get('data.locations') as Array<{ id: number; name: string }> || [];
+
+    // Resolve propertyTypeName if we have ID but no name
+    if (filters.propertyType && !filters.propertyTypeName) {
+      const typeId = Array.isArray(filters.propertyType) ? filters.propertyType[0] : filters.propertyType;
+      const foundType = propertyTypes.find((t) => t.id === typeId);
+      if (foundType) {
+        RealtySoftState.set('filters.propertyTypeName', foundType.name);
+        Logger.debug('[RealtySoft] Resolved propertyTypeName:', foundType.name);
+      }
+    }
+
+    // Resolve locationName if we have ID but no name
+    if (filters.location && !filters.locationName) {
+      const locId = Array.isArray(filters.location) ? filters.location[0] : filters.location;
+      const foundLoc = locations.find((l) => l.id === locId);
+      if (foundLoc) {
+        RealtySoftState.set('filters.locationName', foundLoc.name);
+        Logger.debug('[RealtySoft] Resolved locationName:', foundLoc.name);
       }
     }
   }
@@ -1471,7 +1890,7 @@ const RealtySoft = (function () {
                     <span class="rs_card_plot"></span>
                   </span>
                 </div>
-                <span class="rs-template-card-05__view-link">View Details</span>
+                <span class="rs_card_view rs-template-card-05__view-link"></span>
               </div>
             </div>
           </a>
@@ -1531,7 +1950,7 @@ const RealtySoft = (function () {
                   <span class="rs_card_built"></span>
                 </span>
               </div>
-              <span class="rs-template-card-06__view-link">View Details</span>
+              <span class="rs_card_view rs-template-card-06__view-link"></span>
             </div>
           </a>
         </div>
@@ -1823,7 +2242,7 @@ const RealtySoft = (function () {
               </div>
               <div class="rs-template-card-10__actions">
                 <span class="rs_card_ref rs-template-card-10__ref-btn"></span>
-                <span class="rs-template-card-10__view-details">View Details</span>
+                <span class="rs_card_view rs-template-card-10__view-details"></span>
               </div>
             </div>
           </a>
@@ -1900,7 +2319,7 @@ const RealtySoft = (function () {
                 <span class="rs_card_price rs-template-card-11__price"></span>
               </div>
               <div class="rs-template-card-11__actions">
-                <span class="rs-template-card-11__details-btn">View Details</span>
+                <span class="rs_card_view rs-template-card-11__details-btn"></span>
                 <span class="rs_card_ref rs-template-card-11__ref"></span>
               </div>
             </div>
@@ -2220,6 +2639,10 @@ const RealtySoft = (function () {
    */
   function renderTemplates(): void {
     Logger.debug('[RealtySoft] renderTemplates() - scanning for template elements...');
+
+    // Track listing container IDs to ensure uniqueness
+    let listingIdCounter = 0;
+
     for (const [templateClass, templateHTML] of Object.entries(TEMPLATES)) {
       const elements = document.querySelectorAll<HTMLElement>(`.${templateClass}`);
       Logger.debug(
@@ -2228,8 +2651,10 @@ const RealtySoft = (function () {
 
       if (elements.length === 0) continue;
 
-      // Find the best element (prefer main content over header/footer)
-      const bestElement = findBestElement(elements);
+      // For listing templates, allow multiple instances (standalone listings)
+      // For search templates, still use best element logic (only one search form)
+      const isListingTemplate = templateClass.includes('listing');
+      const bestElement = isListingTemplate ? null : findBestElement(elements);
 
       elements.forEach((el) => {
         // Skip if already rendered
@@ -2237,9 +2662,16 @@ const RealtySoft = (function () {
           return;
         }
 
-        // Mark non-best elements as duplicates
-        if (el !== bestElement) {
+        // For non-listing templates, mark non-best elements as duplicates
+        if (!isListingTemplate && el !== bestElement) {
           Logger.debug(`[RealtySoft] Skipping duplicate ${templateClass} element (header/footer)`);
+          el.dataset.rsTemplateDuplicate = 'true';
+          return;
+        }
+
+        // For listing templates, skip duplicates in header/footer (unless standalone)
+        if (isListingTemplate && isInHeaderFooter(el) && !el.hasAttribute('data-rs-standalone')) {
+          Logger.debug(`[RealtySoft] Skipping listing in header/footer: ${templateClass}`);
           el.dataset.rsTemplateDuplicate = 'true';
           return;
         }
@@ -2252,8 +2684,12 @@ const RealtySoft = (function () {
           }
         }
 
-        if (templateClass.includes('listing')) {
-          if (!el.id) el.id = 'rs_listing';
+        if (isListingTemplate) {
+          // Assign unique IDs to each listing container
+          if (!el.id) {
+            listingIdCounter++;
+            el.id = listingIdCounter === 1 ? 'rs_listing' : `rs_listing_${listingIdCounter}`;
+          }
         }
 
         el.innerHTML = templateHTML;
@@ -2274,7 +2710,7 @@ const RealtySoft = (function () {
           initTemplate03Tabs(el);
         }
 
-        Logger.debug(`[RealtySoft] Auto-rendered template: ${templateClass}`);
+        Logger.debug(`[RealtySoft] Auto-rendered template: ${templateClass} (id: ${el.id})`);
       });
     }
   }
@@ -2551,14 +2987,21 @@ const RealtySoft = (function () {
     observer.observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
     Logger.debug('[RealtySoft] HTML lang attribute sync initialized');
 
-    // URL popstate: Watch for browser back/forward navigation (URL-based language switchers)
-    window.addEventListener('popstate', () => {
+    // URL popstate: Watch for browser back/forward navigation
+    window.addEventListener('popstate', (event) => {
       // Re-detect language from URL after navigation
       const detectedLang = RealtySoftLabels.detectLanguage();
       const currentLang = RealtySoftState.get<string>('config.language');
       if (detectedLang !== currentLang) {
         Logger.debug('[RealtySoft] URL navigation detected language change:', detectedLang);
         setLanguage(detectedLang);
+      }
+
+      // Handle filter/page restoration from URL on back/forward navigation
+      if (event.state && event.state.rsPage !== undefined) {
+        Logger.debug('[RealtySoft] Restoring state from popstate:', event.state);
+        parseURLFilters();
+        search();
       }
     });
   }
@@ -2668,12 +3111,35 @@ const RealtySoft = (function () {
           RealtySoftState.set('config.branding', globalConfig.branding);
         }
 
-        // Pagination settings
-        const defaultPerPage = globalConfig.perPage || 12;
+        // Customization options from config (can also come from API)
+        if ((globalConfig as any).wishlistIcon) {
+          RealtySoftState.set('config.wishlistIcon', (globalConfig as any).wishlistIcon);
+        }
+        if ((globalConfig as any).recaptchaSiteKey) {
+          RealtySoftState.set('config.recaptchaSiteKey', (globalConfig as any).recaptchaSiteKey);
+        }
+
+        // Pagination settings - check for data-rs-limit on main listing container
+        const mainListing = document.querySelector<HTMLElement>(
+          '#rs_listing:not([data-rs-standalone]), [class*="rs-listing-template-"]:not([data-rs-standalone])'
+        );
+        const dataLimit = mainListing?.dataset.rsLimit ? parseInt(mainListing.dataset.rsLimit, 10) : null;
+        const defaultPerPage = dataLimit || globalConfig.perPage || 12;
         const defaultMapPerPage = globalConfig.mapPerPage || 200;
         RealtySoftState.set('config.perPage', defaultPerPage);
         RealtySoftState.set('config.mapPerPage', defaultMapPerPage);
         RealtySoftState.set('results.perPage', defaultPerPage);
+
+        // Own properties options - check data-rs-own and data-rs-own-first on main listing
+        const ownOnly = mainListing?.dataset.rsOwn === 'true';      // Show ONLY own properties
+        const ownFirst = mainListing?.dataset.rsOwnFirst === 'true'; // Show own properties FIRST
+        RealtySoftState.set('config.ownOnly', ownOnly);
+        RealtySoftState.set('config.ownFirst', ownFirst);
+        Logger.debug('[RealtySoft] Main listing config:', {
+          limit: dataLimit,
+          ownOnly,
+          ownFirst
+        });
 
         // Labels mode: 'api' (default), 'hybrid', or 'static'
         // API mode fetches labels from dashboard, falls back to static if API fails
@@ -2736,11 +3202,27 @@ const RealtySoft = (function () {
                 RealtySoftState.set('data.priceRanges', priceRanges);
                 Logger.debug('[RealtySoft] Static mode: priceRanges loaded:', priceRanges);
               }
-              // Extract and store ownerEmail from API (if not already set in config)
+              // Extract and store ownerEmail from API (API value takes precedence over config)
               const ownerEmail = extractOwnerEmail(labelsData);
-              if (ownerEmail && !RealtySoftState.get('config.ownerEmail')) {
+              if (ownerEmail) {
                 RealtySoftState.set('config.ownerEmail', ownerEmail);
                 Logger.debug('[RealtySoft] Static mode: ownerEmail loaded from API:', ownerEmail);
+              }
+              // Extract and store location hierarchy types from API
+              const locationTypes = extractLocationTypes(labelsData);
+              if (locationTypes) {
+                RealtySoftState.set('config.locationParentType', locationTypes.parentType);
+                RealtySoftState.set('config.locationChildTypes', locationTypes.childTypes);
+                Logger.debug('[RealtySoft] Static mode: location types loaded:', locationTypes);
+              }
+              // Extract and store customization options (wishlist icon, reCAPTCHA, branding)
+              const customization = extractCustomizationOptions(labelsData);
+              if (customization) {
+                if (customization.wishlistIcon) {
+                  RealtySoftState.set('config.wishlistIcon', customization.wishlistIcon);
+                }
+                if (customization.recaptchaSiteKey) RealtySoftState.set('config.recaptchaSiteKey', customization.recaptchaSiteKey);
+                if (customization.branding) RealtySoftState.set('config.branding', customization.branding);
               }
             })
             .catch(() => {
@@ -2773,11 +3255,27 @@ const RealtySoft = (function () {
                 RealtySoftState.set('data.priceRanges', priceRanges);
                 Logger.debug('[RealtySoft] Hybrid mode: priceRanges loaded:', priceRanges);
               }
-              // Extract and store ownerEmail from API (if not already set in config)
+              // Extract and store ownerEmail from API (API value takes precedence over config)
               const ownerEmail = extractOwnerEmail(labelsData);
-              if (ownerEmail && !RealtySoftState.get('config.ownerEmail')) {
+              if (ownerEmail) {
                 RealtySoftState.set('config.ownerEmail', ownerEmail);
                 Logger.debug('[RealtySoft] Hybrid mode: ownerEmail loaded from API:', ownerEmail);
+              }
+              // Extract and store location hierarchy types from API
+              const locationTypes = extractLocationTypes(labelsData);
+              if (locationTypes) {
+                RealtySoftState.set('config.locationParentType', locationTypes.parentType);
+                RealtySoftState.set('config.locationChildTypes', locationTypes.childTypes);
+                Logger.debug('[RealtySoft] Hybrid mode: location types loaded:', locationTypes);
+              }
+              // Extract and store customization options (wishlist icon, reCAPTCHA, branding)
+              const customization = extractCustomizationOptions(labelsData);
+              if (customization) {
+                if (customization.wishlistIcon) {
+                  RealtySoftState.set('config.wishlistIcon', customization.wishlistIcon);
+                }
+                if (customization.recaptchaSiteKey) RealtySoftState.set('config.recaptchaSiteKey', customization.recaptchaSiteKey);
+                if (customization.branding) RealtySoftState.set('config.branding', customization.branding);
               }
             })
             .catch(() => {
@@ -2821,11 +3319,27 @@ const RealtySoft = (function () {
               Logger.debug('[RealtySoft] API mode: priceRanges loaded:', priceRanges);
             }
 
-            // Extract and store ownerEmail from API (if not already set in config)
+            // Extract and store ownerEmail from API (API value takes precedence over config)
             const ownerEmail = extractOwnerEmail(labelsData);
-            if (ownerEmail && !RealtySoftState.get('config.ownerEmail')) {
+            if (ownerEmail) {
               RealtySoftState.set('config.ownerEmail', ownerEmail);
               Logger.debug('[RealtySoft] API mode: ownerEmail loaded:', ownerEmail);
+            }
+            // Extract and store location hierarchy types from API
+            const locationTypes = extractLocationTypes(labelsData);
+            if (locationTypes) {
+              RealtySoftState.set('config.locationParentType', locationTypes.parentType);
+              RealtySoftState.set('config.locationChildTypes', locationTypes.childTypes);
+              Logger.debug('[RealtySoft] API mode: location types loaded:', locationTypes);
+            }
+            // Extract and store customization options (wishlist icon, reCAPTCHA, branding)
+            const customization = extractCustomizationOptions(labelsData);
+            if (customization) {
+              if (customization.wishlistIcon) {
+                RealtySoftState.set('config.wishlistIcon', customization.wishlistIcon);
+              }
+              if (customization.recaptchaSiteKey) RealtySoftState.set('config.recaptchaSiteKey', customization.recaptchaSiteKey);
+              if (customization.branding) RealtySoftState.set('config.branding', customization.branding);
             }
           }
 
@@ -2861,11 +3375,32 @@ const RealtySoft = (function () {
           widgetMode = detectMode();
           Logger.debug('[RealtySoft] Widget mode:', widgetMode);
 
+          // 1. Parse URL filters first (user navigation has priority)
           parseURLFilters();
 
           const searchContainer = document.getElementById('rs_search');
           const listingContainer = document.getElementById('rs_listing');
 
+          // 2. Parse default filters (data-rs-*) - pre-filled but changeable
+          // These only apply if not already set by URL
+          let allDefaults: DefaultFilters = {};
+
+          if (listingContainer && !listingContainer.hasAttribute('data-rs-standalone')) {
+            const listingDefaults = parseDefaultFilters(listingContainer);
+            allDefaults = { ...allDefaults, ...listingDefaults };
+          }
+
+          if (searchContainer) {
+            const searchDefaults = parseDefaultFilters(searchContainer);
+            allDefaults = { ...allDefaults, ...searchDefaults };
+          }
+
+          if (Object.keys(allDefaults).length > 0) {
+            RealtySoftState.setDefaultFilters(allDefaults);
+          }
+
+          // 3. Parse locked filters (data-rs-lock-*) - cannot be changed by user
+          // These override everything and lock the filter
           let allLocked: LockedFilters = {};
 
           if (listingContainer && !listingContainer.hasAttribute('data-rs-standalone')) {
@@ -2881,6 +3416,26 @@ const RealtySoft = (function () {
           if (Object.keys(allLocked).length > 0) {
             RealtySoftState.setLockedFilters(allLocked);
           }
+
+          // Resolve filter names after all filters are applied
+          resolveFilterNames();
+
+          // Parse data-rs-sort attribute for initial sort order
+          const sortContainer = listingContainer || searchContainer;
+          if (sortContainer) {
+            const initialSort = sortContainer.dataset.rsSort;
+            if (initialSort) {
+              const validSorts = [
+                'create_date_desc', 'create_date',
+                'last_date_desc', 'last_date',
+                'list_price', 'list_price_desc',
+                'is_featured_desc', 'location_id'
+              ];
+              if (validSorts.includes(initialSort)) {
+                RealtySoftState.set('ui.sort', initialSort);
+              }
+            }
+          }
         } catch (dataError) {
           console.error('[RealtySoft] Data processing error (continuing with component init):', dataError);
         }
@@ -2895,6 +3450,9 @@ const RealtySoft = (function () {
         // Initialize platform/plugin language sync (Weglot, HTML lang observer, etc.)
         initPlatformLanguageSync();
 
+        // Initialize price placeholders (scan page for #MINPRICE#, #MAXPRICE#, #AVGPRICE# tokens)
+        initPricePlaceholders();
+
         // Trigger initial search if listing is present
         if (widgetMode === 'combined' || widgetMode === 'results-only') {
           search();
@@ -2902,6 +3460,9 @@ const RealtySoft = (function () {
 
         // Initialize standalone listings (independent data fetch, no effect on global filters)
         initStandaloneListings();
+
+        // Watch for late data-rs-standalone attribute additions (page builders like LiveCanvas)
+        setupStandaloneMutationObserver();
 
         // Register service worker if opted in
         if (globalConfig.serviceWorker && 'serviceWorker' in navigator) {
@@ -3109,6 +3670,19 @@ const RealtySoft = (function () {
 
     try {
       const params = RealtySoftState.getSearchParams();
+
+      // Add ownonly=1 if data-rs-own="true" is set on main listing (show ONLY own properties)
+      const ownOnly = RealtySoftState.get<boolean>('config.ownOnly');
+      if (ownOnly) {
+        (params as Record<string, unknown>).ownonly = 1;
+      }
+
+      // Add ownfirst=1 if data-rs-own-first="true" is set (show own properties FIRST, then others)
+      const ownFirst = RealtySoftState.get<boolean>('config.ownFirst');
+      if (ownFirst) {
+        (params as Record<string, unknown>).ownfirst = 1;
+      }
+
       const results = await RealtySoftAPI.searchProperties(params);
 
       // Results can have additional fields from API
@@ -3127,8 +3701,26 @@ const RealtySoft = (function () {
         'ui.loading': false,
       });
 
-      // Track search with current filters
-      RealtySoftAnalytics.trackSearch();
+      // Track search with current filters (pass names for analytics aggregation)
+      const currentFilters = RealtySoftState.get('filters') as Partial<FilterState>;
+      RealtySoftAnalytics.trackSearch({
+        location: currentFilters.location,
+        locationName: currentFilters.locationName,
+        listingType: currentFilters.listingType,
+        propertyType: currentFilters.propertyType,
+        propertyTypeName: currentFilters.propertyTypeName,
+        bedsMin: currentFilters.bedsMin,
+        bedsMax: currentFilters.bedsMax,
+        priceMin: currentFilters.priceMin,
+        priceMax: currentFilters.priceMax,
+        features: currentFilters.features,
+      });
+
+      // Update price placeholders with values from search results
+      updatePricePlaceholders(properties);
+
+      // Update browser URL with current filters (for back button support)
+      updateURLWithFilters();
 
       document.dispatchEvent(
         new CustomEvent('realtysoft:search', {
@@ -3153,17 +3745,41 @@ const RealtySoft = (function () {
     const containers = document.querySelectorAll<HTMLElement>(
       '#rs_listing[data-rs-standalone], [class*="rs-listing-template-"][data-rs-standalone]'
     );
+
+    // Debug: Log all potential listing containers and their standalone attribute status
+    const allListings = document.querySelectorAll<HTMLElement>('#rs_listing, [class*="rs-listing-template-"]');
+    Logger.debug('[RealtySoft] Standalone detection:', {
+      totalListings: allListings.length,
+      standaloneContainers: containers.length,
+      listings: Array.from(allListings).map(el => ({
+        id: el.id,
+        classes: el.className,
+        hasStandaloneAttr: el.hasAttribute('data-rs-standalone'),
+        standaloneValue: el.getAttribute('data-rs-standalone'),
+      }))
+    });
+
     if (!containers.length) return;
 
     for (const container of Array.from(containers)) {
       try {
-        const filters = parseLockedFilters(container);
+        const filters = parseDefaultFilters(container);
 
-        // Convert locked filter format to API search params
+        // Convert filter format to API search params
         const params: Partial<SearchParams> = {};
-        if (filters.location) params.location_id = filters.location as number;
+        if (filters.location) {
+          // Handle single or array of location IDs
+          params.location_id = Array.isArray(filters.location)
+            ? filters.location.join(',')
+            : filters.location as number;
+        }
         if (filters.listingType) params.listing_type = filters.listingType as string;
-        if (filters.propertyType) params.type_id = filters.propertyType as number;
+        if (filters.propertyType) {
+          // Handle single or array of property type IDs
+          params.type_id = Array.isArray(filters.propertyType)
+            ? filters.propertyType.join(',')
+            : filters.propertyType as number;
+        }
         if (filters.bedsMin) params.bedrooms_min = filters.bedsMin as number;
         if (filters.bedsMax) params.bedrooms_max = filters.bedsMax as number;
         if (filters.bathsMin) params.bathrooms_min = filters.bathsMin as number;
@@ -3178,29 +3794,29 @@ const RealtySoft = (function () {
         if (filters.ref) params.ref_no = filters.ref as string;
 
         // Limit and sort from data attributes (defaults: 6 properties, newest first)
+        // Support both data-rs-sort and data-rs-order for consistency
         params.limit = parseInt(container.dataset.rsLimit || '6', 10);
         params.page = 1;
-        params.order = container.dataset.rsOrder || 'create_date_desc';
+
+        // Map internal sort names to CRM API parameter names
+        const sortMapping: Record<string, string> = {
+          'last_date_desc': 'write_date_desc',  // Recently updated
+          'last_date': 'write_date',            // Oldest updated
+        };
+        const rawSort = container.dataset.rsSort || container.dataset.rsOrder || 'create_date_desc';
+        params.order = sortMapping[rawSort] || rawSort;
 
         // Filter options
         const featuredOnly = container.dataset.rsFeatured === 'true';
         const ownOnly = container.dataset.rsOwn === 'true';
         const ownFirst = container.dataset.rsOwnFirst === 'true';
 
-        if (featuredOnly) params.featured = '1';
-        if (ownOnly) params.is_own = '1';
+        if (featuredOnly) params.status = 'sale';  // API uses status=sale for featured properties
+        if (ownOnly) params.ownonly = 1;   // Show ONLY own properties
+        if (ownFirst) params.ownfirst = 1; // Show own properties FIRST, then others
 
         const results = await RealtySoftAPI.searchProperties(params as SearchParams);
-        let properties = results.data || [];
-
-        // Sort own properties first if ownFirst is enabled
-        if (ownFirst && properties.length > 0) {
-          properties = properties.sort((a: Property, b: Property) => {
-            const aOwn = a.is_own ? 1 : 0;
-            const bOwn = b.is_own ? 1 : 0;
-            return bOwn - aOwn; // Own properties first
-          });
-        }
+        const properties = results.data || [];
 
         // Find grid component inside this container and inject data
         const gridEl = container.querySelector('.rs_property_grid') as RSHTMLElement | null;
@@ -3216,6 +3832,51 @@ const RealtySoft = (function () {
         console.error('[RealtySoft] Standalone listing error:', error);
       }
     }
+  }
+
+  /**
+   * Watch for late data-rs-standalone attribute additions.
+   * Page builders like LiveCanvas may add the attribute after initial page load.
+   */
+  function setupStandaloneMutationObserver(): void {
+    // Track which containers we've already processed
+    const processedContainers = new Set<HTMLElement>();
+
+    // Mark already-processed containers
+    document.querySelectorAll<HTMLElement>(
+      '#rs_listing[data-rs-standalone], [class*="rs-listing-template-"][data-rs-standalone]'
+    ).forEach(el => processedContainers.add(el));
+
+    const observer = new MutationObserver((mutations) => {
+      let hasNewStandalone = false;
+
+      for (const mutation of mutations) {
+        if (mutation.type === 'attributes' && mutation.attributeName === 'data-rs-standalone') {
+          const target = mutation.target as HTMLElement;
+          if (target.hasAttribute('data-rs-standalone') && !processedContainers.has(target)) {
+            Logger.debug('[RealtySoft] Late standalone attribute detected:', {
+              element: target.id || target.className,
+              value: target.getAttribute('data-rs-standalone'),
+            });
+            hasNewStandalone = true;
+          }
+        }
+      }
+
+      // Re-initialize standalone listings if new ones were added
+      if (hasNewStandalone) {
+        Logger.debug('[RealtySoft] Re-initializing standalone listings after late attribute addition');
+        initStandaloneListings();
+      }
+    });
+
+    // Observe all potential listing containers
+    document.querySelectorAll('#rs_listing, [class*="rs-listing-template-"]').forEach(el => {
+      observer.observe(el, { attributes: true, attributeFilter: ['data-rs-standalone'] });
+    });
+
+    // Also observe body for new listing containers being added
+    observer.observe(document.body, { childList: true, subtree: true });
   }
 
   /**
@@ -3267,7 +3928,8 @@ const RealtySoft = (function () {
       RealtySoftState.set('ui.loading', false);
       cacheOgData(property);
 
-      RealtySoftAnalytics.trackPropertyView(property);
+      // Note: Property view tracking moved to detail.ts component
+      // to ensure complete data (location, type) is always captured
 
       document.dispatchEvent(
         new CustomEvent('realtysoft:property-loaded', {
@@ -3297,7 +3959,8 @@ const RealtySoft = (function () {
       RealtySoftState.set('ui.loading', false);
       cacheOgData(property);
 
-      RealtySoftAnalytics.trackPropertyView(property);
+      // Note: Property view tracking moved to detail.ts component
+      // to ensure complete data (location, type) is always captured
 
       document.dispatchEvent(
         new CustomEvent('realtysoft:property-loaded', {
@@ -3428,9 +4091,21 @@ const RealtySoft = (function () {
     const subpath = slugMatch[1]; // e.g. "villa-name-V12345" or "R123456"
 
     // 3. SEO URL: /property/title-slug-REF (ref is last hyphen-separated segment)
+    // Handles refs with type suffix: R4949605-L (rental), R4949605-S (short), R4949605-N (dev)
     const parts = subpath.split('-');
     if (parts.length > 1) {
       const lastPart = parts[parts.length - 1];
+
+      // Check if last part is a single letter type suffix (L, S, N, etc.)
+      // and second-to-last is a base ref (letter(s) + digits)
+      if (/^[A-Z]$/i.test(lastPart) && parts.length >= 2) {
+        const secondToLast = parts[parts.length - 2];
+        if (/^[A-Z]{1,4}\d+$/i.test(secondToLast)) {
+          return secondToLast + '-' + lastPart.toUpperCase();
+        }
+      }
+
+      // Standard ref without suffix
       if (/^[A-Z0-9]{3,}$/i.test(lastPart)) return lastPart;
     }
 
@@ -3848,16 +4523,10 @@ const RealtySoft = (function () {
   // Use a flag to prevent double-init from race conditions
   let autoInitTriggered = false;
 
-  console.log('[RS-DEBUG] Auto-init code reached, readyState:', document.readyState);
-
   function triggerAutoInit(): void {
-    console.log('[RS-DEBUG] triggerAutoInit called, already triggered:', autoInitTriggered);
     if (autoInitTriggered) return;
     autoInitTriggered = true;
-    const should = shouldAutoInit();
-    console.log('[RS-DEBUG] shouldAutoInit returned:', should);
-    if (should) {
-      console.log('[RS-DEBUG] Calling init()');
+    if (shouldAutoInit()) {
       init();
     }
   }
@@ -3871,14 +4540,12 @@ const RealtySoft = (function () {
 
   // 3. Immediate check if DOM is already ready
   if (document.readyState !== 'loading') {
-    console.log('[RS-DEBUG] DOM ready, scheduling immediate init');
     setTimeout(triggerAutoInit, 0);
   }
 
   // 4. Microtask fallback for race conditions
   Promise.resolve().then(() => {
     if (document.readyState !== 'loading') {
-      console.log('[RS-DEBUG] Microtask fallback triggered');
       triggerAutoInit();
     }
   });

@@ -160,7 +160,10 @@ if (!isset($stats[$today])) {
         'card_clicks' => 0,
         'wishlist_adds' => 0,
         'inquiries' => 0,
-        'shares' => []
+        'shares' => [],
+        'pdf_downloads' => 0,
+        'video_views' => 0,
+        'tour_views' => 0
     ];
 }
 
@@ -184,11 +187,102 @@ foreach ($events as $event) {
             $stats[$today]['shares'][$platform] = 0;
         }
         $stats[$today]['shares'][$platform]++;
+    } elseif ($category === 'click' && $action === 'resource') {
+        // Track PDF, video, and virtual tour clicks (from detail page)
+        $resourceType = $event['data']['resource_type'] ?? '';
+        if ($resourceType === 'pdf') {
+            if (!isset($stats[$today]['pdf_downloads'])) $stats[$today]['pdf_downloads'] = 0;
+            $stats[$today]['pdf_downloads']++;
+        } elseif ($resourceType === 'video') {
+            if (!isset($stats[$today]['video_views'])) $stats[$today]['video_views'] = 0;
+            $stats[$today]['video_views']++;
+        } elseif ($resourceType === 'tour') {
+            if (!isset($stats[$today]['tour_views'])) $stats[$today]['tour_views'] = 0;
+            $stats[$today]['tour_views']++;
+        }
+    } elseif ($category === 'wishlist' && $action === 'pdf') {
+        // Track PDF downloads from wishlist page
+        if (!isset($stats[$today]['pdf_downloads'])) $stats[$today]['pdf_downloads'] = 0;
+        $stats[$today]['pdf_downloads']++;
     }
 }
 
 $statsResult = file_put_contents($statsFile, json_encode($stats, JSON_PRETTY_PRINT));
 logDebug("Stats file written to $statsFile: " . ($statsResult !== false ? 'success (' . $statsResult . ' bytes)' : 'failed'));
+
+// Forward events to SmartPropertyWidget Dashboard API
+$dashboardApiUrl = 'https://sm.smartpropertywidget.com/api/v1/widget/analytics';
+
+// Map widget events to dashboard format
+$dashboardEvents = [];
+foreach ($events as $event) {
+    $category = $event['category'] ?? '';
+    $action = $event['action'] ?? '';
+    $eventData = $event['data'] ?? [];
+
+    // Map category/action to event_type
+    $eventType = null;
+    if ($category === 'search' && $action === 'search') {
+        $eventType = 'search';
+    } elseif ($category === 'view' && $action === 'property_view') {
+        $eventType = 'property_view';
+    } elseif ($category === 'click' && $action === 'card_click') {
+        $eventType = 'card_click';
+    } elseif ($category === 'wishlist' && $action === 'add') {
+        $eventType = 'wishlist_add';
+    } elseif ($category === 'inquiry' && $action === 'submit') {
+        $eventType = 'inquiry';
+    } elseif ($category === 'click' && $action === 'share') {
+        $eventType = 'share';
+    } elseif ($category === 'click' && $action === 'resource' && ($eventData['resource_type'] ?? '') === 'pdf') {
+        $eventType = 'pdf_download';
+    } elseif ($category === 'wishlist' && $action === 'pdf') {
+        $eventType = 'pdf_download';
+    }
+
+    if ($eventType) {
+        $dashboardEvents[] = [
+            'type' => $eventType,
+            'data' => $eventData,
+            'session_id' => $event['sessionId'] ?? null,
+            'url' => $event['url'] ?? null
+        ];
+    }
+}
+
+// Send to dashboard if we have events
+if (!empty($dashboardEvents)) {
+    $payload = json_encode([
+        'domain' => $domain,
+        'events' => $dashboardEvents
+    ]);
+
+    logDebug("Forwarding " . count($dashboardEvents) . " events to dashboard: $dashboardApiUrl");
+
+    $ch = curl_init($dashboardApiUrl);
+    curl_setopt_array($ch, [
+        CURLOPT_POST => true,
+        CURLOPT_POSTFIELDS => $payload,
+        CURLOPT_HTTPHEADER => [
+            'Content-Type: application/json',
+            'Accept: application/json'
+        ],
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_TIMEOUT => 5, // Short timeout to not block response
+        CURLOPT_SSL_VERIFYPEER => true
+    ]);
+
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $curlError = curl_error($ch);
+    curl_close($ch);
+
+    if ($curlError) {
+        logDebug("Dashboard API curl error: $curlError");
+    } else {
+        logDebug("Dashboard API response ($httpCode): $response");
+    }
+}
 
 logDebug("Successfully processed " . count($events) . " events for domain: $domain");
 echo json_encode(['success' => true, 'count' => count($events)]);

@@ -4,6 +4,7 @@
  */
 
 import { RSBaseComponent } from '../base';
+import { RealtySoftRecaptchaHelper } from '../../core/recaptcha';
 import type {
   ComponentOptions,
   Property,
@@ -48,6 +49,7 @@ class RSDetailInquiryForm extends RSBaseComponent {
   private countryList: HTMLElement | null = null;
   private thankYouMessage: string = '';
   private thankYouRedirect: string | null = null;
+  private recaptchaContainerId: string = 'rs-inquiry-recaptcha';
 
   constructor(element: HTMLElement, options: ComponentOptions = {}) {
     super(element, options);
@@ -398,6 +400,8 @@ class RSDetailInquiryForm extends RSBaseComponent {
           </label>
         </div>
 
+        ${RealtySoftRecaptchaHelper.getContainerHTML(this.recaptchaContainerId)}
+
         <div class="rs-detail-inquiry__error" style="display: none;"></div>
 
         <button type="submit" class="rs-detail-inquiry__submit">
@@ -434,6 +438,25 @@ class RSDetailInquiryForm extends RSBaseComponent {
 
     // Store the initial default message for comparison on language change
     this.lastDefaultMessage = this.getDefaultMessage();
+
+    // Initialize reCAPTCHA if enabled
+    this.initRecaptcha();
+  }
+
+  /**
+   * Initialize reCAPTCHA widget
+   */
+  private async initRecaptcha(): Promise<void> {
+    if (!RealtySoftRecaptchaHelper.isEnabled()) return;
+
+    const container = this.element.querySelector(`#${this.recaptchaContainerId}`) as HTMLElement | null;
+    if (!container) return;
+
+    try {
+      await RealtySoftRecaptchaHelper.render(this.recaptchaContainerId, container);
+    } catch (error) {
+      console.warn('[InquiryForm] Failed to load reCAPTCHA:', error);
+    }
   }
 
   /**
@@ -615,6 +638,12 @@ class RSDetailInquiryForm extends RSBaseComponent {
   private async submitForm(): Promise<void> {
     if (!this.form || !this.property) return;
 
+    // Validate reCAPTCHA if enabled
+    if (RealtySoftRecaptchaHelper.isEnabled() && !RealtySoftRecaptchaHelper.isValid(this.recaptchaContainerId)) {
+      this.showError(this.label('recaptcha_required') || 'Please complete the reCAPTCHA verification.');
+      return;
+    }
+
     this.submitting = true;
     this.showLoading();
     this.hideError();
@@ -627,6 +656,11 @@ class RSDetailInquiryForm extends RSBaseComponent {
     const config = (RealtySoftState.get<Partial<WidgetConfig>>('config') || {}) as Record<string, unknown>;
     const ownerEmail = (config.ownerEmail as string) || this.property.agent?.email || '';
     const branding = (config.branding as Record<string, string>) || {};
+
+    // Get reCAPTCHA token if enabled
+    const recaptchaToken = RealtySoftRecaptchaHelper.isEnabled()
+      ? RealtySoftRecaptchaHelper.getResponse(this.recaptchaContainerId)
+      : '';
 
     // Send data in camelCase format (compatible with old widget PHP)
     const data = {
@@ -645,6 +679,7 @@ class RSDetailInquiryForm extends RSBaseComponent {
       sendConfirmation: (config.sendConfirmationEmail as boolean) !== false,
       language: RealtySoftLabels.getLanguage(),
       privacyAccepted: true,
+      recaptchaToken: recaptchaToken,
       branding: {
         companyName: branding.companyName || '',
         logoUrl: branding.logoUrl || '',
@@ -668,6 +703,8 @@ class RSDetailInquiryForm extends RSBaseComponent {
       console.error('Inquiry submission failed:', error);
       const errorMsg = (error as Error).message || this.label('inquiry_error');
       this.showError(errorMsg);
+      // Reset reCAPTCHA on error so user can try again
+      RealtySoftRecaptchaHelper.reset(this.recaptchaContainerId);
     } finally {
       this.submitting = false;
       this.hideLoading();

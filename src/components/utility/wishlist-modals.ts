@@ -14,6 +14,7 @@ import type {
 import { WishlistManager } from '../../core/wishlist-manager';
 import type { WishlistItem } from '../../core/wishlist-manager';
 import type { RealtySoftToastModule } from '../../core/toast';
+import { RealtySoftRecaptchaHelper } from '../../core/recaptcha';
 
 // Declare globals
 declare const RealtySoft: RealtySoftModule;
@@ -52,6 +53,7 @@ class RSWishlistModals extends RSBaseComponent {
   private windowEventsbound: boolean = false;
   private modalOpenHandler: ((e: Event) => void) | null = null;
   private modalCloseHandler: ((e: Event) => void) | null = null;
+  private recaptchaContainerId: string = 'rs-wishlist-email-recaptcha';
 
   constructor(element: HTMLElement, options: ComponentOptions = {}) {
     super(element, options);
@@ -144,6 +146,7 @@ class RSWishlistModals extends RSBaseComponent {
                 <label>${this.label('wishlist_email_message') || 'Personal message (optional):'}</label>
                 <textarea name="message" class="rs-textarea" rows="4" placeholder="${this.label('wishlist_email_placeholder') || 'Add a personal note...'}"></textarea>
               </div>
+              ${RealtySoftRecaptchaHelper.getContainerHTML(this.recaptchaContainerId)}
               <div class="rs-form-actions">
                 <button type="button" class="rs-wishlist-btn rs-wishlist-btn--secondary rs-email-cancel">${this.label('cancel') || 'Cancel'}</button>
                 <button type="submit" class="rs-wishlist-btn rs-wishlist-btn--success">${this.label('wishlist_email_send') || 'Send Email'}</button>
@@ -365,6 +368,21 @@ class RSWishlistModals extends RSBaseComponent {
   // Email functionality
   private openEmailModal(): void {
     this.openModalById('rs-email-modal');
+    // Initialize reCAPTCHA if enabled
+    this.initEmailRecaptcha();
+  }
+
+  private async initEmailRecaptcha(): Promise<void> {
+    if (!RealtySoftRecaptchaHelper.isEnabled()) return;
+
+    const container = this.element.querySelector(`#${this.recaptchaContainerId}`) as HTMLElement | null;
+    if (!container) return;
+
+    try {
+      await RealtySoftRecaptchaHelper.render(this.recaptchaContainerId, container);
+    } catch (error) {
+      console.warn('[WishlistModals] Failed to load reCAPTCHA:', error);
+    }
   }
 
   private async handleEmailSubmit(e: Event): Promise<void> {
@@ -378,6 +396,14 @@ class RSWishlistModals extends RSBaseComponent {
     if (!emailTo) {
       if (typeof RealtySoftToast !== 'undefined' && RealtySoftToast) {
         RealtySoftToast.error('Please enter recipient email');
+      }
+      return;
+    }
+
+    // Validate reCAPTCHA if enabled
+    if (RealtySoftRecaptchaHelper.isEnabled() && !RealtySoftRecaptchaHelper.isValid(this.recaptchaContainerId)) {
+      if (typeof RealtySoftToast !== 'undefined' && RealtySoftToast) {
+        RealtySoftToast.error(this.label('recaptcha_required') || 'Please complete the reCAPTCHA verification.');
       }
       return;
     }
@@ -405,6 +431,11 @@ class RSWishlistModals extends RSBaseComponent {
     // Get currency info
     const currencyInfo = this.getCurrencyInfo();
 
+    // Get reCAPTCHA token if enabled
+    const recaptchaToken = RealtySoftRecaptchaHelper.isEnabled()
+      ? RealtySoftRecaptchaHelper.getResponse(this.recaptchaContainerId)
+      : '';
+
     try {
       const response = await fetch(emailEndpoint, {
         method: 'POST',
@@ -419,6 +450,7 @@ class RSWishlistModals extends RSBaseComponent {
           wishlist: propertiesWithUrls,
           siteUrl: window.location.origin,
           ownerEmail: RealtySoftState.get<string>('config.ownerEmail') || '',
+          recaptchaToken: recaptchaToken,
           branding: {
             companyName: branding.companyName || '',
             logoUrl: branding.logoUrl || '',
@@ -470,6 +502,8 @@ class RSWishlistModals extends RSBaseComponent {
       if (typeof RealtySoftToast !== 'undefined' && RealtySoftToast) {
         RealtySoftToast.error('Email failed: ' + (error as Error).message);
       }
+      // Reset reCAPTCHA on error so user can try again
+      RealtySoftRecaptchaHelper.reset(this.recaptchaContainerId);
     } finally {
       if (submitBtn) {
         submitBtn.disabled = false;

@@ -76,6 +76,17 @@ class RSPropertyGrid extends RSBaseComponent {
     const listingParent = this.element.closest('#rs_listing, [class*="rs-listing-template-"]');
     this.isStandalone = !!listingParent?.hasAttribute('data-rs-standalone');
 
+    // Debug: Log standalone detection for this grid
+    Logger.debug('[RSPropertyGrid] Standalone detection:', {
+      gridElement: this.element.className,
+      listingParentFound: !!listingParent,
+      listingParentId: listingParent?.id || null,
+      listingParentClass: listingParent?.className || null,
+      hasStandaloneAttr: listingParent?.hasAttribute('data-rs-standalone') || false,
+      standaloneAttrValue: listingParent?.getAttribute('data-rs-standalone') ?? null,
+      isStandalone: this.isStandalone,
+    });
+
     // Set up IntersectionObserver for lazy loading images
     this.setupImageObserver();
 
@@ -494,7 +505,20 @@ class RSPropertyGrid extends RSBaseComponent {
     const totalImageCount = property.total_images || allImages.length;
     card.dataset.totalImages = String(totalImageCount);
     const mainImage = images[0] || '/realtysoft/assets/placeholder.jpg';
-    const price = RealtySoftLabels.formatPrice(property.price);
+    const periodLabel = this.getRentalPeriodLabel(property);
+    // Support price ranges for development properties
+    let priceDisplay: string;
+    if (property.price_min && property.price_max && property.price_min !== property.price_max) {
+      const minPrice = RealtySoftLabels.formatPrice(property.price_min);
+      const maxPrice = RealtySoftLabels.formatPrice(property.price_max);
+      priceDisplay = `${minPrice} - ${maxPrice}`;
+    } else if (property.price_min && property.listing_type === 'development') {
+      const fromLabel = this.label('price_from') || 'From';
+      priceDisplay = `${fromLabel} ${RealtySoftLabels.formatPrice(property.price_min)}`;
+    } else {
+      priceDisplay = RealtySoftLabels.formatPrice(property.price);
+    }
+    const price = periodLabel ? `${priceDisplay}${periodLabel}` : priceDisplay;
     // Check wishlist using WishlistManager (ref) with fallback to RealtySoftState (id)
     const refNo = property.ref || property.id;
     const isInWishlist = (typeof WishlistManager !== 'undefined' && WishlistManager?.has(refNo)) || RealtySoftState.isInWishlist(property.id);
@@ -528,9 +552,7 @@ class RSPropertyGrid extends RSBaseComponent {
         </div>
       </a>
       <button class="rs-card__wishlist rs_card_wishlist ${isInWishlist ? 'rs-card__wishlist--active' : ''}" type="button" aria-label="${this.label('wishlist_add')}">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="${isInWishlist ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2">
-          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
-        </svg>
+        ${this.getWishlistIconSvg(isInWishlist)}
       </button>
       <div class="rs-card__content">
         <a href="${propertyUrl}" class="rs-card__price-link rs_card_link">
@@ -547,47 +569,10 @@ class RSPropertyGrid extends RSBaseComponent {
           ${this.escapeHtml(String(property.location || ''))}
         </div>
         <div class="rs-card__specs">
-          ${property.beds && property.beds > 0 ? `
-            <span class="rs-card__spec rs_card_beds">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M2 4v16"></path>
-                <path d="M2 8h18a2 2 0 0 1 2 2v10"></path>
-                <path d="M2 17h20"></path>
-                <path d="M6 8v9"></path>
-              </svg>
-              ${property.beds} ${property.beds === 1 ? this.label('card_bed') : this.label('card_beds')}
-            </span>
-          ` : ''}
-          ${property.baths && property.baths > 0 ? `
-            <span class="rs-card__spec rs_card_baths">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M9 6 6.5 3.5a1.5 1.5 0 0 0-1-.5C4.683 3 4 3.683 4 4.5V17a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-5"></path>
-                <line x1="10" x2="8" y1="5" y2="7"></line>
-                <line x1="2" x2="22" y1="12" y2="12"></line>
-                <line x1="7" x2="7" y1="19" y2="21"></line>
-                <line x1="17" x2="17" y1="19" y2="21"></line>
-              </svg>
-              ${property.baths} ${property.baths === 1 ? this.label('card_bath') : this.label('card_baths')}
-            </span>
-          ` : ''}
-          ${property.built_area && property.built_area > 0 ? `
-            <span class="rs-card__spec rs_card_built">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-              </svg>
-              ${property.built_area} ${this.label('card_built')}
-            </span>
-          ` : ''}
-          ${property.plot_size && property.plot_size > 0 ? `
-            <span class="rs-card__spec rs_card_plot">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M3 6l9-4 9 4v12l-9 4-9-4V6z"></path>
-                <path d="M12 2v20"></path>
-                <path d="M3 6l9 4 9-4"></path>
-              </svg>
-              ${property.plot_size} ${this.label('card_plot')}
-            </span>
-          ` : ''}
+          ${this.renderBedsSpec(property)}
+          ${this.renderBathsSpec(property)}
+          ${this.renderBuiltSpec(property)}
+          ${this.renderPlotSpec(property)}
         </div>
         <div class="rs-card__footer">
           <span class="rs-card__ref rs_card_ref">${this.label('card_ref')} ${this.escapeHtml(property.ref || '')}</span>
@@ -732,17 +717,28 @@ class RSPropertyGrid extends RSBaseComponent {
       wishlistBtn.classList.toggle('rs-card__wishlist--active', isInWishlist);
       wishlistBtn.type = 'button';
       wishlistBtn.setAttribute('aria-label', this.label('wishlist_add'));
-      wishlistBtn.innerHTML = `
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="${isInWishlist ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2">
-          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
-        </svg>
-      `;
+      wishlistBtn.innerHTML = this.getWishlistIconSvg(isInWishlist);
     }
 
-    // Handle price
+    // Handle price - with range support for developments
     const priceEl = card.querySelector('.rs_card_price');
     if (priceEl) {
-      priceEl.textContent = RealtySoftLabels.formatPrice(property.price);
+      const periodLabel = this.getRentalPeriodLabel(property);
+      let priceDisplay: string;
+
+      // Check for price range (development properties)
+      if (property.price_min && property.price_max && property.price_min !== property.price_max) {
+        const minPrice = RealtySoftLabels.formatPrice(property.price_min);
+        const maxPrice = RealtySoftLabels.formatPrice(property.price_max);
+        priceDisplay = `${minPrice} - ${maxPrice}`;
+      } else if (property.price_min && property.listing_type === 'development') {
+        const fromLabel = this.label('price_from') || 'From';
+        priceDisplay = `${fromLabel} ${RealtySoftLabels.formatPrice(property.price_min)}`;
+      } else {
+        priceDisplay = RealtySoftLabels.formatPrice(property.price);
+      }
+
+      priceEl.textContent = periodLabel ? `${priceDisplay}${periodLabel}` : priceDisplay;
     }
 
     // Handle title
@@ -776,41 +772,93 @@ class RSPropertyGrid extends RSBaseComponent {
       el.classList.add('rs-spec-hidden');
     };
 
-    // Handle beds
+    // Handle beds - with range support for developments
     const bedsEl = card.querySelector('.rs_card_beds') as HTMLElement | null;
     if (bedsEl) {
-      if (property.beds && property.beds > 0) {
-        bedsEl.textContent = `${property.beds} ${property.beds === 1 ? this.label('card_bed') : this.label('card_beds')}`;
+      const hasRange = property.beds_min && property.beds_max && property.beds_min !== property.beds_max;
+      const hasMin = property.beds_min && property.beds_min > 0;
+      const hasSingle = property.beds && property.beds > 0;
+
+      if (hasRange || hasMin || hasSingle) {
+        let display: string;
+        if (hasRange) {
+          display = `${property.beds_min}-${property.beds_max}`;
+        } else if (hasMin && property.listing_type === 'development') {
+          display = `${property.beds_min}+`;
+        } else {
+          display = `${property.beds}`;
+        }
+        const label = (hasRange || (hasMin && property.listing_type === 'development') || property.beds !== 1)
+          ? this.label('card_beds') : this.label('card_bed');
+        bedsEl.textContent = `${display} ${label}`;
       } else {
         hideSpecContainer(bedsEl);
       }
     }
 
-    // Handle baths
+    // Handle baths - with range support for developments
     const bathsEl = card.querySelector('.rs_card_baths') as HTMLElement | null;
     if (bathsEl) {
-      if (property.baths && property.baths > 0) {
-        bathsEl.textContent = `${property.baths} ${property.baths === 1 ? this.label('card_bath') : this.label('card_baths')}`;
+      const hasRange = property.baths_min && property.baths_max && property.baths_min !== property.baths_max;
+      const hasMin = property.baths_min && property.baths_min > 0;
+      const hasSingle = property.baths && property.baths > 0;
+
+      if (hasRange || hasMin || hasSingle) {
+        let display: string;
+        if (hasRange) {
+          display = `${property.baths_min}-${property.baths_max}`;
+        } else if (hasMin && property.listing_type === 'development') {
+          display = `${property.baths_min}+`;
+        } else {
+          display = `${property.baths}`;
+        }
+        const label = (hasRange || (hasMin && property.listing_type === 'development') || property.baths !== 1)
+          ? this.label('card_baths') : this.label('card_bath');
+        bathsEl.textContent = `${display} ${label}`;
       } else {
         hideSpecContainer(bathsEl);
       }
     }
 
-    // Handle built area
+    // Handle built area - with range support for developments
     const builtEl = card.querySelector('.rs_card_built') as HTMLElement | null;
     if (builtEl) {
-      if (property.built_area && property.built_area > 0) {
-        builtEl.textContent = `${property.built_area} ${this.label('card_built')}`;
+      const hasRange = property.built_area_min && property.built_area_max && property.built_area_min !== property.built_area_max;
+      const hasMin = property.built_area_min && property.built_area_min > 0;
+      const hasSingle = property.built_area && property.built_area > 0;
+
+      if (hasRange || hasMin || hasSingle) {
+        let display: string;
+        if (hasRange) {
+          display = `${property.built_area_min}-${property.built_area_max}`;
+        } else if (hasMin && property.listing_type === 'development') {
+          display = `${property.built_area_min}+`;
+        } else {
+          display = `${property.built_area}`;
+        }
+        builtEl.textContent = `${display} ${this.label('card_built')}`;
       } else {
         hideSpecContainer(builtEl);
       }
     }
 
-    // Handle plot size
+    // Handle plot size - with range support for developments
     const plotEl = card.querySelector('.rs_card_plot') as HTMLElement | null;
     if (plotEl) {
-      if (property.plot_size && property.plot_size > 0) {
-        plotEl.textContent = `${property.plot_size} ${this.label('card_plot')}`;
+      const hasRange = property.plot_size_min && property.plot_size_max && property.plot_size_min !== property.plot_size_max;
+      const hasMin = property.plot_size_min && property.plot_size_min > 0;
+      const hasSingle = property.plot_size && property.plot_size > 0;
+
+      if (hasRange || hasMin || hasSingle) {
+        let display: string;
+        if (hasRange) {
+          display = `${property.plot_size_min}-${property.plot_size_max}`;
+        } else if (hasMin && property.listing_type === 'development') {
+          display = `${property.plot_size_min}+`;
+        } else {
+          display = `${property.plot_size}`;
+        }
+        plotEl.textContent = `${display} ${this.label('card_plot')}`;
       } else {
         hideSpecContainer(plotEl);
       }
@@ -826,6 +874,12 @@ class RSPropertyGrid extends RSBaseComponent {
     const refEl = card.querySelector('.rs_card_ref');
     if (refEl) {
       refEl.textContent = property.ref || '';
+    }
+
+    // Handle view details button text (for template cards)
+    const viewEl = card.querySelector('.rs_card_view');
+    if (viewEl) {
+      viewEl.textContent = this.label('card_view') || 'View Details';
     }
 
     // Handle property type
@@ -1145,6 +1199,133 @@ class RSPropertyGrid extends RSBaseComponent {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+  }
+
+  private getRentalPeriodLabel(property: Property): string {
+    const listingType = property.listing_type?.toLowerCase();
+    let period = '';
+    if (listingType === 'long_rental') {
+      period = this.label('per_month') || this.label('detail_per_month') || 'month';
+    } else if (listingType === 'short_rental') {
+      period = this.label('per_week') || this.label('detail_per_week') || 'week';
+    }
+    if (!period) return '';
+    // Ensure period starts with /
+    return period.startsWith('/') ? period : '/' + period;
+  }
+
+  // Helper methods for rendering specs with range support (development properties)
+  private renderBedsSpec(property: Property): string {
+    const hasRange = property.beds_min && property.beds_max && property.beds_min !== property.beds_max;
+    const hasMin = property.beds_min && property.beds_min > 0;
+    const hasSingle = property.beds && property.beds > 0;
+
+    if (!hasRange && !hasMin && !hasSingle) return '';
+
+    let display: string;
+    if (hasRange) {
+      display = `${property.beds_min}-${property.beds_max}`;
+    } else if (hasMin && property.listing_type === 'development') {
+      display = `${property.beds_min}+`;
+    } else {
+      display = `${property.beds}`;
+    }
+
+    const label = (hasRange || (hasMin && property.listing_type === 'development') || property.beds !== 1)
+      ? this.label('card_beds')
+      : this.label('card_bed');
+
+    return `<span class="rs-card__spec rs_card_beds">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M2 4v16"></path>
+        <path d="M2 8h18a2 2 0 0 1 2 2v10"></path>
+        <path d="M2 17h20"></path>
+        <path d="M6 8v9"></path>
+      </svg>
+      ${display} ${label}
+    </span>`;
+  }
+
+  private renderBathsSpec(property: Property): string {
+    const hasRange = property.baths_min && property.baths_max && property.baths_min !== property.baths_max;
+    const hasMin = property.baths_min && property.baths_min > 0;
+    const hasSingle = property.baths && property.baths > 0;
+
+    if (!hasRange && !hasMin && !hasSingle) return '';
+
+    let display: string;
+    if (hasRange) {
+      display = `${property.baths_min}-${property.baths_max}`;
+    } else if (hasMin && property.listing_type === 'development') {
+      display = `${property.baths_min}+`;
+    } else {
+      display = `${property.baths}`;
+    }
+
+    const label = (hasRange || (hasMin && property.listing_type === 'development') || property.baths !== 1)
+      ? this.label('card_baths')
+      : this.label('card_bath');
+
+    return `<span class="rs-card__spec rs_card_baths">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M9 6 6.5 3.5a1.5 1.5 0 0 0-1-.5C4.683 3 4 3.683 4 4.5V17a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-5"></path>
+        <line x1="10" x2="8" y1="5" y2="7"></line>
+        <line x1="2" x2="22" y1="12" y2="12"></line>
+        <line x1="7" x2="7" y1="19" y2="21"></line>
+        <line x1="17" x2="17" y1="19" y2="21"></line>
+      </svg>
+      ${display} ${label}
+    </span>`;
+  }
+
+  private renderBuiltSpec(property: Property): string {
+    const hasRange = property.built_area_min && property.built_area_max && property.built_area_min !== property.built_area_max;
+    const hasMin = property.built_area_min && property.built_area_min > 0;
+    const hasSingle = property.built_area && property.built_area > 0;
+
+    if (!hasRange && !hasMin && !hasSingle) return '';
+
+    let display: string;
+    if (hasRange) {
+      display = `${property.built_area_min}-${property.built_area_max}`;
+    } else if (hasMin && property.listing_type === 'development') {
+      display = `${property.built_area_min}+`;
+    } else {
+      display = `${property.built_area}`;
+    }
+
+    return `<span class="rs-card__spec rs_card_built">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+      </svg>
+      ${display} ${this.label('card_built')}
+    </span>`;
+  }
+
+  private renderPlotSpec(property: Property): string {
+    const hasRange = property.plot_size_min && property.plot_size_max && property.plot_size_min !== property.plot_size_max;
+    const hasMin = property.plot_size_min && property.plot_size_min > 0;
+    const hasSingle = property.plot_size && property.plot_size > 0;
+
+    if (!hasRange && !hasMin && !hasSingle) return '';
+
+    let display: string;
+    if (hasRange) {
+      display = `${property.plot_size_min}-${property.plot_size_max}`;
+    } else if (hasMin && property.listing_type === 'development') {
+      display = `${property.plot_size_min}+`;
+    } else {
+      display = `${property.plot_size}`;
+    }
+
+    return `<span class="rs-card__spec rs_card_plot">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M3 6l9-4 9 4v12l-9 4-9-4V6z"></path>
+        <path d="M12 2v20"></path>
+        <path d="M3 6l9 4 9-4"></path>
+      </svg>
+      ${display} ${this.label('card_plot')}
+    </span>`;
   }
 }
 

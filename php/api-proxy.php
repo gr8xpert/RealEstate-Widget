@@ -383,7 +383,7 @@ if ($endpoint === 'v1/location' || $endpoint === 'v2/location') {
 
     if (!empty($laravelApi['base_url'])) {
         $dashboardUrl = rtrim($laravelApi['base_url'], '/') . '/api/v1/widget/locations';
-        $dashboardUrl .= '?domain=' . urlencode($domain);
+        $dashboardUrl .= '?domain=' . urlencode($domain) . '&lang=' . urlencode($language);
 
         $ch = curl_init();
         curl_setopt_array($ch, [
@@ -440,7 +440,7 @@ if ($endpoint === 'v1/property_types') {
 
     if (!empty($laravelApi['base_url'])) {
         $dashboardUrl = rtrim($laravelApi['base_url'], '/') . '/api/v1/widget/property-types';
-        $dashboardUrl .= '?domain=' . urlencode($domain);
+        $dashboardUrl .= '?domain=' . urlencode($domain) . '&lang=' . urlencode($language);
 
         $ch = curl_init();
         curl_setopt_array($ch, [
@@ -495,7 +495,7 @@ if ($endpoint === 'v1/property_features') {
 
     if (!empty($laravelApi['base_url'])) {
         $dashboardUrl = rtrim($laravelApi['base_url'], '/') . '/api/v1/widget/features';
-        $dashboardUrl .= '?domain=' . urlencode($domain);
+        $dashboardUrl .= '?domain=' . urlencode($domain) . '&lang=' . urlencode($language);
 
         $ch = curl_init();
         curl_setopt_array($ch, [

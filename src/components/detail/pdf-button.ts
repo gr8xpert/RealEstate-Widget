@@ -30,10 +30,15 @@ class RSDetailPdfButton extends RSBaseComponent {
     const p = this.property;
     const orig = (p._original || {}) as Record<string, unknown>;
 
+    // Check documents array from CRM API
+    const documents = orig.documents as string[] | undefined;
+    const firstDocument = Array.isArray(documents) && documents.length > 0 ? documents[0] : null;
+
     this.pdfUrl = p.pdf_url || (orig.pdf_url as string) || (orig.pdf as string) ||
                   (orig.brochure_url as string) || (orig.brochure as string) ||
                   (orig.pdf_link as string) || (orig.document_url as string) ||
                   (orig.flyer_url as string) || (orig.flyer as string) ||
+                  firstDocument ||
                   null;
 
     if (!this.pdfUrl) {

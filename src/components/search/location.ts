@@ -96,7 +96,7 @@ class RSLocation extends RSBaseComponent {
   private selectedParents: Set<string> = new Set();
   private selectedChildren: Set<string> = new Set();
   private parentType: string = 'municipality';
-  private childType: string = 'city';
+  private childTypes: string[] = ['city'];
   private parentLabel: string = '';
   private childLabel: string = '';
 
@@ -149,9 +149,28 @@ class RSLocation extends RSBaseComponent {
     this.selectedParents = new Set();
     this.selectedChildren = new Set();
 
-    // Get parent/child type from data attributes or defaults
-    this.parentType = this.element.dataset.rsParentType || 'municipality';
-    this.childType = this.element.dataset.rsChildType || 'city';
+    // Get parent/child types: config (from dashboard API) > data attributes > defaults
+    // Config keys: locationParentType, locationChildTypes
+    const configParentType = RealtySoftState.get<string>('config.locationParentType');
+    const configChildTypes = RealtySoftState.get<string[]>('config.locationChildTypes');
+    this.parentType = configParentType || this.element.dataset.rsParentType || 'municipality';
+    // Support array from config, comma-separated from data attribute, or default
+    if (configChildTypes && Array.isArray(configChildTypes)) {
+      this.childTypes = configChildTypes;
+    } else if (this.element.dataset.rsChildTypes) {
+      this.childTypes = this.element.dataset.rsChildTypes.split(',').map(s => s.trim()).filter(Boolean);
+    } else if (this.element.dataset.rsChildType) {
+      // Legacy: single child type
+      this.childTypes = [this.element.dataset.rsChildType];
+    } else {
+      this.childTypes = ['city'];
+    }
+
+    Logger.debug('[RSLocation] Hierarchy types:', {
+      parentType: this.parentType,
+      childTypes: this.childTypes,
+      source: configParentType ? 'config' : (this.element.dataset.rsParentType ? 'data-attr' : 'default'),
+    });
 
     // If locked, find the location name for display
     if (this.lockedMode) {
@@ -217,6 +236,23 @@ class RSLocation extends RSBaseComponent {
       this.selectedLocation = value;
       this.updateDisplay();
     });
+
+    // Subscribe to location hierarchy type changes (from dashboard API)
+    this.subscribe<string>('config.locationParentType', (value) => {
+      if (value && value !== this.parentType) {
+        Logger.debug('[RSLocation] Parent type changed from API:', { old: this.parentType, new: value });
+        this.parentType = value;
+        this.updateLocationData();
+      }
+    });
+
+    this.subscribe<string[]>('config.locationChildTypes', (value) => {
+      if (value && Array.isArray(value) && JSON.stringify(value) !== JSON.stringify(this.childTypes)) {
+        Logger.debug('[RSLocation] Child types changed from API:', { old: this.childTypes, new: value });
+        this.childTypes = value;
+        this.updateLocationData();
+      }
+    });
   }
 
   private getParentLocations(): ExtendedLocation[] {
@@ -232,12 +268,13 @@ class RSLocation extends RSBaseComponent {
     // For variation 2 (Two Dropdowns), also filter out parents with no children
     // This handles cases where API has incorrect property_count but parent has no actual children
     if (this.variation === '2') {
+      const childTypesLower = this.childTypes.map(t => t.toLowerCase());
       filtered = filtered.filter(parent => {
         const children = this.locations.filter(loc => {
           const pid = loc.parent_id;
           if (!pid && pid !== 0) return false;
           const matchesParent = String(pid) === String(parent.id);
-          const matchesType = loc.type && loc.type.toLowerCase() === this.childType.toLowerCase();
+          const matchesType = loc.type && childTypesLower.includes(loc.type.toLowerCase());
           return matchesParent && matchesType && hasProperties(loc);
         });
         return children.length > 0;
@@ -260,12 +297,28 @@ class RSLocation extends RSBaseComponent {
     const parent = this.locations.find(loc => String(loc.id) === String(parentId));
     const parentName = parent?.name?.toLowerCase().trim() || '';
 
-    // Get locations of childType that have this parentId, exclude items with 0 properties
+    // Get all descendants of the parent (recursive)
+    const allDescendantIds = new Set<string>();
+    const collectDescendants = (pid: number | string) => {
+      this.locations.forEach(loc => {
+        if (loc.parent_id && String(loc.parent_id) === String(pid)) {
+          allDescendantIds.add(String(loc.id));
+          collectDescendants(loc.id);
+        }
+      });
+    };
+    collectDescendants(parentId);
+
+    // Get locations of ANY childType that are direct children OR descendants, exclude items with 0 properties
+    const childTypesLower = this.childTypes.map(t => t.toLowerCase());
     const allChildren = this.locations.filter(loc => {
+      const locId = String(loc.id);
       const pid = loc.parent_id;
-      const matchesParent = pid && String(pid) === String(parentId);
-      const matchesType = loc.type && loc.type.toLowerCase() === this.childType.toLowerCase();
-      return matchesParent && matchesType;
+      // Must be either direct child or descendant of the parent
+      const isDescendant = (pid && String(pid) === String(parentId)) || allDescendantIds.has(locId);
+      // Must match one of the child types
+      const matchesType = loc.type && childTypesLower.includes(loc.type.toLowerCase());
+      return isDescendant && matchesType;
     });
 
     // Filter by property_count and exclude children with same name as parent
@@ -275,7 +328,7 @@ class RSLocation extends RSBaseComponent {
       return hasProps && !isDuplicateName;
     });
 
-    Logger.debug(`[RealtySoft] Child locations for parent ${parentId}: ${allChildren.length} total, ${filtered.length} after filtering`);
+    Logger.debug(`[RealtySoft] Child locations for parent ${parentId}: ${allChildren.length} total (types: ${this.childTypes.join(',')}), ${filtered.length} after filtering`);
 
     // Preserve API order (sorted by dashboard preferences) instead of alphabetical
     return filtered;
@@ -447,32 +500,83 @@ class RSLocation extends RSBaseComponent {
     if (!this.childList) return;
 
     if (this.selectedParents.size === 0) {
-      this.childList.innerHTML = '<div class="rs-location__no-results">Select a municipality first</div>';
+      this.childList.innerHTML = '<div class="rs-location__no-results">Select a location first</div>';
       return;
     }
 
-    let children: ExtendedLocation[] = [];
-    this.selectedParents.forEach(parentId => {
-      children = children.concat(this.getChildLocations(parentId));
+    const childTypesLower = this.childTypes.map(t => t.toLowerCase());
+    let html = '';
+
+    // For each selected parent, get direct children and render hierarchically
+    this.selectedParents.forEach(selectedParentId => {
+      // Get direct children of selected parent that match child types
+      const directChildren = this.locations.filter(loc => {
+        const pid = loc.parent_id;
+        if (!pid) return false;
+        const isDirectChild = String(pid) === String(selectedParentId);
+        const matchesType = loc.type && childTypesLower.includes(loc.type.toLowerCase());
+        const hasProps = hasProperties(loc);
+        const matchesFilter = !filter || loc.name.toLowerCase().includes(filter.toLowerCase());
+        return isDirectChild && matchesType && hasProps && matchesFilter;
+      });
+
+      // For each direct child, check if it has sub-children (also matching child types)
+      directChildren.forEach(directChild => {
+        // Get sub-children of this direct child
+        const subChildren = this.locations.filter(loc => {
+          const pid = loc.parent_id;
+          if (!pid) return false;
+          const isSubChild = String(pid) === String(directChild.id);
+          const matchesType = loc.type && childTypesLower.includes(loc.type.toLowerCase());
+          const hasProps = hasProperties(loc);
+          // Exclude if same name as parent (duplicate entry)
+          const isDuplicate = loc.name?.toLowerCase().trim() === directChild.name?.toLowerCase().trim();
+          const matchesFilter = !filter || loc.name.toLowerCase().includes(filter.toLowerCase());
+          return isSubChild && matchesType && hasProps && !isDuplicate && matchesFilter;
+        });
+
+        if (subChildren.length > 0) {
+          // Has sub-children: render as group with header
+          html += `
+            <div class="rs-location__group">
+              <label class="rs-location__check-item rs-location__check-item--parent">
+                <input type="checkbox" value="${directChild.id}" data-name="${this.escapeHtml(directChild.name)}"
+                       ${this.selectedChildren.has(String(directChild.id)) ? 'checked' : ''}>
+                <strong>${this.escapeHtml(directChild.name)}</strong>
+              </label>
+              <div class="rs-location__children">
+          `;
+
+          subChildren.forEach(sub => {
+            html += `
+              <label class="rs-location__check-item rs-location__check-item--child">
+                <input type="checkbox" value="${sub.id}" data-name="${this.escapeHtml(sub.name)}"
+                       ${this.selectedChildren.has(String(sub.id)) ? 'checked' : ''}>
+                <span>${this.escapeHtml(sub.name)}</span>
+              </label>
+            `;
+          });
+
+          html += '</div></div>';
+        } else {
+          // No sub-children: render as simple item
+          html += `
+            <label class="rs-location__check-item">
+              <input type="checkbox" value="${directChild.id}" data-name="${this.escapeHtml(directChild.name)}"
+                     ${this.selectedChildren.has(String(directChild.id)) ? 'checked' : ''}>
+              <span>${this.escapeHtml(directChild.name)}</span>
+            </label>
+          `;
+        }
+      });
     });
 
-    const filtered = filter
-      ? children.filter(c => c.name.toLowerCase().includes(filter.toLowerCase()))
-      : children;
-
-    if (filtered.length === 0) {
-      this.childList.innerHTML = '<div class="rs-location__no-results">No areas found</div>';
+    if (!html) {
+      this.childList.innerHTML = '<div class="rs-location__no-results">No locations found</div>';
       return;
     }
 
-    this.childList.innerHTML = filtered.map(loc => `
-      <label class="rs-location__check-item">
-        <input type="checkbox" value="${loc.id}" data-name="${this.escapeHtml(loc.name)}"
-               ${this.selectedChildren.has(String(loc.id)) ? 'checked' : ''}>
-        <span>${this.escapeHtml(loc.name)}</span>
-        ${loc.count ? `<span class="rs-location__count">(${loc.count})</span>` : ''}
-      </label>
-    `).join('');
+    this.childList.innerHTML = html;
   }
 
   // VARIATION 3: Hierarchical Multi-Select
@@ -587,13 +691,14 @@ class RSLocation extends RSBaseComponent {
       };
       collectDescendants(municipality.id);
 
-      // Get cities that are descendants of this municipality, excluding items with 0 properties
+      // Get child locations that are descendants of this municipality, excluding items with 0 properties
       // Preserve API order (sorted by dashboard preferences) instead of alphabetical
+      const childTypesLower = this.childTypes.map(t => t.toLowerCase());
       const cities = this.locations
         .filter(loc => {
-          if (!loc.type || loc.type.toLowerCase() !== this.childType.toLowerCase()) return false;
+          if (!loc.type || !childTypesLower.includes(loc.type.toLowerCase())) return false;
           if (!hasProperties(loc)) return false;
-          // Check if city is direct child or descendant
+          // Check if location is direct child or descendant
           return (loc.parent_id && String(loc.parent_id) === String(municipality.id)) ||
                  descendantIds.has(loc.id);
         });
@@ -1105,8 +1210,9 @@ class RSLocation extends RSBaseComponent {
         const loc = this.locations.find(l => l.id === this.selectedLocation);
         if (loc) {
           // Check if it's a parent or child type
+          const childTypesLower = this.childTypes.map(t => t.toLowerCase());
           const isParent = loc.type && loc.type.toLowerCase() === this.parentType.toLowerCase();
-          const isChild = loc.type && loc.type.toLowerCase() === this.childType.toLowerCase();
+          const isChild = loc.type && childTypesLower.includes(loc.type.toLowerCase());
 
           if (isParent) {
             this.selectedParents.add(String(loc.id));

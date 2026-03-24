@@ -136,6 +136,33 @@ class RSBaseComponent {
   }
 
   /**
+   * Get wishlist icon SVG path based on config
+   * Returns the SVG path element for heart/star/bookmark/save icons
+   */
+  getWishlistIconPath(): string {
+    const iconType = RealtySoftState.get<string>('config.wishlistIcon') || 'heart';
+
+    switch (iconType) {
+      case 'star':
+        return '<path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path>';
+      case 'bookmark':
+        return '<path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>';
+      case 'save':
+        return '<path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline>';
+      case 'heart':
+      default:
+        return '<path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>';
+    }
+  }
+
+  /**
+   * Get full wishlist icon SVG element
+   */
+  getWishlistIconSvg(filled: boolean = false, className: string = '', width: number = 20, height: number = 20): string {
+    return `<svg class="${className}" width="${width}" height="${height}" viewBox="0 0 24 24" fill="${filled ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2">${this.getWishlistIconPath()}</svg>`;
+  }
+
+  /**
    * Destroy component
    */
   destroy(): void {

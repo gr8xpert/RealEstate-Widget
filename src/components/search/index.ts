@@ -16,3 +16,4 @@ import './reference';
 import './search-button';
 import './reset-button';
 import './ai-search-toggle';
+import './sort-filter';

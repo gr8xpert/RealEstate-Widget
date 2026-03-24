@@ -109,7 +109,7 @@ class RSPropertyType extends RSBaseComponent {
       const lockedId = Array.from(this.selectedIds)[0];
       const lockedType = this.propertyTypes.find(t => String(t.id) === lockedId);
       if (lockedType) {
-        this.selectedName = lockedType.name;
+        this.selectedName = this.translateTypeName(lockedType.name);
       }
     }
 
@@ -130,11 +130,31 @@ class RSPropertyType extends RSBaseComponent {
 
     // Subscribe to filter changes
     this.subscribe<number | number[] | null>('filters.propertyType', (value) => {
-      if (value === null) {
-        this.selectedIds.clear();
+      // Sync selectedIds with filter value
+      this.selectedIds.clear();
+      if (value !== null) {
+        if (Array.isArray(value)) {
+          value.forEach(id => this.selectedIds.add(String(id)));
+        } else {
+          this.selectedIds.add(String(value));
+        }
       }
       this.updateDisplay();
     });
+  }
+
+  /**
+   * Translate property type name using label system.
+   * Looks up translation using lowercase name (e.g., "apartment" → "Appartamento")
+   * Falls back to original name if no translation found.
+   */
+  private translateTypeName(name: string): string {
+    if (!name) return '';
+    // Create lookup key: lowercase, replace spaces with underscores
+    const key = name.toLowerCase().replace(/\s+/g, '_');
+    const translated = this.label(key);
+    // If label returns the key itself, no translation found - use original
+    return translated === key ? name : translated;
   }
 
   // Get parent property types (no parent_id or parent_id = 0), excluding items with 0 properties
@@ -311,7 +331,7 @@ class RSPropertyType extends RSBaseComponent {
         <div class="rs-property-type__item ${index === this.highlightIndex ? 'rs-property-type__item--highlight' : ''}"
              data-id="${type.id}"
              data-name="${this.escapeHtml(type.name)}">
-          <span class="rs-property-type__item-text">${this.escapeHtml(type.name)}</span>
+          <span class="rs-property-type__item-text">${this.escapeHtml(this.translateTypeName(type.name))}</span>
           ${!isParent ? '<span class="rs-property-type__item-badge">Sub-type</span>' : ''}
         </div>
       `;
@@ -347,7 +367,7 @@ class RSPropertyType extends RSBaseComponent {
                      data-name="${this.escapeHtml(parent.name)}"
                      ${parentChecked ? 'checked' : ''}
                      style="margin-right: 10px;">
-              <span class="rs-property-type__checkbox-text" style="font-weight: 600;">${this.escapeHtml(parent.name)}</span>
+              <span class="rs-property-type__checkbox-text" style="font-weight: 600;">${this.escapeHtml(this.translateTypeName(parent.name))}</span>
             </label>
           </div>
         `;
@@ -364,7 +384,7 @@ class RSPropertyType extends RSBaseComponent {
                        data-name="${this.escapeHtml(child.name)}"
                        ${this.selectedIds.has(String(child.id)) ? 'checked' : ''}
                        style="margin-right: 10px;">
-                <span class="rs-property-type__checkbox-text">${this.escapeHtml(child.name)}</span>
+                <span class="rs-property-type__checkbox-text">${this.escapeHtml(this.translateTypeName(child.name))}</span>
               </label>
             </div>
           `;
@@ -404,7 +424,7 @@ class RSPropertyType extends RSBaseComponent {
                        value="${parent.id}"
                        data-is-parent="true"
                        ${parentChecked ? 'checked' : ''}>
-                <span class="rs-property-type__checkbox-text"><strong>${this.escapeHtml(parent.name)}</strong></span>
+                <span class="rs-property-type__checkbox-text"><strong>${this.escapeHtml(this.translateTypeName(parent.name))}</strong></span>
               </label>
               <button type="button" class="rs-property-type__accordion-toggle" data-parent-id="${parent.id}">
                 ${isExpanded ? '−' : '+'}
@@ -422,7 +442,7 @@ class RSPropertyType extends RSBaseComponent {
                        value="${child.id}"
                        data-parent-id="${parent.id}"
                        ${this.selectedIds.has(String(child.id)) ? 'checked' : ''}>
-                <span class="rs-property-type__checkbox-text">${this.escapeHtml(child.name)}</span>
+                <span class="rs-property-type__checkbox-text">${this.escapeHtml(this.translateTypeName(child.name))}</span>
               </label>
             </div>
           `;
@@ -443,11 +463,11 @@ class RSPropertyType extends RSBaseComponent {
     let html = `<option value="">${this.label('search_property_type')}</option>`;
 
     parents.forEach(parent => {
-      html += `<option value="${parent.id}">${this.escapeHtml(parent.name)}</option>`;
+      html += `<option value="${parent.id}">${this.escapeHtml(this.translateTypeName(parent.name))}</option>`;
 
       const children = this.getChildTypes(parent.id);
       children.forEach(child => {
-        html += `<option value="${child.id}">&nbsp;&nbsp;├─ ${this.escapeHtml(child.name)}</option>`;
+        html += `<option value="${child.id}">&nbsp;&nbsp;├─ ${this.escapeHtml(this.translateTypeName(child.name))}</option>`;
       });
     });
 
@@ -513,7 +533,7 @@ class RSPropertyType extends RSBaseComponent {
       const target = e.target as HTMLElement;
       const item = target.closest('.rs-property-type__item') as HTMLElement | null;
       if (item && item.dataset.id && item.dataset.name) {
-        this.selectSingleType(item.dataset.id, item.dataset.name);
+        this.selectSingleType(item.dataset.id, this.translateTypeName(item.dataset.name));
       }
     });
 
@@ -727,7 +747,7 @@ class RSPropertyType extends RSBaseComponent {
         e.preventDefault();
         if (this.highlightIndex >= 0 && this.filteredTypes[this.highlightIndex]) {
           const type = this.filteredTypes[this.highlightIndex];
-          this.selectSingleType(String(type.id), type.name);
+          this.selectSingleType(String(type.id), this.translateTypeName(type.name));
         }
         break;
       case 'Escape':
@@ -801,7 +821,7 @@ class RSPropertyType extends RSBaseComponent {
 
     const html = selectedTypes.map(type => `
       <span class="rs-property-type__tag" style="display: inline-flex; align-items: center; background: #2e7d32; color: white; padding: 4px 10px; border-radius: 4px; margin: 4px 4px 4px 0; font-size: 13px;">
-        ${this.escapeHtml(type.name)}
+        ${this.escapeHtml(this.translateTypeName(type.name))}
         <button type="button" class="rs-property-type__tag-remove" data-id="${type.id}" style="background: none; border: none; color: white; margin-left: 6px; cursor: pointer; font-size: 14px; padding: 0; line-height: 1;">&times;</button>
       </span>
     `).join('');
@@ -862,16 +882,26 @@ class RSPropertyType extends RSBaseComponent {
       this.select.value = this.selectedIds.size > 0 ? Array.from(this.selectedIds)[0] : '';
     }
 
-    // Variations 2 & 3: Multi-select - reset if no filter
-    if ((this.variation === '2' || this.variation === '3') && !currentFilter) {
-      this.selectedIds.clear();
-      this.selectedName = '';
-      // Update checkbox states
+    // Variations 2 & 3: Multi-select - sync checkbox states with selectedIds
+    if (this.variation === '2' || this.variation === '3') {
+      // Update checkbox states to match selectedIds
       this.element.querySelectorAll<HTMLInputElement>('.rs-property-type__checkbox').forEach(checkbox => {
-        checkbox.checked = false;
+        const isParent = checkbox.dataset.isParent === 'true';
+        if (isParent) {
+          // Parent checkbox: checked if all children are selected
+          const parentId = checkbox.value;
+          checkbox.checked = this.areAllChildrenSelected(parentId);
+        } else {
+          // Child checkbox: checked if in selectedIds
+          checkbox.checked = this.selectedIds.has(checkbox.value);
+        }
       });
       // Update tags
       this.updateTags();
+      // Clear name if no filter
+      if (!currentFilter) {
+        this.selectedName = '';
+      }
     }
 
     this.updateButtonText();

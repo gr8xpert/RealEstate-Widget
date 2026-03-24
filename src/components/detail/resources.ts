@@ -36,8 +36,13 @@ class RSDetailResources extends RSBaseComponent {
     }
 
     const p = this.property;
+    // Check documents array from CRM API as fallback
+    const orig = (p._original || {}) as Record<string, unknown>;
+    const documents = orig.documents as string[] | undefined;
+    const hasDocuments = Array.isArray(documents) && documents.length > 0;
+
     // Check if we have any resources
-    if (!p.video_url && !p.virtual_tour_url && !p.pdf_url) {
+    if (!p.video_url && !p.virtual_tour_url && !p.pdf_url && !hasDocuments) {
       this.element.style.display = 'none';
       return;
     }
@@ -72,10 +77,15 @@ class RSDetailResources extends RSBaseComponent {
       });
     }
 
-    if (p.pdf_url) {
+    // Get PDF URL from property or documents array fallback
+    const orig = (p._original || {}) as Record<string, unknown>;
+    const documents = orig.documents as string[] | undefined;
+    const pdfUrl = p.pdf_url || (Array.isArray(documents) && documents.length > 0 ? documents[0] : null);
+
+    if (pdfUrl) {
       resources.push({
         type: 'pdf',
-        url: p.pdf_url,
+        url: pdfUrl,
         icon: this.getIcon('pdf'),
         label: this.label('detail_download_pdf'),
         isEmbed: false

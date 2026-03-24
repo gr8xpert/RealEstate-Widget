@@ -54,10 +54,7 @@ class RSWishlistButton extends RSBaseComponent {
       <button type="button"
               class="rs-wishlist-button__btn ${this.isInWishlist ? 'rs-wishlist-button__btn--active' : ''}"
               aria-label="${this.isInWishlist ? this.label('wishlist_remove') : this.label('wishlist_add')}">
-        <svg class="rs-wishlist-button__icon" width="20" height="20" viewBox="0 0 24 24"
-             fill="${this.isInWishlist ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2">
-          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
-        </svg>
+        ${this.getWishlistIconSvg(this.isInWishlist, 'rs-wishlist-button__icon')}
       </button>
     `;
 
@@ -86,7 +83,11 @@ class RSWishlistButton extends RSBaseComponent {
   private updateDisplay(): void {
     this.btn?.classList.toggle('rs-wishlist-button__btn--active', this.isInWishlist);
     this.btn?.setAttribute('aria-label', this.isInWishlist ? this.label('wishlist_remove') : this.label('wishlist_add'));
-    this.icon?.setAttribute('fill', this.isInWishlist ? 'currentColor' : 'none');
+    // Re-render icon to update fill state
+    if (this.btn) {
+      this.btn.innerHTML = this.getWishlistIconSvg(this.isInWishlist, 'rs-wishlist-button__icon');
+      this.icon = this.btn.querySelector('.rs-wishlist-button__icon');
+    }
   }
 }
 

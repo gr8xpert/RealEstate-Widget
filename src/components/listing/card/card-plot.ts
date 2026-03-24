@@ -34,12 +34,28 @@ class RSCardPlot extends RSBaseComponent {
   }
 
   render(): void {
-    if (!this.property || !this.property.plot_size || this.property.plot_size <= 0) {
+    // Check for range values first (development properties)
+    const hasRange = this.property?.plot_size_min && this.property?.plot_size_max && this.property.plot_size_min !== this.property.plot_size_max;
+    const hasMin = this.property?.plot_size_min && this.property.plot_size_min > 0;
+    const hasSingle = this.property?.plot_size && this.property.plot_size > 0;
+
+    if (!this.property || (!hasRange && !hasMin && !hasSingle)) {
       this.element.style.display = 'none';
       return;
     }
 
-    this.element.innerHTML = `${SVG_ICONS.plotSize} ${this.property.plot_size} ${this.label('card_plot')}`;
+    let plotDisplay: string;
+    if (hasRange) {
+      // Show range: "500-1000 m²"
+      plotDisplay = `${this.property.plot_size_min}-${this.property.plot_size_max}`;
+    } else if (hasMin && this.property.listing_type === 'development') {
+      // Development with only min: "500+ m²"
+      plotDisplay = `${this.property.plot_size_min}+`;
+    } else {
+      plotDisplay = `${this.property.plot_size}`;
+    }
+
+    this.element.innerHTML = `${SVG_ICONS.plotSize} ${plotDisplay} ${this.label('card_plot')}`;
   }
 }
 

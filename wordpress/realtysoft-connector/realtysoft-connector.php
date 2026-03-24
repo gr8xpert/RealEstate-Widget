@@ -16,6 +16,9 @@ if (is_admin()) {
     require_once plugin_dir_path(__FILE__) . 'includes/class-installer.php';
 }
 
+// Include the license manager (needed for cron)
+require_once plugin_dir_path(__FILE__) . 'includes/class-license-manager.php';
+
 class RealtySoft_Connector {
     private $default_slug = 'property';
     private $loader_url = 'https://smartpropertywidget.com/spw/dist/realtysoft-loader.js';
@@ -27,7 +30,7 @@ class RealtySoft_Connector {
         add_action('init', [$this, 'maybe_flush_rules'], 99);
         add_filter('query_vars', [$this, 'add_query_vars']);
         register_activation_hook(__FILE__, [$this, 'activate']);
-        register_deactivation_hook(__FILE__, 'flush_rewrite_rules');
+        register_deactivation_hook(__FILE__, [$this, 'deactivate']);
 
         // REST API endpoint for OG cache (widget pushes data here)
         add_action('rest_api_init', [$this, 'register_rest_routes']);
@@ -44,6 +47,84 @@ class RealtySoft_Connector {
         // Settings page
         add_action('admin_menu', [$this, 'add_settings_page']);
         add_action('admin_init', [$this, 'register_settings']);
+
+        // Daily cron to sync dashboard config (branding, features, etc.)
+        add_action('realtysoft_daily_sync', [$this, 'run_daily_sync']);
+        if (!wp_next_scheduled('realtysoft_daily_sync')) {
+            wp_schedule_event(time(), 'daily', 'realtysoft_daily_sync');
+        }
+
+        // ─── Optimization Plugin Compatibility ──────────────────────
+        // Exclude widget scripts from being deferred, delayed, or combined
+        // by popular caching/optimization plugins.
+        $this->register_optimization_exclusions();
+    }
+
+    /**
+     * Register exclusions for popular WordPress caching/optimization plugins.
+     * Prevents them from deferring, delaying, combining, or minifying widget scripts.
+     */
+    private function register_optimization_exclusions() {
+        // WP Rocket: exclude from defer and combine
+        add_filter('rocket_exclude_defer_js', function ($excluded) {
+            $excluded[] = 'realtysoft-loader';
+            $excluded[] = 'realtysoft';
+            $excluded[] = 'RealtySoftConfig';
+            $excluded[] = '__rsPrefetch';
+            $excluded[] = '__rsSSR';
+            return $excluded;
+        });
+        add_filter('rocket_exclude_js', function ($excluded) {
+            $excluded[] = 'realtysoft-loader(.*)\.js';
+            $excluded[] = 'realtysoft(.*)\.js';
+            return $excluded;
+        });
+        add_filter('rocket_delay_js_exclusions', function ($excluded) {
+            $excluded[] = 'realtysoft-loader';
+            $excluded[] = 'realtysoft';
+            $excluded[] = 'RealtySoftConfig';
+            $excluded[] = '__rsPrefetch';
+            $excluded[] = '__rsSSR';
+            return $excluded;
+        });
+
+        // Autoptimize: exclude from JS optimization
+        add_filter('autoptimize_filter_js_exclude', function ($excluded) {
+            return $excluded . ',realtysoft-loader,realtysoft,RealtySoftConfig,__rsPrefetch,__rsSSR';
+        });
+
+        // LiteSpeed Cache: exclude from JS optimization
+        add_filter('litespeed_optimize_js_excludes', function ($excluded) {
+            $excluded[] = 'realtysoft-loader';
+            $excluded[] = 'realtysoft';
+            return $excluded;
+        });
+
+        // FlyingPress: exclude from defer and delay
+        add_filter('flying_press_exclude_from_delay', function ($excluded) {
+            $excluded[] = 'realtysoft-loader';
+            $excluded[] = 'realtysoft';
+            $excluded[] = 'RealtySoftConfig';
+            $excluded[] = '__rsPrefetch';
+            return $excluded;
+        });
+        add_filter('flying_press_exclude_from_defer', function ($excluded) {
+            $excluded[] = 'realtysoft-loader';
+            $excluded[] = 'realtysoft';
+            return $excluded;
+        });
+
+        // SG Optimizer: exclude from JS combination and minification
+        add_filter('sgo_javascript_combine_exclude', function ($excluded) {
+            $excluded[] = 'realtysoft-loader';
+            $excluded[] = 'realtysoft';
+            return $excluded;
+        });
+        add_filter('sgo_js_minify_exclude', function ($excluded) {
+            $excluded[] = 'realtysoft-loader';
+            $excluded[] = 'realtysoft';
+            return $excluded;
+        });
     }
 
     // ─── Activation ──────────────────────────────────────────────
@@ -51,6 +132,19 @@ class RealtySoft_Connector {
     public function activate() {
         $this->add_rewrite_rules();
         flush_rewrite_rules();
+    }
+
+    public function deactivate() {
+        flush_rewrite_rules();
+        wp_clear_scheduled_hook('realtysoft_daily_sync');
+    }
+
+    /**
+     * Daily cron callback — re-validates license to sync dashboard config.
+     */
+    public function run_daily_sync() {
+        $license_manager = RealtySoft_License_Manager::get_instance();
+        $license_manager->sync_config();
     }
 
     /**
@@ -223,8 +317,14 @@ class RealtySoft_Connector {
         $config = get_option('realtysoft_widget_config', []);
         $slugs = $this->get_slugs();
 
-        // Build the config object — only include non-empty values
-        $js_config = [];
+        // 1. Dashboard config (base layer — centrally managed via license API)
+        $dashboard_config = get_option('realtysoft_dashboard_config', []);
+        if (!is_array($dashboard_config)) {
+            $dashboard_config = [];
+        }
+
+        // Build the config object — start with dashboard defaults
+        $js_config = $dashboard_config;
 
         if (!empty($config['ownerEmail'])) {
             $js_config['ownerEmail'] = $config['ownerEmail'];
@@ -360,8 +460,9 @@ class RealtySoft_Connector {
         $final_config = array_merge($js_config, $advancedConfig);
 
         // Output config script
+        // data-no-defer / data-cfasync: prevent optimization plugins from deferring/combining
         if (!empty($final_config)) {
-            echo "<script>\nwindow.RealtySoftConfig = " . wp_json_encode($final_config, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) . ";\n</script>\n";
+            echo "<script data-no-defer=\"1\" data-cfasync=\"false\">\nwindow.RealtySoftConfig = " . wp_json_encode($final_config, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) . ";\n</script>\n";
         }
 
         // Preconnect + DNS prefetch for faster API calls and asset loading
@@ -381,7 +482,7 @@ class RealtySoft_Connector {
                 // User sees property content in the initial HTML (no JS needed for first paint).
 
                 // 1. Set flag so widget JS skips early-hide
-                echo "<script>window.__rsSSR = true;</script>\n";
+                echo "<script data-no-defer=\"1\" data-cfasync=\"false\">window.__rsSSR = true;</script>\n";
 
                 // 2. Hide WordPress page placeholder content while JS loads
                 echo '<style id="rs-ssr-page-hide">' . "\n";
@@ -391,7 +492,7 @@ class RealtySoft_Connector {
 
                 // 3. Render SSR preview and inject via MutationObserver
                 $preview_html = $this->render_property_preview($ssr_data);
-                echo "<script>\n";
+                echo "<script data-no-defer=\"1\" data-cfasync=\"false\">\n";
                 echo "(function(){\n";
                 echo "  var html = " . wp_json_encode($preview_html) . ";\n";
                 echo "  function inject(c) {\n";
@@ -432,7 +533,7 @@ class RealtySoft_Connector {
                 $labels_url .= '&_lang=' . urlencode($lang);
             }
 
-            echo "<script>\n";
+            echo "<script data-no-defer=\"1\" data-cfasync=\"false\">\n";
             echo "var h={headers:{'X-Requested-With':'XMLHttpRequest'}};\n";
             echo "window.__rsPrefetch={\n";
             echo "  property:fetch('" . esc_js($prop_url) . "',h).then(function(r){return r.json()}).catch(function(){return null}),\n";
@@ -443,9 +544,16 @@ class RealtySoft_Connector {
             echo "</script>\n";
         }
 
+        // Explicit base URL fallback for when optimization plugins combine/rename the loader script
+        echo "<script data-no-defer=\"1\" data-cfasync=\"false\">window.__realtySoftBaseUrl='" . esc_js(rtrim(dirname($this->loader_url), '/')) . "';</script>\n";
+
         // Always use the loader — it has built-in hourly cache busting
         // so clients automatically get updates without manual version bumps
-        echo '<script src="' . esc_url($this->loader_url) . '"></script>' . "\n";
+        // Attributes prevent optimization plugins from deferring/combining/delaying:
+        //   data-no-defer:  WP Rocket, FlyingPress
+        //   data-cfasync:   Cloudflare Rocket Loader
+        //   data-no-minify: LiteSpeed Cache, SG Optimizer
+        echo '<script src="' . esc_url($this->loader_url) . '" data-no-defer="1" data-no-minify="1" data-cfasync="false"></script>' . "\n";
     }
 
     /**
@@ -1058,21 +1166,39 @@ class RealtySoft_Connector {
     // ─── Settings Page ───────────────────────────────────────────
 
     public function render_settings_page() {
-        $slugs  = $this->get_slugs();
-        $config = get_option('realtysoft_widget_config', []);
+        $current_tab = isset($_GET['tab']) ? sanitize_text_field($_GET['tab']) : 'settings';
+        $base_url = admin_url('options-general.php?page=realtysoft-settings');
         ?>
         <div class="wrap">
-            <h1>Smart Property Widget Settings</h1>
+            <h1>Smart Property Widget</h1>
+
+            <nav class="nav-tab-wrapper">
+                <a href="<?php echo esc_url($base_url . '&tab=settings'); ?>"
+                   class="nav-tab <?php echo $current_tab === 'settings' ? 'nav-tab-active' : ''; ?>">Settings</a>
+                <a href="<?php echo esc_url($base_url . '&tab=setup'); ?>"
+                   class="nav-tab <?php echo $current_tab === 'setup' ? 'nav-tab-active' : ''; ?>">Setup Wizard</a>
+            </nav>
 
             <?php
-            $current_domain = preg_replace('/^www\./', '', parse_url(home_url(), PHP_URL_HOST));
-            $analytics_url = 'https://smartpropertywidget.com/spw/analytics/client.php?client=' . urlencode($current_domain);
+            if ($current_tab === 'setup') {
+                // Render installer wizard
+                $installer = RealtySoft_Installer::get_instance();
+                $installer->render_installer_page();
+                echo '</div>';
+                return;
+            }
+            ?>
+
+        <?php
+        $slugs  = $this->get_slugs();
+        $config = get_option('realtysoft_widget_config', []);
+        $current_domain = preg_replace('/^www\./', '', parse_url(home_url(), PHP_URL_HOST));
             ?>
             <div style="margin: 15px 0 20px; padding: 15px 20px; background: #f0f6fc; border-left: 4px solid #2271b1; border-radius: 4px; display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
                 <div style="flex: 1; min-width: 200px;">
                     <strong style="font-size: 14px;">Quick Links</strong>
                     <p style="margin: 5px 0 0; color: #50575e;">
-                        Access documentation and view analytics for <strong><?php echo esc_html($current_domain); ?></strong>
+                        Access documentation for <strong><?php echo esc_html($current_domain); ?></strong>
                     </p>
                 </div>
                 <div style="display: flex; gap: 10px; flex-wrap: wrap;">
@@ -1082,13 +1208,6 @@ class RealtySoft_Connector {
                        style="display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;">
                         <span class="dashicons dashicons-book" style="margin-top: 3px;"></span>
                         Documentation
-                    </a>
-                    <a href="<?php echo esc_url($analytics_url); ?>"
-                       target="_blank"
-                       class="button button-primary"
-                       style="display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;">
-                        <span class="dashicons dashicons-chart-bar" style="margin-top: 3px;"></span>
-                        View Analytics
                     </a>
                 </div>
             </div>

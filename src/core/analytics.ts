@@ -27,8 +27,10 @@ interface AnalyticsEvent {
 // Filter data for search tracking
 interface FilterData {
   location?: number | number[] | null;
+  locationName?: string | null;
   listingType?: string | null;
-  propertyType?: string | string[] | null;
+  propertyType?: number | number[] | string | string[] | null;
+  propertyTypeName?: string | null;
   bedsMin?: number | null;
   bedsMax?: number | null;
   priceMin?: number | null;
@@ -65,7 +67,7 @@ interface RealtySoftAnalyticsModule {
   trackPagination: (page: number, totalPages: number) => void;
   trackSortChange: (sortValue: string) => void;
   trackViewToggle: (view: string) => void;
-  trackResourceClick: (resourceType: string, propertyId: number) => void;
+  trackResourceClick: (resourceType: string, propertyId: number, propertyRef?: string) => void;
 }
 
 const RealtySoftAnalytics: RealtySoftAnalyticsModule = (function () {
@@ -76,7 +78,7 @@ const RealtySoftAnalytics: RealtySoftAnalyticsModule = (function () {
     endpoint: null,
     batchSize: 5,
     batchDelay: 3000,
-    debug: true,
+    debug: false,
   };
 
   /**
@@ -233,12 +235,13 @@ const RealtySoftAnalytics: RealtySoftAnalyticsModule = (function () {
 
   /**
    * Track search event
+   * Note: We send NAMES (not IDs) for location/property_type so analytics can aggregate by human-readable values
    */
   function trackSearch(filters: FilterData = {}): void {
     track('search', 'search', {
-      location: filters.location,
+      location: filters.locationName || filters.location,
       listing_type: filters.listingType,
-      property_type: filters.propertyType,
+      property_type: filters.propertyTypeName || filters.propertyType,
       beds_min: filters.bedsMin,
       beds_max: filters.bedsMax,
       price_min: filters.priceMin,
@@ -388,10 +391,11 @@ const RealtySoftAnalytics: RealtySoftAnalyticsModule = (function () {
   /**
    * Track resource click (PDF, virtual tour, video, etc.)
    */
-  function trackResourceClick(resourceType: string, propertyId: number): void {
+  function trackResourceClick(resourceType: string, propertyId: number, propertyRef?: string): void {
     track('click', 'resource', {
       resource_type: resourceType,
       property_id: propertyId,
+      property_ref: propertyRef || '',
     });
   }
 
@@ -423,6 +427,56 @@ if (typeof window !== 'undefined') {
   (
     window as unknown as { RealtySoftAnalytics: RealtySoftAnalyticsModule }
   ).RealtySoftAnalytics = RealtySoftAnalytics;
+
+  // Global PDF link click detector - catches ALL PDF downloads
+  document.addEventListener('click', (e) => {
+    const target = e.target as HTMLElement;
+    const link = target.closest('a') as HTMLAnchorElement | null;
+
+    if (link && link.href) {
+      const href = link.href.toLowerCase();
+      // Check if it's a PDF link (handle query strings like .pdf?ln=en_US)
+      const isPdf = href.includes('.pdf') || href.includes('/pdf/') || href.includes('pdf=') || href.includes('brochure') || link.classList.contains('rs-template__sidebar-pdf');
+      if (isPdf) {
+        let propertyId = 0;
+        let propertyRef = '';
+
+        // Try to get property data from state first (most reliable)
+        const currentProperty = (window as any).RealtySoftState?.get?.('currentProperty');
+        if (currentProperty) {
+          propertyId = currentProperty.id || 0;
+          propertyRef = currentProperty.ref || '';
+        }
+
+        // Fallback: Try to get from detail element data attribute
+        if (!propertyId && !propertyRef) {
+          const detailEl = document.querySelector('.rs_detail, .rs-detail, [data-property-id], [data-property-ref]');
+          if (detailEl) {
+            const el = detailEl as HTMLElement;
+            propertyId = parseInt(el.dataset.propertyId || '0') || 0;
+            propertyRef = el.dataset.propertyRef || '';
+          }
+        }
+
+        // Fallback: Extract from URL (handles both numeric and alphanumeric refs)
+        if (!propertyRef) {
+          // Match /property/XXXX/ or /propiedad/XXXX/ etc (alphanumeric ref)
+          const refMatch = window.location.pathname.match(/\/(?:property|propiedad|inmueble|propriete)\/([A-Za-z0-9_-]+)/i);
+          if (refMatch) {
+            propertyRef = refMatch[1];
+          }
+        }
+
+        if (!propertyId && !propertyRef) {
+          // Last resort: try numeric ID from URL
+          const urlMatch = window.location.href.match(/\/(\d+)(?:\/|$|\?)/);
+          if (urlMatch) propertyId = parseInt(urlMatch[1]) || 0;
+        }
+
+        RealtySoftAnalytics.trackResourceClick('pdf', propertyId, propertyRef);
+      }
+    }
+  }, true); // Use capture phase to catch early
 }
 
 // Export for ES modules

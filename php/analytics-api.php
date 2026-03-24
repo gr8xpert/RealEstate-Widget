@@ -112,6 +112,9 @@ function readEvents($files, $startDate, $endDate, $category = null, $eventType =
     foreach ($files as $clientId => $file) {
         if (!file_exists($file)) continue;
 
+        // Clear file stat cache to ensure we read the latest data
+        clearstatcache(true, $file);
+
         $fp = fopen($file, 'r');
         $headers = fgetcsv($fp); // Skip header
 
@@ -189,7 +192,10 @@ function getDailyStats($dataDir, $clientId = null, $startDate, $endDate) {
                     'card_clicks' => 0,
                     'wishlist_adds' => 0,
                     'inquiries' => 0,
-                    'shares' => []
+                    'shares' => [],
+                    'pdf_downloads' => 0,
+                    'video_views' => 0,
+                    'tour_views' => 0
                 ];
             }
 
@@ -198,6 +204,9 @@ function getDailyStats($dataDir, $clientId = null, $startDate, $endDate) {
             $stats[$date]['card_clicks'] += $dayStats['card_clicks'] ?? 0;
             $stats[$date]['wishlist_adds'] += $dayStats['wishlist_adds'] ?? 0;
             $stats[$date]['inquiries'] += $dayStats['inquiries'] ?? 0;
+            $stats[$date]['pdf_downloads'] += $dayStats['pdf_downloads'] ?? 0;
+            $stats[$date]['video_views'] += $dayStats['video_views'] ?? 0;
+            $stats[$date]['tour_views'] += $dayStats['tour_views'] ?? 0;
 
             // Merge shares
             if (isset($dayStats['shares'])) {
@@ -248,7 +257,10 @@ switch ($action) {
             'wishlist_adds' => 0,
             'inquiries' => 0,
             'total_shares' => 0,
-            'shares_by_platform' => []
+            'shares_by_platform' => [],
+            'pdf_downloads' => 0,
+            'video_views' => 0,
+            'tour_views' => 0
         ];
 
         foreach ($dailyStats as $day => $stats) {
@@ -257,6 +269,9 @@ switch ($action) {
             $totals['card_clicks'] += $stats['card_clicks'];
             $totals['wishlist_adds'] += $stats['wishlist_adds'];
             $totals['inquiries'] += $stats['inquiries'];
+            $totals['pdf_downloads'] += $stats['pdf_downloads'] ?? 0;
+            $totals['video_views'] += $stats['video_views'] ?? 0;
+            $totals['tour_views'] += $stats['tour_views'] ?? 0;
 
             foreach ($stats['shares'] as $platform => $count) {
                 $totals['total_shares'] += $count;
@@ -331,6 +346,18 @@ switch ($action) {
         $files = getCsvFiles($dataDir, $clientId);
         $events = readEvents($files, $startDate, $endDate, $category, $eventType);
 
+        // Debug mode - add ?debug=1 to see details
+        $debug = isset($_GET['debug']);
+        $debugInfo = [];
+        if ($debug) {
+            $debugInfo['files'] = array_keys($files);
+            $debugInfo['total_events'] = count($events);
+            $debugInfo['date_range'] = [
+                'start' => $startDate->format('Y-m-d H:i:s'),
+                'end' => $endDate->format('Y-m-d H:i:s')
+            ];
+        }
+
         // Aggregate by property
         $propertyStats = [];
         foreach ($events as $event) {
@@ -349,6 +376,7 @@ switch ($action) {
                     'clicks' => 0,
                     'wishlist_adds' => 0,
                     'inquiries' => 0,
+                    'pdf_downloads' => 0,
                     'unique_sessions' => [],
                     'last_activity' => $event['timestamp'],
                     'client_id' => $event['client_id']
@@ -358,11 +386,25 @@ switch ($action) {
             $propertyStats[$ref]['event_count']++;
             $propertyStats[$ref]['unique_sessions'][$event['session_id']] = true;
 
+            // Update location/type if missing but event has it
+            if (empty($propertyStats[$ref]['location']) && !empty($event['location'])) {
+                $propertyStats[$ref]['location'] = $event['location'];
+            }
+            if (empty($propertyStats[$ref]['property_type']) && !empty($event['property_type'])) {
+                $propertyStats[$ref]['property_type'] = $event['property_type'];
+            }
+
             // Track specific actions
             if ($event['action'] === 'property_view') $propertyStats[$ref]['views']++;
             if ($event['action'] === 'card_click') $propertyStats[$ref]['clicks']++;
             if ($event['action'] === 'add') $propertyStats[$ref]['wishlist_adds']++;
             if ($event['action'] === 'submit') $propertyStats[$ref]['inquiries']++;
+            if ($event['action'] === 'resource') {
+                $filterData = json_decode($event['filter_data'], true) ?: [];
+                if (($filterData['resource_type'] ?? '') === 'pdf') {
+                    $propertyStats[$ref]['pdf_downloads']++;
+                }
+            }
 
             // Update last activity
             if ($event['timestamp'] > $propertyStats[$ref]['last_activity']) {
@@ -384,11 +426,21 @@ switch ($action) {
         // Limit to top 100
         $propertyStats = array_slice(array_values($propertyStats), 0, 100);
 
-        echo json_encode([
+        $response = [
             'success' => true,
             'properties' => $propertyStats,
             'total' => count($propertyStats)
-        ]);
+        ];
+        if ($debug) {
+            $response['debug'] = $debugInfo;
+            // Find SP0531 specifically
+            foreach ($propertyStats as $p) {
+                if (stripos($p['property_ref'], 'SP0531') !== false) {
+                    $response['debug']['sp0531'] = $p;
+                }
+            }
+        }
+        echo json_encode($response);
         break;
 
     case 'searches':
@@ -505,6 +557,14 @@ switch ($action) {
             }
 
             $propertyStats[$ref]['unique_sessions'][$event['session_id']] = true;
+
+            // Update location/type if missing but event has it
+            if (empty($propertyStats[$ref]['location']) && !empty($event['location'])) {
+                $propertyStats[$ref]['location'] = $event['location'];
+            }
+            if (empty($propertyStats[$ref]['property_type']) && !empty($event['property_type'])) {
+                $propertyStats[$ref]['property_type'] = $event['property_type'];
+            }
 
             // Track specific actions
             if ($event['action'] === 'property_view') $propertyStats[$ref]['views']++;

@@ -34,13 +34,31 @@ class RSCardBaths extends RSBaseComponent {
   }
 
   render(): void {
-    if (!this.property || !this.property.baths || this.property.baths <= 0) {
+    // Check for range values first (development properties)
+    const hasRange = this.property?.baths_min && this.property?.baths_max && this.property.baths_min !== this.property.baths_max;
+    const hasMin = this.property?.baths_min && this.property.baths_min > 0;
+    const hasSingle = this.property?.baths && this.property.baths > 0;
+
+    if (!this.property || (!hasRange && !hasMin && !hasSingle)) {
       this.element.style.display = 'none';
       return;
     }
 
-    const bathLabel = this.property.baths === 1 ? this.label('card_bath') : this.label('card_baths');
-    this.element.innerHTML = `${SVG_ICONS.bath} ${this.property.baths} ${bathLabel}`;
+    let bathsDisplay: string;
+    if (hasRange) {
+      // Show range: "2-4 Baths"
+      bathsDisplay = `${this.property.baths_min}-${this.property.baths_max}`;
+    } else if (hasMin && this.property.listing_type === 'development') {
+      // Development with only min: "2+ Baths"
+      bathsDisplay = `${this.property.baths_min}+`;
+    } else {
+      bathsDisplay = `${this.property.baths}`;
+    }
+
+    const bathLabel = (hasRange || (hasMin && this.property.listing_type === 'development') || this.property.baths !== 1)
+      ? this.label('card_baths')
+      : this.label('card_bath');
+    this.element.innerHTML = `${SVG_ICONS.bath} ${bathsDisplay} ${bathLabel}`;
   }
 }
 

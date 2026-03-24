@@ -3,8 +3,7 @@
  * Handles all API communication through proxy
  */
 
-// Version check
-console.log('[RealtySoft] API module loaded - v3.9.4');
+// Version: 3.9.4
 
 import type {
   APIConfig,
@@ -229,6 +228,7 @@ interface RawProperty {
   date_modified?: string;
   last_updated?: string;
   similar_property_ids?: number[];
+  documents?: string[];
 }
 
 interface RawImage {
@@ -907,9 +907,10 @@ const RealtySoftAPI: RealtySoftAPIModule = (function () {
     }
 
     // Check for PHP-injected prefetch (started before widget loaded)
+    // Only use prefetch if language matches - otherwise we'd get wrong language labels
     const prefetch = (window as any).__rsPrefetch;
     let result: Record<string, string>;
-    if (prefetch?.labels && (!prefetch.lang || prefetch.lang === config.language)) {
+    if (prefetch?.labels && prefetch.lang && prefetch.lang === config.language) {
       const prefetched = await prefetch.labels;
       delete prefetch.labels; // Consume once
       if (prefetched) {
@@ -1051,6 +1052,17 @@ const RealtySoftAPI: RealtySoftAPIModule = (function () {
       return obj.name || '';
     };
 
+    // Helper to extract ID from an object or return number directly
+    const extractId = (obj: unknown): number | null => {
+      if (typeof obj === 'number') return obj;
+      if (typeof obj === 'object' && obj !== null && 'id' in obj) {
+        const id = (obj as { id: unknown }).id;
+        if (typeof id === 'number') return id;
+        if (typeof id === 'string') return parseInt(id, 10) || null;
+      }
+      return null;
+    };
+
     // Extract location name with translation support
     const locationName =
       getTranslatedName(property.location_id as { name?: string }) ||
@@ -1167,13 +1179,29 @@ const RealtySoftAPI: RealtySoftAPIModule = (function () {
       ref: property.ref_no || property.ref || property.reference || '',
       unique_ref: property.unique_ref || property.unique_reference || property.external_ref || '',
       price: property.list_price || property.price || property.asking_price || 0,
+      // Support _2 suffix pattern from CRM API (list_price_2 = max price for developments)
+      // Only set price_min/max when there's actually a range (list_price_2 exists and differs)
+      price_min: property.price_min || property.price_from || property.min_price ||
+        (property.list_price_2 && property.list_price_2 != property.list_price ? property.list_price : undefined),
+      price_max: property.price_max || property.price_to || property.max_price || property.list_price_2 || undefined,
       price_on_request: property.price_on_request || property.hide_price || false,
       location: locationName,
+      // Extract IDs for similar properties search fallback
+      location_id: extractId(property.location_id) || extractId(property.city_id) || extractId(property.municipality_id) || null,
+      type_id: extractId(property.type_id) || extractId(property.property_type) || null,
       postal_code:
         property.postal_code || property.zipcode || property.zip || property.postcode || '',
       address: property.address || property.street_address || '',
       beds: property.bedrooms || property.beds || 0,
+      // Support _2 suffix pattern from CRM API (bedrooms_2 = max beds for developments)
+      beds_min: property.beds_min || property.bedrooms_min || property.min_beds ||
+        (property.bedrooms_2 && property.bedrooms_2 !== property.bedrooms ? property.bedrooms : undefined),
+      beds_max: property.beds_max || property.bedrooms_max || property.max_beds || property.bedrooms_2 || undefined,
       baths: property.bathrooms || property.baths || 0,
+      // Support _2 suffix pattern from CRM API (bathrooms_2 = max baths for developments)
+      baths_min: property.baths_min || property.bathrooms_min || property.min_baths ||
+        (property.bathrooms_2 && property.bathrooms_2 !== property.bathrooms ? property.bathrooms : undefined),
+      baths_max: property.baths_max || property.bathrooms_max || property.max_baths || property.bathrooms_2 || undefined,
       built_area:
         property.build_size ||
         property.built_area ||
@@ -1183,6 +1211,10 @@ const RealtySoftAPI: RealtySoftAPIModule = (function () {
         property.m2_pivienda ||
         property.size ||
         0,
+      // Support _2 suffix pattern from CRM API (build_size_2 = max built area for developments)
+      built_area_min: property.built_area_min || property.build_size_min || property.min_built_area ||
+        (property.build_size_2 && property.build_size_2 !== property.build_size ? property.build_size : undefined),
+      built_area_max: property.built_area_max || property.build_size_max || property.max_built_area || property.build_size_2 || undefined,
       plot_size:
         property.plot_size ||
         property.plot ||
@@ -1190,6 +1222,10 @@ const RealtySoftAPI: RealtySoftAPIModule = (function () {
         property.terrain_size ||
         property.m2_parcela ||
         0,
+      // Support _2 suffix pattern from CRM API (plot_size_2 = max plot size for developments)
+      plot_size_min: property.plot_size_min || property.min_plot_size ||
+        (property.plot_size_2 && property.plot_size_2 !== property.plot_size ? property.plot_size : undefined),
+      plot_size_max: property.plot_size_max || property.max_plot_size || property.plot_size_2 || undefined,
       terrace_size:
         property.terrace_size ||
         property.terrace_area ||
@@ -1227,9 +1263,9 @@ const RealtySoftAPI: RealtySoftAPIModule = (function () {
       status: property.status || (typeof property.listing_type_id === 'object' ? property.listing_type_id?.name : '') || property.listing_status || '',
       type: typeName,
       is_featured: toBoolean(property.is_featured),
-      is_own: toBoolean(property.is_own),
+      is_own: toBoolean(property.is_own || property.own || property.is_exclusive || property.exclusive || property.agency_own || property.own_property),
       is_new: toBoolean(property.is_new),
-      is_exclusive: toBoolean(property.is_exclusive),
+      is_exclusive: toBoolean(property.is_exclusive || property.exclusive),
       description,
       short_description: shortDescription,
       features,
@@ -1285,6 +1321,7 @@ const RealtySoftAPI: RealtySoftAPIModule = (function () {
         property.document_url ||
         property.flyer_url ||
         property.flyer ||
+        (Array.isArray(property.documents) && property.documents.length > 0 ? property.documents[0] : '') ||
         '',
       floor: property.floor || property.floor_number || '',
       orientation: property.orientation || '',
@@ -1465,8 +1502,8 @@ const RealtySoftAPI: RealtySoftAPIModule = (function () {
           Logger.debug('[RealtySoft] Property loaded from PHP prefetch:', requestedRef);
           result = prefetchedData;
         } else {
-          console.warn('[RealtySoft] Prefetch data mismatch - expected:', requestedRef, 'got:', actualRef, '- fetching from API');
-          delete (window as any).__rsPrefetch; // Clear stale prefetch entirely
+          // Prefetch ref mismatch - fetch from API instead
+          delete (window as any).__rsPrefetch;
           const params = isRef ? { ref_no: idOrRef } : { id: idOrRef };
           result = await request<APIResponse<RawProperty[]>>('v1/property', params);
         }
@@ -1575,20 +1612,41 @@ const RealtySoftAPI: RealtySoftAPIModule = (function () {
   }
 
   /**
-   * Submit inquiry
+   * Submit inquiry via Laravel API with reCAPTCHA support
    */
   async function submitInquiry(
     data: InquiryData
   ): Promise<{ success: boolean; message?: string }> {
-    const url =
-      config.inquiryEndpoint || 'https://smartpropertywidget.com/spw/php/send-inquiry.php';
-    const response = await fetch(url, {
+    // Use Laravel API endpoint for reCAPTCHA validation and email sending
+    const laravelApiUrl = 'https://sm.smartpropertywidget.com/api/v1/widget/capture-inquiry';
+
+    // Transform data to match Laravel API format
+    // Combine country code with phone number for full international format
+    const fullPhone = data.countryCode && data.phone
+      ? `${data.countryCode} ${data.phone}`.trim()
+      : data.phone || '';
+
+    const apiData = {
+      domain: window.location.hostname.replace(/^www\./, ''),
+      name: data.name || `${data.firstName || ''} ${data.lastName || ''}`.trim(),
+      email: data.email,
+      phone: fullPhone,
+      message: data.message || '',
+      property_ref: data.propertyRef || '',
+      property_title: data.propertyTitle || '',
+      property_url: data.propertyUrl || '',
+      property_price: data.propertyPrice || '',
+      recaptchaToken: data.recaptchaToken || '',
+    };
+
+    const response = await fetch(laravelApiUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Accept': 'application/json',
         'X-Requested-With': 'XMLHttpRequest',
       },
-      body: JSON.stringify(data),
+      body: JSON.stringify(apiData),
     });
 
     const result = await response.json();

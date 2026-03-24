@@ -36,7 +36,13 @@ class RSDetailBackButton extends RSBaseComponent {
   }
 
   private getSearchUrl(): string {
-    // Check for referrer from search page
+    // Check session storage FIRST - this has the most accurate URL with filters/page
+    const lastSearch = sessionStorage.getItem('rs_last_search_url');
+    if (lastSearch) {
+      return lastSearch;
+    }
+
+    // Check for referrer from search page (fallback)
     const referrer = document.referrer;
     if (referrer && referrer.includes(window.location.hostname)) {
       // Check if referrer is a search/listing page
@@ -44,12 +50,6 @@ class RSDetailBackButton extends RSBaseComponent {
         referrer.includes('properties') || referrer.includes('property-list')) {
         return referrer;
       }
-    }
-
-    // Check session storage for last search URL
-    const lastSearch = sessionStorage.getItem('rs_last_search_url');
-    if (lastSearch) {
-      return lastSearch;
     }
 
     // Check for data attribute

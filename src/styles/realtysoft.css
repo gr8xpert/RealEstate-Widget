@@ -630,10 +630,47 @@ a[class*=" rs-"]:focus-visible {
     border-bottom: none;
 }
 
+/* Location Group (for two dropdowns hierarchical view) */
+.rs-location__group {
+    border-bottom: 1px solid #ecf0f1;
+    margin-bottom: 2px;
+}
+
+.rs-location__group:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.rs-location__group-header {
+    padding: 10px 15px;
+    background: var(--rs-bg-secondary, #f8f9fa);
+    font-size: var(--rs-font-size-sm, 13px);
+    color: var(--rs-text-secondary, #6c757d);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.rs-location__group-header strong {
+    font-weight: 600;
+    color: var(--rs-text-primary, #333);
+}
+
 /* Children Container */
 .rs-location__children {
     background: #fafbfc;
     padding: 5px 0;
+}
+
+/* Type badge for location items */
+.rs-location__type {
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    background: #e9ecef;
+    color: #6c757d;
+    margin-left: auto;
+    text-transform: capitalize;
 }
 
 /* No Results */
@@ -2299,6 +2336,49 @@ a[class*=" rs-"]:focus-visible {
 }
 
 /* === BUTTON MODE (default, data-mode="button") === */
+
+/* Row layout for Back + Features buttons */
+.rs-detail-features__row {
+    display: flex;
+    gap: var(--rs-spacing-sm);
+    width: 100%;
+}
+
+/* Back button - 25% width */
+.rs-detail-features__back-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--rs-spacing-xs);
+    flex: 0 0 25%;
+    padding: var(--rs-spacing-sm-md) var(--rs-spacing-md);
+    background: var(--rs-bg-secondary, #f3f4f6);
+    color: var(--rs-text-primary, #1f2937);
+    border: 1px solid var(--rs-border-color, #d1d5db);
+    border-radius: var(--rs-border-radius);
+    font-size: var(--rs-font-size-base);
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s;
+}
+
+.rs-detail-features__back-btn:hover {
+    background: var(--rs-bg-hover, #e5e7eb);
+    border-color: var(--rs-border-hover, #9ca3af);
+}
+
+.rs-detail-features__back-btn svg {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+}
+
+/* Features button - takes remaining 75% */
+.rs-detail-features__row .rs-detail-features__btn {
+    flex: 1;
+    justify-content: center;
+}
+
 .rs-detail-features__btn {
     display: inline-flex;
     align-items: center;
@@ -2733,6 +2813,23 @@ a[class*=" rs-"]:focus-visible {
 
 .rs-detail-inquiry__checkbox {
     margin-top: var(--rs-spacing-xs);
+}
+
+/* reCAPTCHA container */
+.rs-recaptcha-container {
+    margin: var(--rs-spacing-md) 0;
+    display: flex;
+    justify-content: center;
+}
+
+.rs-recaptcha-container > div {
+    transform-origin: center;
+}
+
+@media (max-width: 400px) {
+    .rs-recaptcha-container > div {
+        transform: scale(0.85);
+    }
 }
 
 .rs-detail-inquiry__error {
@@ -7674,6 +7771,18 @@ a[class*=" rs-"]:focus-visible {
     justify-content: center;
 }
 
+.rs-template__sidebar .rs-template__features-row {
+    width: 100%;
+}
+
+.rs-template__sidebar .rs-template__back-btn {
+    flex: 0 0 auto;
+}
+
+.rs-template__sidebar .rs-template__features-row .rs-template__features-btn {
+    flex: 1;
+}
+
 @media (max-width: 1024px) {
     .rs-template__sidebar {
         order: -1;
@@ -7934,6 +8043,42 @@ a[class*=" rs-"]:focus-visible {
 }
 
 /* Features Button Mode (Popup) */
+
+/* Row layout for Back + Features buttons */
+.rs-template__features-row {
+    display: flex;
+    gap: 10px;
+    width: 100%;
+}
+
+/* Back button - auto width, text only */
+.rs-template__back-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    padding: 12px 20px;
+    background: var(--rs-bg-secondary, #f3f4f6);
+    color: var(--rs-text-primary, #1f2937);
+    border: 1px solid var(--rs-border-color, #d1d5db);
+    border-radius: var(--rs-border-radius, 8px);
+    font-size: var(--rs-font-size-base, 15px);
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.rs-template__back-btn:hover {
+    background: var(--rs-bg-hover, #e5e7eb);
+    border-color: var(--rs-border-hover, #9ca3af);
+}
+
+/* Features button takes remaining 75% in row */
+.rs-template__features-row .rs-template__features-btn {
+    flex: 1;
+    justify-content: center;
+}
+
 .rs-template__features-btn {
     display: inline-flex;
     align-items: center;

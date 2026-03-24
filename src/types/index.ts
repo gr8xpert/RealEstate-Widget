@@ -4,6 +4,16 @@
  */
 
 // ============================================================
+// Price Statistics Types
+// ============================================================
+
+export interface PriceStats {
+  min: number;
+  max: number;
+  avg: number;
+}
+
+// ============================================================
 // Filter Types
 // ============================================================
 
@@ -26,9 +36,14 @@ export interface FilterState {
   plotMax: number | null;
   features: number[];
   ref: string;
+  featured: boolean | null;
 }
 
 export interface LockedFilters {
+  [key: string]: string | number | number[] | null;
+}
+
+export interface DefaultFilters {
   [key: string]: string | number | number[] | null;
 }
 
@@ -109,6 +124,13 @@ export interface BrandingConfig {
   emailHeaderColor?: string;  // Email header background color (hex) - falls back to primaryColor
 }
 
+// Similar properties configuration for detail page
+export interface SimilarPropertiesConfig {
+  limit?: number;       // Maximum number of properties to show (default: 6)
+  minResults?: number;  // Minimum required to show section (default: 3)
+  priceRange?: number;  // Price range as decimal, e.g., 0.3 = ±30% (default: 0.3)
+}
+
 export interface WidgetConfig {
   apiKey: string | null;
   apiUrl: string | null;
@@ -145,6 +167,8 @@ export interface WidgetConfig {
   perPage?: number;      // Items per page for grid/list view (default: 12)
   mapPerPage?: number;   // Items per page for map view (default: 200)
   branding?: BrandingConfig;  // Branding for emails and PDF
+  pricePlaceholderSelector?: string; // CSS selector for elements with #MINPRICE#, #MAXPRICE#, #AVGPRICE# placeholders
+  similarProperties?: SimilarPropertiesConfig; // Config for similar properties on detail page
 }
 
 // ============================================================
@@ -207,14 +231,26 @@ export interface Property {
   ref: string;
   unique_ref: string;
   price: number;
+  price_min?: number;       // For developments: minimum price
+  price_max?: number;       // For developments: maximum price
   price_on_request: boolean;
   location: string;
+  location_id: number | null;    // For similar properties search
+  type_id: number | null;        // For similar properties search
   postal_code: string;
   address: string;
   beds: number;
+  beds_min?: number;        // For developments: minimum beds
+  beds_max?: number;        // For developments: maximum beds
   baths: number;
+  baths_min?: number;       // For developments: minimum baths
+  baths_max?: number;       // For developments: maximum baths
   built_area: number;
+  built_area_min?: number;  // For developments: minimum built area
+  built_area_max?: number;  // For developments: maximum built area
   plot_size: number;
+  plot_size_min?: number;   // For developments: minimum plot size
+  plot_size_max?: number;   // For developments: maximum plot size
   terrace_size: number;
   solarium_size: number;
   garden_size: number;
@@ -268,6 +304,7 @@ export interface Property {
 export interface AppState {
   filters: FilterState;
   lockedFilters: LockedFilters;
+  defaultFilters: DefaultFilters;
   results: ResultsState;
   currentProperty: Property | null;
   ui: UIState;
@@ -333,6 +370,9 @@ export interface SearchParams {
   page: number;
   limit: number;
   order: string;
+  ownonly?: number;  // 1 = only return own properties
+  ownfirst?: number; // 1 = return own properties first, then others
+  status?: string;   // 'sale' = only return featured properties
 }
 
 export interface InquiryData {
@@ -393,6 +433,7 @@ export interface RealtySoftStateModule {
   subscribe<T = unknown>(path: string, callback: SubscriptionCallback<T>): UnsubscribeFunction;
   resetFilters(): void;
   setLockedFilters(locked: LockedFilters): void;
+  setDefaultFilters(defaults: DefaultFilters): void;
   isFilterLocked(filterName: string): boolean;
   getSearchParams(): SearchParams;
   addToWishlist(propertyId: number): void;

@@ -82,10 +82,32 @@ class RSDetailMap extends RSBaseComponent {
     const p = this.property;
     const orig = (p._original || {}) as Record<string, unknown>;
 
-    // Get coordinates
-    this.lat = p.latitude || (orig.latitude as string | number) || (orig.lat as string | number) || null;
-    this.lng = p.longitude || (orig.longitude as string | number) || (orig.lng as string | number) || null;
+    // Get coordinates - check multiple possible field names and formats
+    // Check snake_case, camelCase, and various naming conventions
+    this.lat = p.latitude
+      || (orig.latitude as string | number)
+      || (orig.lat as string | number)
+      || (orig.geo_latitude as string | number)
+      || (orig.geoLatitude as string | number)
+      || (orig.geo_lat as string | number)
+      || (orig.property_latitude as string | number)
+      || (orig.propertyLatitude as string | number)
+      || (orig.Latitude as string | number)
+      || (orig.Lat as string | number)
+      || null;
+    this.lng = p.longitude
+      || (orig.longitude as string | number)
+      || (orig.lng as string | number)
+      || (orig.geo_longitude as string | number)
+      || (orig.geoLongitude as string | number)
+      || (orig.geo_lng as string | number)
+      || (orig.property_longitude as string | number)
+      || (orig.propertyLongitude as string | number)
+      || (orig.Longitude as string | number)
+      || (orig.Lng as string | number)
+      || null;
     this.hasCoords = this.hasValidCoordinates();
+
 
     // Get location info from various possible fields
     const locationId = orig.location_id as { name?: string } | undefined;
@@ -124,10 +146,12 @@ class RSDetailMap extends RSBaseComponent {
     }
 
     // Get variation from data attribute
+    // Default to 0 (auto-detect) which prefers pinpoint when coordinates available
     const variationAttr = this.element.dataset.variation;
     const variationNum = parseInt(variationAttr || '');
-    const finalVariation = (!variationAttr || isNaN(variationNum)) ? 1 : variationNum;
+    const finalVariation = (!variationAttr || isNaN(variationNum)) ? 0 : variationNum;
     this.currentMode = this.getVariationMode(finalVariation);
+
 
     this.mapContainerId = `rs-leaflet-map-${Date.now()}`;
     this.render();
@@ -155,11 +179,10 @@ class RSDetailMap extends RSBaseComponent {
   private getVariationMode(num: number): MapMode {
     switch (num) {
       case 0:
-        // Auto-detect: prefer area boundary (more useful for real estate)
-        // Only use pinpoint if no location name/municipality available
-        if (this.locationName || this.municipality) return 'municipality';
-        if (this.zipcode) return 'zipcode';
+        // Auto-detect: prefer pinpoint when coordinates are available (most accurate)
         if (this.hasCoords) return 'pinpoint';
+        if (this.zipcode) return 'zipcode';
+        if (this.locationName || this.municipality) return 'municipality';
         return 'municipality';
       case 2:
         return this.hasCoords ? 'pinpoint' : 'municipality';
@@ -167,6 +190,8 @@ class RSDetailMap extends RSBaseComponent {
         return this.zipcode ? 'zipcode' : 'municipality';
       case 1:
       default:
+        // Municipality mode: but use pinpoint if coordinates available (more accurate)
+        if (this.hasCoords) return 'pinpoint';
         return 'municipality';
     }
   }
@@ -308,10 +333,22 @@ class RSDetailMap extends RSBaseComponent {
     }).addTo(map);
 
     if (this.currentMode === 'pinpoint' && this.hasCoords) {
-      // Pinpoint mode: marker at exact coordinates
+      // Pinpoint mode: marker at exact coordinates with circle border
       const lat = parseFloat(String(this.lat));
       const lng = parseFloat(String(this.lng));
       map.setView([lat, lng], 14);
+
+      // Add circle border around the location (500m radius)
+      L.circle([lat, lng], {
+        radius: 500,
+        color: '#0066cc',
+        weight: 3,
+        opacity: 0.8,
+        fillColor: '#0066cc',
+        fillOpacity: 0.1
+      }).addTo(map);
+
+      // Add marker at center
       const marker = L.marker([lat, lng]).addTo(map);
       if (this.displayLocation) {
         marker.bindPopup(`<strong>${this.displayLocation}</strong>`).openPopup();
@@ -468,10 +505,35 @@ class RSDetailMap extends RSBaseComponent {
       ? this.municipality.split(/[\/]/)[0].replace(/\s*(Central|Centro|Norte|Sur|Este|Oeste).*$/i, '').trim().toLowerCase()
       : '';
 
-    // Helper to check if result is in the correct municipality
+    // Get expected province for validation
+    const expectedProvince = this.province ? this.province.toLowerCase() : '';
+
+    // Helper to check if result is in the correct location (municipality AND province)
     const isInCorrectMunicipality = (result: any): boolean => {
-      if (!expectedMunicipality) return true; // No municipality to check against
       const displayName = (result.display_name || '').toLowerCase();
+
+      // First, check province if available (critical for avoiding Canary Islands vs mainland)
+      if (expectedProvince) {
+        // Reject if result is in Canary Islands but we expect mainland province
+        const canaryProvinces = ['las palmas', 'santa cruz de tenerife', 'gran canaria', 'tenerife', 'fuerteventura', 'lanzarote'];
+        const mainlandProvinces = ['málaga', 'malaga', 'marbella', 'cádiz', 'cadiz', 'granada', 'sevilla', 'córdoba', 'cordoba', 'almería', 'almeria', 'huelva', 'jaén', 'jaen', 'madrid', 'barcelona', 'valencia', 'alicante'];
+
+        const resultInCanary = canaryProvinces.some(p => displayName.includes(p));
+        const expectedInMainland = mainlandProvinces.some(p => expectedProvince.includes(p));
+
+        // If we expect mainland but result is in Canary Islands, reject
+        if (expectedInMainland && resultInCanary) {
+          return false;
+        }
+
+        // If province is available, prefer results that contain it
+        if (displayName.includes(expectedProvince)) {
+          return true;
+        }
+      }
+
+      if (!expectedMunicipality) return true; // No municipality to check against
+
       // Check if display_name contains our expected municipality
       // But also accept if it contains the province (wider area is OK)
       if (displayName.includes(expectedMunicipality)) return true;

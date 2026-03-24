@@ -406,8 +406,9 @@ class RSPropertyCarousel extends RSBaseComponent {
       };
 
       // Apply carousel-specific filters
-      if (this.featured) params.is_featured = 1;
-      if (this.own) params.is_own = 1;
+      if (this.featured) params.status = 'sale';  // API uses status=sale for featured properties
+      if (this.own) params.ownonly = 1;   // Show ONLY own properties
+      if (this.ownFirst) params.ownfirst = 1; // Show own properties FIRST, then others
       if (this.location) params.location_id = this.location;
       if (this.listingType) params.listing_type = this.listingType;
       if (this.propertyType) params.type_id = this.propertyType;
@@ -421,16 +422,6 @@ class RSPropertyCarousel extends RSBaseComponent {
 
       if (result && result.data && result.data.length > 0) {
         this.properties = result.data;
-
-        // Sort own properties first if ownFirst is enabled
-        if (this.ownFirst) {
-          this.properties.sort((a, b) => {
-            const aOwn = a.is_own ? 1 : 0;
-            const bOwn = b.is_own ? 1 : 0;
-            return bOwn - aOwn; // Own properties first
-          });
-          Logger.debug('[RSPropertyCarousel] Sorted with own properties first');
-        }
 
         Logger.debug('[RSPropertyCarousel] Loaded', this.properties.length, 'properties');
 

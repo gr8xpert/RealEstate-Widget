@@ -10,7 +10,8 @@ import type {
   Property,
   RealtySoftModule,
   RealtySoftLabelsModule,
-  RealtySoftStateModule
+  RealtySoftStateModule,
+  RealtySoftAnalyticsModule
 } from '../../types/index';
 import { RSDetailBackButton } from './back-button';
 import { RSDetailGallery } from './gallery';
@@ -34,6 +35,7 @@ import { RSMortgageCalculator } from './mortgage-calculator';
 declare const RealtySoft: RealtySoftModule;
 declare const RealtySoftLabels: RealtySoftLabelsModule;
 declare const RealtySoftState: RealtySoftStateModule;
+declare const RealtySoftAnalytics: RealtySoftAnalyticsModule;
 
 // Extended HTMLElement with component reference
 interface RSHTMLElement extends HTMLElement {
@@ -44,6 +46,7 @@ class RSDetail extends RSBaseComponent {
   private property: Property | null = null;
   private propertyId: string | null = null;
   private propertyRef: string | null = null;
+  private hasTrackedView: boolean = false;
 
   constructor(element: HTMLElement, options: ComponentOptions = {}) {
     super(element, options);
@@ -184,8 +187,10 @@ class RSDetail extends RSBaseComponent {
       const cleanPart = lastPart.replace('.html', '');
 
       // Patterns to extract reference from URL slug
+      // Handles refs with type suffix: R4949605-L (rental), R4949605-S (short), R4949605-N (dev)
       const patterns: [RegExp, string][] = [
-        [/([A-Z]{1,4}\d+)/i, '1-4 letters + digits'],
+        [/([A-Z]{1,4}\d+-[A-Z])(?:[^A-Z0-9]|$)/i, '1-4 letters + digits + type suffix'],
+        [/([A-Z]{1,4}\d+)(?:[^A-Z0-9-]|$)/i, '1-4 letters + digits'],
         [/(\d{6,})/, '6+ digits'],
         [/([A-Z]{2,}\d*-\d+)/i, 'letters-digits format'],
         [/-([A-Z0-9]+)$/i, 'suffix after dash']
@@ -263,7 +268,7 @@ class RSDetail extends RSBaseComponent {
     const textMappings: Record<string, string | number | null | undefined> = {
       // Basic Info
       'rs_detail_title': p.title,
-      'rs_detail_price': p.price_on_request ? this.label('detail_price_on_request') : RealtySoftLabels.formatPrice(p.price),
+      'rs_detail_price': p.price_on_request ? this.label('detail_price_on_request') : this.formatPriceWithPeriod(p),
       'rs_detail_ref': p.ref,
       'rs_detail_unique_ref': p.unique_ref,
       'rs_detail_location': p.location,
@@ -399,12 +404,16 @@ class RSDetail extends RSBaseComponent {
       }
     });
 
-    // Video link (standalone)
+    // Video link (standalone) - with analytics tracking
     this.element.querySelectorAll<HTMLElement>('.rs_detail_video_link').forEach(el => {
       if (p.video_url) {
         if (el.tagName === 'A') {
           (el as HTMLAnchorElement).href = p.video_url;
           (el as HTMLAnchorElement).target = '_blank';
+          // Add analytics tracking for video view
+          el.addEventListener('click', () => {
+            RealtySoftAnalytics.trackResourceClick('video', p.id);
+          });
         }
         el.style.display = '';
       } else {
@@ -412,12 +421,16 @@ class RSDetail extends RSBaseComponent {
       }
     });
 
-    // Virtual tour link (standalone)
+    // Virtual tour link (standalone) - with analytics tracking
     this.element.querySelectorAll<HTMLElement>('.rs_detail_tour_link').forEach(el => {
       if (p.virtual_tour_url) {
         if (el.tagName === 'A') {
           (el as HTMLAnchorElement).href = p.virtual_tour_url;
           (el as HTMLAnchorElement).target = '_blank';
+          // Add analytics tracking for virtual tour view
+          el.addEventListener('click', () => {
+            RealtySoftAnalytics.trackResourceClick('tour', p.id);
+          });
         }
         el.style.display = '';
       } else {
@@ -425,12 +438,16 @@ class RSDetail extends RSBaseComponent {
       }
     });
 
-    // PDF link (standalone)
+    // PDF link (standalone) - with analytics tracking
     this.element.querySelectorAll<HTMLElement>('.rs_detail_pdf_link').forEach(el => {
       if (p.pdf_url) {
         if (el.tagName === 'A') {
           (el as HTMLAnchorElement).href = p.pdf_url;
           (el as HTMLAnchorElement).target = '_blank';
+          // Add analytics tracking for PDF download
+          el.addEventListener('click', () => {
+            RealtySoftAnalytics.trackResourceClick('pdf', p.id);
+          });
         }
         el.style.display = '';
       } else {
@@ -442,6 +459,34 @@ class RSDetail extends RSBaseComponent {
     if (p.title) {
       document.title = `${p.title} | ${document.title.split('|').pop()?.trim() || 'Property'}`;
     }
+
+    // Ensure analytics tracking with complete property data
+    // This is a fallback in case the initial tracking in controller.ts didn't have full data
+    if (!this.hasTrackedView && p.id) {
+      this.hasTrackedView = true;
+      RealtySoftAnalytics.trackPropertyView({
+        id: p.id,
+        ref: p.ref || undefined,
+        type: p.type || undefined,
+        location: p.location || undefined,
+        price: p.price || undefined,
+      });
+    }
+  }
+
+  private formatPriceWithPeriod(property: Property): string {
+    const price = RealtySoftLabels.formatPrice(property.price);
+    const listingType = property.listing_type?.toLowerCase();
+    let period = '';
+    if (listingType === 'long_rental') {
+      period = this.label('per_month') || this.label('detail_per_month') || 'month';
+    } else if (listingType === 'short_rental') {
+      period = this.label('per_week') || this.label('detail_per_week') || 'week';
+    }
+    if (!period) return price;
+    // Ensure period starts with /
+    const formattedPeriod = period.startsWith('/') ? period : '/' + period;
+    return `${price}${formattedPeriod}`;
   }
 
   private formatDescription(text: string): string {
